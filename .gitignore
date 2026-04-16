@@ -10,6 +10,9 @@
 # LibreOffice lock files
 .~lock.*
 
+# Local notes (kept locally, not tracked)
+notes/
+
 # Course materials (kept locally, not tracked)
 *.pptx
 *.ppt
