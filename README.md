@@ -56,10 +56,6 @@ Key results implemented:
 - **Finite-size spectrum** — near-zero edge modes in the topological phase ($|\mu| < 2t$)
 - **Winding number** — numerical BZ integral of the BdG d-vector angle
 
-> **Note on BdG diagonalisation:** quasiparticle energies are computed as
-> `np.sort(np.abs(evals))` rather than filtering `evals >= 0`. The near-zero
-> Majorana mode rounds to a tiny negative float at large $L$, which a sign
-> filter silently drops, producing spurious spikes in the finite-size spectrum.
 
 ### Run
 
