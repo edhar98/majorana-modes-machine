@@ -38,8 +38,6 @@ The goal is to bridge abstract theoretical physics and the quantum software stac
 ├── plots/                      # Generated figures (PDF)
 │
 └── presentation/               # Weekly 20-min seminar slides (Beamer/LaTeX)
-    └── week1/
-        └── slides.tex
 ```
 
 ---
