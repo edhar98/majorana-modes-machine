@@ -1,0 +1,218 @@
+\documentclass[aspectratio=169, 12pt]{beamer}
+
+% ── Theme ─────────────────────────────────────────────────────────────────────
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb, physics}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\graphicspath{{../../plots/}}   % pull figures from ../plots/
+
+% ── Custom colors (match Python palette) ──────────────────────────────────────
+\definecolor{trivial}{HTML}{d62728}
+\definecolor{critical}{HTML}{2ca02c}
+\definecolor{topological}{HTML}{1f77b4}
+\definecolor{edgemode}{HTML}{e377c2}
+
+% ── Macros ────────────────────────────────────────────────────────────────────
+\newcommand{\cdag}{c^{\dagger}}
+\newcommand{\gA}{\gamma_{A,j}}
+\newcommand{\gB}{\gamma_{B,j}}
+\newcommand{\winding}{\nu}
+
+% ── Title ─────────────────────────────────────────────────────────────────────
+\title[Kitaev Chain — Block 1]{Majorana Modes in the Machine}
+\subtitle{Block 1: The Physics Bridge}
+\author{[Your Name]}
+\institute{Advanced Seminar — AI-Augmented Theoretical Physics}
+\date{\today}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ── Outline ───────────────────────────────────────────────────────────────────
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The Kitaev Hamiltonian}
+
+\begin{frame}{Starting point: the lattice Kitaev Hamiltonian}
+  \begin{equation}
+    H_K = -\mu \sum_j \cdag_j c_j
+          - t \sum_j \!\bigl(\cdag_j c_{j+1} + \mathrm{h.c.}\bigr)
+          + \Delta \sum_j \!\bigl(\cdag_j \cdag_{j+1} + \mathrm{h.c.}\bigr)
+  \end{equation}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Physical ingredients}
+      \begin{itemize}
+        \item Spinless (or spin-polarized) fermions
+        \item Nearest-neighbor hopping $t$
+        \item $p$-wave pairing $\Delta \in \mathbb{R}$
+        \item Chemical potential $\mu$ tunes filling
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Questions we will answer}
+      \begin{itemize}
+        \item When does topology emerge?
+        \item How do edge zero modes appear?
+        \item What is the topological invariant?
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ── Majorana representation ───────────────────────────────────────────────────
+\section{Majorana Representation}
+
+\begin{frame}{Majorana operators}
+  Define
+  \begin{equation}
+    \gamma_{A,j} = \frac{c_j + \cdag_j}{\sqrt{2}}, \qquad
+    \gamma_{B,j} = \frac{i(\cdag_j - c_j)}{\sqrt{2}}
+  \end{equation}
+  so that $\{\gamma_{\alpha,i}, \gamma_{\beta,j}\} = 2\delta_{\alpha\beta}\delta_{ij}$.
+
+  \medskip
+  Rewriting the Hamiltonian:
+  \begin{equation}
+    H_K = -\mu\!\sum_j \!\Bigl(i\gA\gB + \tfrac{1}{2}\Bigr)
+          + i\!\sum_j \!\Bigl[
+              (\Delta+t)\,\gamma_{B,j}\gamma_{A,j+1}
+             +(\Delta-t)\,\gamma_{A,j}\gamma_{B,j+1}
+            \Bigr]
+  \end{equation}
+
+  \begin{alertblock}{Sweet spot: $\mu = 0$, $t = \Delta$}
+    Only inter-site coupling $i\gamma_{B,j}\gamma_{A,j+1}$ survives.
+    Open boundaries leave \textbf{one unpaired Majorana at each end}.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Trivial vs.\ topological pairing}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \textbf{\color{trivial}Trivial regime}\\[4pt]
+      Dominant \emph{onsite} pairing $i\gA\gB$.\\
+      No protected boundary mode.
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \textbf{\color{topological}Topological regime} ($\mu=0,\, t=\Delta$)\\[4pt]
+      Bond pairing $i\gamma_{B,j}\gamma_{A,j+1}$.\\
+      \textbf{One unpaired Majorana at each edge.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ── BdG Hamiltonian ───────────────────────────────────────────────────────────
+\section{BdG Hamiltonian \& Spectrum}
+
+\begin{frame}{From real space to momentum space}
+  Fourier transform + Nambu spinor $\Psi^\dagger_k = (c^\dagger_k,\, c_{-k})$:
+  \begin{equation}
+    H_K = \sum_{k>0} \Psi^\dagger_k\, h(k)\, \Psi_k, \qquad
+    h(k) = \begin{pmatrix} \xi_k & 2i\Delta\sin k \\ -2i\Delta\sin k & -\xi_k \end{pmatrix}
+  \end{equation}
+  with $\xi_k = -\mu - 2t\cos k$.
+
+  \medskip
+  Rewritten as a two-band / Dirac Hamiltonian:
+  \begin{equation}
+    h(k) = n_y(k)\,\sigma^y + n_z(k)\,\sigma^z, \qquad
+    E_k  = \sqrt{n_z^2 + n_y^2}
+  \end{equation}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \[ n_z(k) = -\mu - 2t\cos k \]
+      \[ n_y(k) = -2\Delta\sin k  \]
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Gap closes when}
+      \[ \mu = \pm 2t \]
+      Phase boundaries of the Kitaev chain.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Bulk dispersion: trivial / critical / topological}
+  \begin{center}
+    \includegraphics[width=0.78\linewidth]{block1_01_bulk_dispersion.pdf}
+  \end{center}
+  Gap closes at $k=0$ when $\mu=-2t$ (and at $k=\pi$ when $\mu=+2t$).
+\end{frame}
+
+% ── Winding number ────────────────────────────────────────────────────────────
+\section{Topological Invariant}
+
+\begin{frame}{Winding number $\nu$}
+  As $k$ sweeps the BZ, the vector $\mathbf{n}(k)=(n_z,n_y)$ traces a closed loop.
+  \begin{equation}
+    \theta_k = \arg(n_z + i n_y), \qquad
+    \winding = \frac{1}{2\pi}\int_\mathrm{BZ} \partial_k\theta_k\, dk
+  \end{equation}
+
+  \begin{center}
+    \includegraphics[width=0.85\linewidth]{block1_02_winding_loops.pdf}
+  \end{center}
+  \begin{itemize}
+    \item $\nu=0$: loop does \emph{not} enclose origin $\to$ trivial
+    \item $|\nu|=1$: loop winds once around origin $\to$ topological
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Phase diagram}
+  \begin{center}
+    \includegraphics[width=0.80\linewidth]{block1_03_phase_diagram.pdf}
+  \end{center}
+  Bulk gap vanishes at $\mu = \pm 2t$; winding number jumps across the transition.
+\end{frame}
+
+% ── Finite-size & edge modes ──────────────────────────────────────────────────
+\section{Finite-Size Results}
+
+\begin{frame}{Finite-size spectrum (OBC): edge modes appear}
+  \begin{center}
+    \includegraphics[width=0.80\linewidth]{block1_04_finite_size_spectrum.pdf}
+  \end{center}
+  {\color{edgemode}Pink} curve: near-zero mode pinned inside the gap in the topological phase.
+\end{frame}
+
+\begin{frame}{Real-space BdG snapshot}
+  \begin{center}
+    \includegraphics[width=0.82\linewidth]{block1_05_realspace_snapshot.pdf}
+  \end{center}
+  Left (trivial): uniform gap.
+  Right (topological): two eigenvalues near zero — the Majorana pair.
+\end{frame}
+
+% ── Summary ───────────────────────────────────────────────────────────────────
+\section{Summary}
+
+\begin{frame}{Block 1 — key takeaways}
+  \begin{enumerate}
+    \item The Kitaev Hamiltonian hosts \textbf{two phases} separated by gap closings at $\mu=\pm 2t$.
+    \item Majorana representation reveals the \textbf{sweet-spot} picture directly ($\mu=0,\,t=\Delta$).
+    \item The BdG d-vector winding number $\nu\in\{0,1\}$ is the \textbf{topological invariant}.
+    \item OBC spectra show \textbf{near-zero edge modes} in the topological phase — numerical confirmation of bulk-boundary correspondence.
+  \end{enumerate}
+  \vfill
+  \textbf{Next (Block 2):} Jordan–Wigner transform → qubit encoding → quantum circuit for ground-state preparation.
+\end{frame}
+
+\end{document}

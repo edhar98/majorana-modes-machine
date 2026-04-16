@@ -1,0 +1,203 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{bm}
+
+\title{Theoretical Background}
+\subtitle{Kitaev Chain, Topological Phases, and Majorana Edge Modes}
+\author{}
+\date{April 13, 2026}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Project Context}
+\begin{itemize}
+\item Goal: study the topological phase transition of the one-dimensional Kitaev chain.
+\item Main bridge: connect fermionic many-body physics to qubit-based simulation methods.
+\item Core tasks later in the project:
+\begin{itemize}
+\item derive and analyze the model,
+\item map fermions to qubits,
+\item prepare ground states and measure topological observables,
+\item test the stability of signatures under noise.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Why This Model Matters}
+\begin{itemize}
+\item The Kitaev chain is the minimal model for one-dimensional topological superconductivity.
+\item It exhibits two distinct phases:
+\begin{itemize}
+\item a trivial phase with no protected edge physics,
+\item a topological phase with Majorana zero modes localized at the boundaries.
+\end{itemize}
+\item It is simple enough for exact analysis and small-scale simulation.
+\item It captures the main ideas behind edge modes, bulk-boundary correspondence, and topological protection.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Kitaev Chain Hamiltonian}
+\[
+H =
+-\mu \sum_{j=1}^{N} \left(c_j^\dagger c_j - \frac{1}{2}\right)
+- t \sum_{j=1}^{N-1} \left(c_j^\dagger c_{j+1} + c_{j+1}^\dagger c_j\right)
++ \Delta \sum_{j=1}^{N-1} \left(c_j c_{j+1} + c_{j+1}^\dagger c_j^\dagger\right)
+\]
+
+\begin{itemize}
+\item \(c_j^\dagger, c_j\): spinless fermion creation and annihilation operators.
+\item \(t\): nearest-neighbor hopping amplitude.
+\item \(\mu\): chemical potential.
+\item \(\Delta\): superconducting pairing amplitude.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Physical Interpretation}
+\begin{itemize}
+\item The hopping term delocalizes fermions along the chain.
+\item The chemical potential controls filling and tunes the phase transition.
+\item The pairing term breaks particle-number conservation but preserves fermion parity.
+\item The Hamiltonian is quadratic, so it can be solved exactly by Bogoliubov methods.
+\end{itemize}
+\[
+\text{number not conserved} \qquad \Longrightarrow \qquad \text{Nambu/BdG description}
+\]
+\end{frame}
+
+\begin{frame}{Momentum-Space BdG Form}
+\[
+\Psi_k =
+\begin{pmatrix}
+c_k \\
+c_{-k}^\dagger
+\end{pmatrix},
+\qquad
+H = \frac{1}{2}\sum_k \Psi_k^\dagger \mathcal{H}(k)\Psi_k
+\]
+\[
+\mathcal{H}(k) =
+\left(-2t\cos k - \mu\right)\tau_z + 2\Delta \sin k \, \tau_y
+\]
+\[
+E(k) = \pm \sqrt{\left(2t\cos k + \mu\right)^2 + 4\Delta^2 \sin^2 k}
+\]
+
+\begin{itemize}
+\item The spectrum is gapped except when the bulk gap closes.
+\item Gap closings mark topological phase transitions.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Phase Diagram}
+\begin{itemize}
+\item The bulk gap closes at
+\[
+\mu = \pm 2t
+\]
+\item For \(\Delta \neq 0\):
+\begin{itemize}
+\item \(|\mu| < 2|t|\): topological superconducting phase,
+\item \(|\mu| > 2|t|\): trivial phase.
+\end{itemize}
+\item The topological phase supports boundary Majorana zero modes for open chains.
+\end{itemize}
+\[
+\text{bulk gap closing} \Longleftrightarrow \text{change of topological sector}
+\]
+\end{frame}
+
+\begin{frame}{Majorana Representation}
+\[
+c_j = \frac{1}{2}\left(a_j + i b_j\right),
+\qquad
+c_j^\dagger = \frac{1}{2}\left(a_j - i b_j\right)
+\]
+\[
+a_j^\dagger = a_j,\qquad b_j^\dagger = b_j,\qquad
+\{a_j,a_\ell\}=2\delta_{j\ell},\qquad
+\{b_j,b_\ell\}=2\delta_{j\ell}
+\]
+
+\begin{itemize}
+\item Each fermionic mode splits into two Majorana operators.
+\item In the trivial phase, Majoranas pair on the same site.
+\item In the topological phase, Majoranas pair between neighboring sites, leaving unpaired edge modes.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Special Point and Edge Modes}
+\begin{itemize}
+\item At the solvable point \(t=\Delta\) and \(\mu=0\), the structure is especially transparent.
+\item The Hamiltonian pairs \(b_j\) with \(a_{j+1}\) in the bulk.
+\item The operators \(a_1\) and \(b_N\) remain unpaired for an open chain.
+\item These boundary operators form a nonlocal fermionic zero mode.
+\end{itemize}
+\[
+f_{\text{edge}} = \frac{1}{2}\left(a_1 + i b_N\right)
+\]
+\begin{itemize}
+\item This produces a near-degenerate ground-state manifold distinguished by fermion parity.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Finite Chains and Observable Signatures}
+\begin{itemize}
+\item In a finite chain, the two edge Majoranas overlap weakly.
+\item This overlap causes an exponentially small energy splitting.
+\item Practical signatures of the topological regime include:
+\begin{itemize}
+\item a bulk gap that closes and reopens,
+\item near-zero-energy edge states,
+\item boundary-localized correlations,
+\item parity-sensitive ground-state structure.
+\end{itemize}
+\item These are the quantities that simulation and measurement protocols must recover.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Fermion-to-Qubit Mapping}
+\[
+c_j =
+\left(\prod_{\ell<j} Z_\ell\right)\frac{X_j - iY_j}{2},
+\qquad
+c_j^\dagger =
+\left(\prod_{\ell<j} Z_\ell\right)\frac{X_j + iY_j}{2}
+\]
+
+\begin{itemize}
+\item The Jordan-Wigner map converts fermionic operators into Pauli strings.
+\item This provides the bridge from many-body theory to circuit simulation.
+\item After the mapping, the model can be implemented with qubit Hamiltonians and measured with standard quantum-information tools.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{What This Background Enables}
+\begin{itemize}
+\item Exact diagonalization of small systems.
+\item Free-fermion calculations of spectra and correlation functions.
+\item Circuit-level emulation of state preparation and measurement.
+\item Later analysis of robustness under noise and imperfect operations.
+\end{itemize}
+\[
+\text{theory} \;\rightarrow\; \text{encoding} \;\rightarrow\; \text{simulation} \;\rightarrow\; \text{measurement}
+\]
+\end{frame}
+
+\begin{frame}{Takeaway}
+\begin{itemize}
+\item The Kitaev chain is the central theoretical model for the project.
+\item Its phase transition is controlled by a bulk gap closing at \(\mu=\pm 2t\).
+\item The topological phase supports Majorana edge modes in open chains.
+\item The Jordan-Wigner transformation makes the model accessible to qubit-based simulation.
+\item This is the theoretical foundation for all later numerical and circuit work.
+\end{itemize}
+\end{frame}
+
+\end{document}
