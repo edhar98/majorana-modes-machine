@@ -1,0 +1,163 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\geometry{margin=2.5cm}
+
+\title{Finite-Size Majorana Splitting in the Kitaev Chain:\\
+Why do the ``spikes'' in the finite-size spectrum worsen with larger $L$?}
+\author{Seminar notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Setup}
+
+We study the Kitaev chain at $t = \Delta = 1$ with open boundary conditions (OBC).
+The BdG Hamiltonian is the real-symmetric matrix
+\begin{equation}
+  M = \begin{pmatrix} h & d \\ -d & -h \end{pmatrix}, \qquad
+  h_{ij} = -\mu\delta_{ij} - t(\delta_{i,j+1}+\delta_{i+1,j}), \qquad
+  d_{ij} = \Delta(\delta_{i,j+1}-\delta_{i+1,j}).
+\end{equation}
+Particle-hole symmetry (PHS) guarantees eigenvalues come in exact $\pm E$ pairs.
+Plot 4 tracks the \emph{six smallest positive eigenvalues} as $\mu$ varies.
+
+\section{The ideal edge-mode energy}
+
+\subsection{Zero-energy condition in the complex BZ}
+
+To find the edge-mode energy, we look for a zero-energy solution that decays
+into the bulk. Set $E = 0$ and try an Ansatz $\psi_j \sim \lambda^j$.
+Substituting into the bulk BdG equations gives the characteristic equation
+\begin{equation}
+  \bigl(-\mu - t(\lambda + \lambda^{-1})\bigr)^2 + \Delta^2(\lambda - \lambda^{-1})^2 = 0.
+\end{equation}
+For $t = \Delta$ this factors to
+\begin{equation}
+  \bigl(-\mu - t(\lambda + \lambda^{-1}) + \Delta(\lambda - \lambda^{-1})\bigr)
+  \bigl(-\mu - t(\lambda + \lambda^{-1}) - \Delta(\lambda - \lambda^{-1})\bigr) = 0.
+\end{equation}
+The two branches give the solutions
+\begin{equation}
+  \lambda_A = \frac{\mu}{2t}, \qquad \lambda_B = \frac{2t}{\mu}.
+\end{equation}
+For the left edge mode we need $|\lambda| < 1$, so we take $\lambda = \mu/(2t)$
+(valid for $|\mu| < 2t$, i.e.\ inside the topological phase).
+The wavefunction decays \emph{purely exponentially}:
+\begin{equation}
+  \psi_j^L \sim \left(\frac{|\mu|}{2t}\right)^{j-1}, \qquad
+  \xi = \frac{1}{|\ln|\mu/2t||} \quad \text{(coherence length)}.
+\end{equation}
+Crucially, for $t = \Delta$ the solution has \textbf{no oscillatory factor}
+$e^{ik_0 j}$. This is special to the symmetric point; for $t \neq \Delta$ the
+roots can be complex, introducing oscillations.
+
+\subsection{Finite-size hybridization splitting}
+
+A chain of length $L$ has both a left edge mode $\psi^L_j \sim \lambda^{j-1}$
+and a right edge mode $\psi^R_j \sim \lambda^{L-j}$.
+Their overlap determines the splitting of the zero-energy pair:
+\begin{equation}
+  \delta E \approx 2t\,\frac{\langle\psi^L | V | \psi^R\rangle}
+                             {\|\psi^L\|\,\|\psi^R\|}
+  \sim 2t\,\lambda^L = 2t\left(\frac{|\mu|}{2t}\right)^L.
+\end{equation}
+This is the energy of the near-zero mode.
+For $t = \Delta = 1$:
+\begin{equation}
+  \boxed{E_0(\mu, L) \approx 2\left(\frac{|\mu|}{2}\right)^L.}
+  \label{eq:splitting}
+\end{equation}
+Predictions from \eqref{eq:splitting}:
+\begin{itemize}
+  \item At the sweet spot $\mu = 0$: $E_0 = 0$ \emph{exactly}, for any $L$.
+  \item At the phase boundary $|\mu| = 2t$: $E_0 \to 2$ (the bulk gap), for any $L$.
+  \item In the interior: $E_0$ decreases \emph{exponentially} with $L$.
+    A larger chain has a better-protected zero mode.
+\end{itemize}
+So \eqref{eq:splitting} predicts that larger $L$ should give
+\emph{smaller} spikes, not larger ones.
+
+\section{Why the spikes increase and widen with $L$: a numerical artifact}
+
+\subsection{The floating-point threshold problem}
+
+The observed behaviour (spikes worsen as $L$ increases) is \emph{not}
+a physical effect — it is a numerical artefact arising from how we
+define ``positive spectrum''.
+
+In the simulation, positive eigenvalues are selected with the filter
+\texttt{evals[evals >= 0]}.  For large $L$, the ideal splitting
+$E_0 = 2(|\mu|/2)^L$ falls below machine precision ($\approx 10^{-15}$)
+over a wide range of $\mu$:
+\begin{equation}
+  E_0 < \varepsilon_\text{mach} \iff
+  \left(\frac{|\mu|}{2}\right)^L < \frac{\varepsilon_\text{mach}}{2}
+  \iff
+  |\mu| < 2\,\varepsilon_\text{mach}^{1/L}.
+\end{equation}
+For $\varepsilon_\text{mach} = 5\times10^{-16}$:
+\begin{align}
+  L = 30:  &\quad |\mu|_\text{thresh} \approx 0.62, \\
+  L = 100: &\quad |\mu|_\text{thresh} \approx 1.41.
+\end{align}
+For $|\mu| < |\mu|_\text{thresh}$, the near-zero eigenvalue is
+indistinguishable from zero at double precision. Due to rounding,
+it can be stored as a tiny \emph{negative} number ($\sim -10^{-16}$).
+The filter \texttt{evals >= 0} then \emph{excludes} this eigenvalue,
+and the \emph{lowest bulk mode} (at finite energy $\sim E_\text{gap}$)
+takes its place as the ``lowest positive eigenvalue''. This appears
+as a spike.
+
+\subsection{Width and height of the artefact}
+
+\begin{itemize}
+  \item \textbf{Width}: the spike region is $|\mu| < 2\varepsilon_\text{mach}^{1/L}$,
+    which \emph{grows} with $L$ (for $L=100$ it covers most of the
+    topological phase, explaining the ``widened'' spikes).
+  \item \textbf{Height}: the spike jumps to the lowest bulk energy,
+    which is $\sim E_\text{gap}(\mu) / (L\text{-dependent level spacing})$.
+    With larger $L$ the bulk level spacing is smaller, so more bulk
+    levels fall inside the window and the spikes look denser.
+\end{itemize}
+
+\section{The fix: use quasiparticle energies $|E|$}
+
+The physical quasiparticle spectrum consists of the \emph{absolute values}
+of the BdG eigenvalues. The near-zero mode has $|E| \approx 0$ regardless
+of the sign of the floating-point result:
+\begin{equation}
+  \text{correct}: \quad
+  \{E_n\}_{n=1}^{L} = \text{sort}\bigl(|e_i|\bigr)_{i=1}^{2L}.
+\end{equation}
+In code, replace
+\begin{verbatim}
+  return evals[evals >= 0]          # WRONG: sign-sensitive
+\end{verbatim}
+with
+\begin{verbatim}
+  return np.sort(np.abs(evals))[:L]  # correct: quasiparticle energies
+\end{verbatim}
+This is the standard way to extract the quasiparticle spectrum from a
+BdG diagonalisation and is immune to the sign ambiguity at near-zero
+eigenvalues.
+
+\section{Summary}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\hline
+Observation & Physical or artefact? & Cause \\
+\hline
+Spikes near $|\mu|\to 2t$ & \textbf{Physical} & $\xi \to \infty$, hybridisation is strong \\
+Spikes in interior for small $L$ & Mostly artefact & Float precision, level crossings \\
+Spikes widen/worsen for large $L$ & \textbf{Artefact} & Threshold $|\mu|_\text{thresh}\propto\varepsilon^{1/L}$ grows \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{document}

@@ -33,20 +33,16 @@ The goal is to bridge abstract theoretical physics and the quantum software stac
 │   ├── kitaev_chain.py         # KitaevChain class — real-space BdG (OBC)
 │   ├── bdg_bulk.py             # Bulk BdG dispersion, gap, d-vector
 │   ├── winding.py              # Topological winding number ν
-│   └── main.py                 # Block 1 runner — generates all plots
+│   └── main.py                 # Block 1 runner — CLI, generates all plots
 │
 ├── plots/                      # Generated figures (PDF)
-│   ├── block1_01_bulk_dispersion.pdf
-│   ├── block1_02_winding_loops.pdf
-│   ├── block1_03_phase_diagram.pdf
-│   ├── block1_04_finite_size_spectrum.pdf
-│   └── block1_05_realspace_snapshot.pdf
 │
-├── presentation/               # Weekly 20-min seminar slides (Beamer/LaTeX)
-│   └── week1/
-│       └── slides.tex
+├── notes/                      # Derivation write-ups (LaTeX)
+│   └── finite_size_majorana_splitting.tex
 │
-└── physics_bridge_kitaev_focus_v2.pdf   # Theory reference deck (Block 1)
+└── presentation/               # Weekly 20-min seminar slides (Beamer/LaTeX)
+    └── week1/
+        └── slides.tex
 ```
 
 ---
@@ -62,15 +58,22 @@ Key results implemented:
 - **Real-space BdG** (open boundary conditions) — exact diagonalization via `KitaevChain`
 - **Bulk dispersion** $E_k = \sqrt{(-\mu - 2t\cos k)^2 + (2\Delta \sin k)^2}$
 - **Phase diagram** — bulk gap and winding number $\nu$ vs $\mu/t$
-- **Finite-size spectrum** — near-zero edge modes appearing in the topological phase ($|\mu| < 2t$)
+- **Finite-size spectrum** — near-zero edge modes in the topological phase ($|\mu| < 2t$)
 - **Winding number** — numerical BZ integral of the BdG d-vector angle
+
+> **Note on BdG diagonalisation:** quasiparticle energies are computed as
+> `np.sort(np.abs(evals))` rather than filtering `evals >= 0`. The near-zero
+> Majorana mode rounds to a tiny negative float at large $L$, which a sign
+> filter silently drops, producing spurious spikes in the finite-size spectrum.
+> See `notes/finite_size_majorana_splitting.tex` for the full derivation.
 
 ### Run
 
 ```bash
 cd src
-python main.py
-# → writes 5 plots to ../plots/
+python main.py                  # all plots
+python main.py --plots 4 --L 100  # single plot, custom chain length
+python main.py --list           # show available plots
 ```
 
 ### Requirements

@@ -63,9 +63,16 @@ class KitaevChain:
         return np.sort(evals)
 
     def positive_spectrum(self) -> np.ndarray:
-        """Return the L positive quasiparticle energies (sorted)."""
-        evals = self.spectrum()
-        return evals[evals >= 0]
+        """
+        Return the L quasiparticle energies (sorted ascending).
+
+        Uses |E| rather than filtering evals >= 0: near-zero Majorana modes
+        can round to tiny negative values at double precision, which a sign
+        filter would silently drop, producing spurious spikes in finite-size
+        spectra at large L.
+        """
+        evals = np.linalg.eigvalsh(self.build_hamiltonian())
+        return np.sort(np.abs(evals))[:self.L]
 
     def eigh(self):
         """Return (eigenvalues, eigenvectors) sorted by ascending eigenvalue."""

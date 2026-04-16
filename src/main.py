@@ -1,12 +1,14 @@
 """
-main.py — Block 1 runner: generates all physics-bridge plots.
+main.py — Block 1 runner: generates physics-bridge plots.
 
-Run from the src/ directory:
-    python main.py
-
-Output goes to ../plots/
+Usage:
+    python main.py                     # generate all plots
+    python main.py --plots 1 3         # only plots 1 and 3
+    python main.py --list              # list available plots
+    python main.py --L 50 --plots 4   # override chain length for plot 4
 """
 
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -16,170 +18,218 @@ from kitaev_chain import KitaevChain
 from bdg_bulk     import bulk_energy, bulk_gap, bdg_vector, critical_mu
 from winding      import winding_number, winding_scan
 
-setup_style()
-
-# ── Shared parameters ─────────────────────────────────────────────────────────
+# ── Shared defaults ───────────────────────────────────────────────────────────
 T     = 1.0
 DELTA = 1.0
 
-# Three representative points used across several plots
 CASES = [
     (dict(mu=-3.0), 'trivial',     r'Trivial $\mu = -3t$'),
     (dict(mu=-2.0), 'critical',    r'Critical $\mu = -2t$'),
     (dict(mu=-1.0), 'topological', r'Topological $\mu = -t$'),
 ]
 
-k_arr    = np.linspace(-np.pi, np.pi, 600)
-mu_scan  = np.linspace(-4.5 * T, 4.5 * T, 400)
-mu_c1, mu_c2 = critical_mu(T)
+PLOT_REGISTRY = {}   # filled by @plot decorator below
 
-print("Generating Block 1 plots …\n")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Plot 1 — Bulk BdG dispersion  E(k) vs k  (reproduces deck slide 8)
-# ═══════════════════════════════════════════════════════════════════════════════
-fig, ax = plt.subplots(figsize=(7, 4.5))
+def plot(n, description):
+    """Register a plotting function under its number and description."""
+    def decorator(fn):
+        PLOT_REGISTRY[n] = (fn, description)
+        return fn
+    return decorator
 
-for params, phase, label in CASES:
-    mu = params['mu']
-    E  = bulk_energy(k_arr, mu, T, DELTA)
-    ax.plot(k_arr / np.pi,  E, color=COLORS[phase], label=label)
-    ax.plot(k_arr / np.pi, -E, color=COLORS[phase], alpha=0.35, lw=1.2)
 
-ax.axhline(0, color='k', lw=0.8, ls=':')
-ax.set_xlabel(r'$k\,/\,\pi$')
-ax.set_ylabel(r'$E_k$')
-ax.set_title(r'Bulk BdG dispersion  ($t = \Delta = 1$)')
-ax.legend(loc='upper center')
-ax.set_xlim(-1, 1)
+# ── Plot functions ────────────────────────────────────────────────────────────
 
-save_fig(fig, 'block1_01_bulk_dispersion.pdf')
+@plot(1, "Bulk BdG dispersion E(k) vs k")
+def plot_bulk_dispersion(t=T, delta=DELTA, **_):
+    k_arr = np.linspace(-np.pi, np.pi, 600)
+    fig, ax = plt.subplots(figsize=(7, 4.5))
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Plot 2 — BdG d-vector loops in (n_z, n_y) plane  (deck slide 6)
-# ═══════════════════════════════════════════════════════════════════════════════
-fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+    for params, phase, label in CASES:
+        mu = params['mu']
+        E  = bulk_energy(k_arr, mu, t, delta)
+        ax.plot(k_arr / np.pi,  E, color=COLORS[phase], label=label)
+        ax.plot(k_arr / np.pi, -E, color=COLORS[phase], alpha=0.35, lw=1.2)
 
-for ax, (params, phase, label) in zip(axes, CASES):
-    mu       = params['mu']
-    nz, ny   = bdg_vector(k_arr, mu, T, DELTA)
-    nu       = winding_number(mu, T, DELTA)
+    ax.axhline(0, color='k', lw=0.8, ls=':')
+    ax.set_xlabel(r'$k\,/\,\pi$')
+    ax.set_ylabel(r'$E_k$')
+    ax.set_title(r'Bulk BdG dispersion  ($t = \Delta = 1$)')
+    ax.legend(loc='upper center')
+    ax.set_xlim(-1, 1)
 
-    ax.plot(nz, ny, color=COLORS[phase], lw=2)
-    ax.axhline(0, color='k', lw=0.5)
-    ax.axvline(0, color='k', lw=0.5)
-    ax.plot(0, 0, 'k+', ms=12, mew=2, zorder=5)
+    save_fig(fig, 'block1_01_bulk_dispersion.pdf')
 
-    lim = max(np.max(np.abs(nz)), np.max(np.abs(ny))) * 1.25
-    ax.set_xlim(-lim, lim)
-    ax.set_ylim(-lim, lim)
-    ax.set_aspect('equal')
-    ax.set_title(f'{label}\n$\\nu = {nu}$')
-    ax.set_xlabel(r'$n_z(k)$')
 
-axes[0].set_ylabel(r'$n_y(k)$')
-fig.suptitle(r'BdG $\mathbf{n}(k)$ loop as $k$ sweeps the BZ', fontsize=14)
-fig.tight_layout()
+@plot(2, "BdG d-vector winding loops in (n_z, n_y) plane")
+def plot_winding_loops(t=T, delta=DELTA, **_):
+    k_arr = np.linspace(-np.pi, np.pi, 600)
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4))
 
-save_fig(fig, 'block1_02_winding_loops.pdf')
+    for ax, (params, phase, label) in zip(axes, CASES):
+        mu     = params['mu']
+        nz, ny = bdg_vector(k_arr, mu, t, delta)
+        nu     = winding_number(mu, t, delta)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Plot 3 — Phase diagram: bulk gap + winding number vs mu
-# ═══════════════════════════════════════════════════════════════════════════════
-gaps = np.array([bulk_gap(mu, T, DELTA) for mu in mu_scan])
-nus  = winding_scan(mu_scan, T, DELTA)
+        ax.plot(nz, ny, color=COLORS[phase], lw=2)
+        ax.axhline(0, color='k', lw=0.5)
+        ax.axvline(0, color='k', lw=0.5)
+        ax.plot(0, 0, 'k+', ms=12, mew=2, zorder=5)
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True,
-                                gridspec_kw={'hspace': 0.08})
+        lim = max(np.max(np.abs(nz)), np.max(np.abs(ny))) * 1.25
+        ax.set_xlim(-lim, lim)
+        ax.set_ylim(-lim, lim)
+        ax.set_aspect('equal')
+        ax.set_title(f'{label}\n$\\nu = {nu}$')
+        ax.set_xlabel(r'$n_z(k)$')
 
-# Bulk gap
-ax1.plot(mu_scan / T, gaps, 'k', lw=2)
-ax1.set_ylabel(r'Bulk gap  $E_\mathrm{gap}$')
-ax1.set_title(r'Phase diagram of the Kitaev chain  ($t = \Delta = 1$)')
-ax1.set_ylim(bottom=0)
+    axes[0].set_ylabel(r'$n_y(k)$')
+    fig.suptitle(r'BdG $\mathbf{n}(k)$ loop as $k$ sweeps the BZ', fontsize=14)
+    fig.tight_layout()
 
-# Winding number
-ax2.step(mu_scan / T, nus, color='steelblue', lw=2, where='mid')
-ax2.set_xlabel(r'$\mu\,/\,t$')
-ax2.set_ylabel(r'Winding number $\nu$')
-ax2.set_yticks([0, 1])
-ax2.set_ylim(-0.3, 1.5)
+    save_fig(fig, 'block1_02_winding_loops.pdf')
 
-# Shade topological region
-for ax in (ax1, ax2):
-    ax.axvspan(mu_c1 / T, mu_c2 / T, alpha=0.10, color='steelblue',
-               label='topological ($|\\mu| < 2t$)')
-    ax.axvline(mu_c1 / T, color='gray', ls='--', lw=1)
-    ax.axvline(mu_c2 / T, color='gray', ls='--', lw=1)
 
-ax1.legend(loc='upper right')
+@plot(3, "Phase diagram: bulk gap + winding number vs mu")
+def plot_phase_diagram(t=T, delta=DELTA, **_):
+    mu_scan      = np.linspace(-4.5 * t, 4.5 * t, 400)
+    mu_c1, mu_c2 = critical_mu(t)
 
-save_fig(fig, 'block1_03_phase_diagram.pdf')
+    gaps = np.array([bulk_gap(mu, t, delta) for mu in mu_scan])
+    nus  = winding_scan(mu_scan, t, delta)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Plot 4 — Finite-size spectrum: lowest quasiparticle energies vs mu  (OBC)
-# ═══════════════════════════════════════════════════════════════════════════════
-L      = 30
-N_SHOW = 6    # number of positive eigenvalues to track
-mu_fs  = np.linspace(-4.5 * T, 4.5 * T, 300)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True,
+                                    gridspec_kw={'hspace': 0.08})
 
-evals_fs = np.zeros((len(mu_fs), N_SHOW))
-for i, mu in enumerate(mu_fs):
-    chain = KitaevChain(L=L, t=T, mu=mu, delta=DELTA)
-    pos   = chain.positive_spectrum()[:N_SHOW]
-    evals_fs[i] = pos
+    ax1.plot(mu_scan / t, gaps, 'k', lw=2)
+    ax1.set_ylabel(r'Bulk gap  $E_\mathrm{gap}$')
+    ax1.set_title(r'Phase diagram of the Kitaev chain  ($t = \Delta = 1$)')
+    ax1.set_ylim(bottom=0)
 
-fig, ax = plt.subplots(figsize=(9, 4.5))
+    ax2.step(mu_scan / t, nus, color='steelblue', lw=2, where='mid')
+    ax2.set_xlabel(r'$\mu\,/\,t$')
+    ax2.set_ylabel(r'Winding number $\nu$')
+    ax2.set_yticks([0, 1])
+    ax2.set_ylim(-0.3, 1.5)
 
-# Plot edge mode (lowest level) in a distinct color
-ax.plot(mu_fs / T, evals_fs[:, 0], color=COLORS['edge'], lw=2.5,
-        label='near-zero (edge) mode', zorder=3)
-for i in range(1, N_SHOW):
-    ax.plot(mu_fs / T, evals_fs[:, i], color=COLORS['bulk'],
-            lw=1.2, alpha=0.7, label='bulk bands' if i == 1 else None)
+    for ax in (ax1, ax2):
+        ax.axvspan(mu_c1 / t, mu_c2 / t, alpha=0.10, color='steelblue',
+                   label=r'topological ($|\mu| < 2t$)')
+        ax.axvline(mu_c1 / t, color='gray', ls='--', lw=1)
+        ax.axvline(mu_c2 / t, color='gray', ls='--', lw=1)
 
-ax.axvspan(mu_c1 / T, mu_c2 / T, alpha=0.10, color='steelblue',
-           label='topological')
-ax.axvline(mu_c1 / T, color='gray', ls='--', lw=1)
-ax.axvline(mu_c2 / T, color='gray', ls='--', lw=1)
-ax.axhline(0, color='k', lw=0.7, ls=':')
+    ax1.legend(loc='upper right')
 
-ax.set_xlabel(r'$\mu\,/\,t$')
-ax.set_ylabel(r'Quasiparticle energy $E_n$')
-ax.set_title(f'Finite-size BdG spectrum  ($L = {L}$, OBC,  $t = \\Delta = 1$)')
-ax.set_ylim(bottom=0)
-ax.legend()
+    save_fig(fig, 'block1_03_phase_diagram.pdf')
 
-save_fig(fig, 'block1_04_finite_size_spectrum.pdf')
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Plot 5 — Real-space eigenvalue snapshot: trivial vs topological
-# ═══════════════════════════════════════════════════════════════════════════════
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=True)
+@plot(4, "Finite-size spectrum: lowest quasiparticle energies vs mu (OBC)")
+def plot_finite_size_spectrum(t=T, delta=DELTA, L=30, **_):
+    mu_c1, mu_c2 = critical_mu(t)
+    mu_fs  = np.linspace(-4.5 * t, 4.5 * t, 300)
+    N_SHOW = 6
 
-snap_cases = [CASES[0], CASES[2]]   # trivial and topological
+    evals_fs = np.zeros((len(mu_fs), N_SHOW))
+    for i, mu in enumerate(mu_fs):
+        chain        = KitaevChain(L=L, t=t, mu=mu, delta=delta)
+        evals_fs[i]  = chain.positive_spectrum()[:N_SHOW]
 
-for ax, (params, phase, label) in zip(axes, snap_cases):
-    mu    = params['mu']
-    chain = KitaevChain(L=20, t=T, mu=mu, delta=DELTA)
-    evals = chain.spectrum()
-    idx   = np.arange(len(evals))
+    fig, ax = plt.subplots(figsize=(9, 4.5))
 
-    # Colour near-zero modes differently
-    colors_pt = [COLORS['edge'] if abs(e) < 0.05 else COLORS[phase]
-                 for e in evals]
-    ax.scatter(idx, evals, c=colors_pt, s=25, zorder=3)
-    ax.axhline(0, color='k', lw=0.8, ls='--')
-    ax.set_xlabel('Eigenvalue index')
-    ax.set_title(label)
+    ax.plot(mu_fs / t, evals_fs[:, 0], color=COLORS['edge'], lw=2,
+            label='near-zero (edge) mode', zorder=3)
+    for i in range(1, N_SHOW):
+        ax.plot(mu_fs / t, evals_fs[:, i], color=COLORS['bulk'],
+                lw=1.2, alpha=0.7, label='bulk bands' if i == 1 else None)
 
-axes[0].set_ylabel('Energy $E$')
-edge_patch = mpatches.Patch(color=COLORS['edge'], label='near-zero mode')
-fig.legend(handles=[edge_patch], loc='lower center', ncol=1, frameon=True)
-fig.suptitle(r'Full BdG spectrum in real space  ($L = 20$, OBC)', fontsize=14)
-fig.tight_layout(rect=[0, 0.06, 1, 1])
+    ax.axvspan(mu_c1 / t, mu_c2 / t, alpha=0.10, color='steelblue',
+               label='topological')
+    ax.axvline(mu_c1 / t, color='gray', ls='--', lw=1)
+    ax.axvline(mu_c2 / t, color='gray', ls='--', lw=1)
+    ax.axhline(0, color='k', lw=0.7, ls=':')
 
-save_fig(fig, 'block1_05_realspace_snapshot.pdf')
+    ax.set_xlabel(r'$\mu\,/\,t$')
+    ax.set_ylabel(r'Quasiparticle energy $E_n$')
+    ax.set_title(f'Finite-size BdG spectrum  ($L = {L}$, OBC,  $t = \\Delta = 1$)')
+    ax.set_ylim(bottom=0)
+    ax.legend()
 
-# ─────────────────────────────────────────────────────────────────────────────
-print("\nAll Block 1 plots written to ../plots/")
+    save_fig(fig, f'block1_04_finite_size_spectrum.pdf')
+
+
+@plot(5, "Real-space eigenvalue snapshot: trivial vs topological")
+def plot_realspace_snapshot(t=T, delta=DELTA, L=20, **_):
+    snap_cases = [CASES[0], CASES[2]]
+    fig, axes  = plt.subplots(1, 2, figsize=(11, 4.5), sharey=True)
+
+    for ax, (params, phase, label) in zip(axes, snap_cases):
+        mu     = params['mu']
+        chain  = KitaevChain(L=L, t=t, mu=mu, delta=delta)
+        evals  = chain.spectrum()
+        colors_pt = [COLORS['edge'] if abs(e) < 0.05 else COLORS[phase]
+                     for e in evals]
+        ax.scatter(np.arange(len(evals)), evals, c=colors_pt, s=25, zorder=3)
+        ax.axhline(0, color='k', lw=0.8, ls='--')
+        ax.set_xlabel('Eigenvalue index')
+        ax.set_title(label)
+
+    axes[0].set_ylabel('Energy $E$')
+    edge_patch = mpatches.Patch(color=COLORS['edge'], label='near-zero mode')
+    fig.legend(handles=[edge_patch], loc='lower center', frameon=True)
+    fig.suptitle(rf'Full BdG spectrum in real space  ($L = {L}$, OBC)', fontsize=14)
+    fig.tight_layout(rect=[0, 0.06, 1, 1])
+
+    save_fig(fig, f'block1_05_realspace_snapshot.pdf')
+
+
+# ── CLI ───────────────────────────────────────────────────────────────────────
+
+def build_parser():
+    parser = argparse.ArgumentParser(
+        description='Generate Block 1 (physics bridge) plots for the Kitaev chain.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        '--plots', nargs='+', type=int, metavar='N',
+        help='plot numbers to generate (default: all)',
+    )
+    parser.add_argument(
+        '--list', action='store_true',
+        help='list available plots and exit',
+    )
+    parser.add_argument('--L',     type=int,   default=30,  help='chain length (default: 30)')
+    parser.add_argument('--t',     type=float, default=T,   help='hopping amplitude (default: 1.0)')
+    parser.add_argument('--delta', type=float, default=DELTA, help='pairing amplitude (default: 1.0)')
+    return parser
+
+
+def main():
+    parser = build_parser()
+    args   = parser.parse_args()
+
+    if args.list:
+        print("Available plots:")
+        for n, (_, desc) in sorted(PLOT_REGISTRY.items()):
+            print(f"  {n}  {desc}")
+        return
+
+    setup_style()
+
+    targets = sorted(args.plots) if args.plots else sorted(PLOT_REGISTRY)
+    kwargs  = dict(t=args.t, delta=args.delta, L=args.L)
+
+    print(f"Generating plots: {targets}\n")
+    for n in targets:
+        if n not in PLOT_REGISTRY:
+            print(f"  [skip] no plot #{n}")
+            continue
+        fn, desc = PLOT_REGISTRY[n]
+        print(f"  [{n}] {desc}")
+        fn(**kwargs)
+
+    print("\nDone.")
+
+
+if __name__ == '__main__':
+    main()
