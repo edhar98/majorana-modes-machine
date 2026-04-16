@@ -10,6 +10,17 @@
 # LibreOffice lock files
 .~lock.*
 
+# Course materials (kept locally, not tracked)
+*.pptx
+*.ppt
+course_desctiption.*
+physics_bridge_*.pdf
+The_Majorana_Blueprint.*
+main.tex
+main.pdf
+package.json
+package-lock.json
+
 # Python
 __pycache__/
 *.pyc
