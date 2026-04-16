@@ -37,9 +37,6 @@ The goal is to bridge abstract theoretical physics and the quantum software stac
 │
 ├── plots/                      # Generated figures (PDF)
 │
-├── notes/                      # Derivation write-ups (LaTeX)
-│   └── finite_size_majorana_splitting.tex
-│
 └── presentation/               # Weekly 20-min seminar slides (Beamer/LaTeX)
     └── week1/
         └── slides.tex
@@ -65,7 +62,6 @@ Key results implemented:
 > `np.sort(np.abs(evals))` rather than filtering `evals >= 0`. The near-zero
 > Majorana mode rounds to a tiny negative float at large $L$, which a sign
 > filter silently drops, producing spurious spikes in the finite-size spectrum.
-> See `notes/finite_size_majorana_splitting.tex` for the full derivation.
 
 ### Run
 
