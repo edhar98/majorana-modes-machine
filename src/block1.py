@@ -130,7 +130,7 @@ def plot_phase_diagram(t=T, delta=DELTA, **_):
 def plot_finite_size_spectrum(t=T, delta=DELTA, L=30, **_):
     mu_c1, mu_c2 = critical_mu(t)
     mu_fs  = np.linspace(-4.5 * t, 4.5 * t, 300)
-    N_SHOW = 6
+    N_SHOW = 12
 
     evals_fs = np.zeros((len(mu_fs), N_SHOW))
     for i, mu in enumerate(mu_fs):
