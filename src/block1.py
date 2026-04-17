@@ -185,6 +185,37 @@ def plot_realspace_snapshot(t=T, delta=DELTA, L=20, **_):
     save_fig(fig, f'block1_05_realspace_snapshot.pdf')
 
 
+@plot(6, "Majorana splitting E0 vs chain length L (semilog)")
+def plot_majorana_splitting(t=T, delta=DELTA, L=100, **_):
+    mu_cases = [
+        (dict(mu=-0.5), 'topological', r'$\mu = -0.5t$'),
+        (dict(mu=-1.0), 'topological', r'$\mu = -t$'),
+        (dict(mu=-1.5), 'topological', r'$\mu = -1.5t$'),
+    ]
+    L_arr = np.arange(4, L + 1, 2)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    for params, _, label in mu_cases:
+        mu     = params['mu']
+        E0_arr = np.array([
+            np.sort(np.abs(KitaevChain(L=l, t=t, mu=mu, delta=delta).spectrum()))[0]
+            for l in L_arr
+        ])
+        theory = 2 * t * (abs(mu) / (2 * t)) ** L_arr
+
+        line, = ax.semilogy(L_arr, E0_arr, 'o-', ms=4, label=f'numerical  {label}')
+        ax.semilogy(L_arr, theory, '--', color=line.get_color(), lw=1.2, alpha=0.6,
+                    label=r'$2t\,(|\mu|/2t)^L$  ' + label)
+
+    ax.set_xlabel('Chain length $L$')
+    ax.set_ylabel('Near-zero mode energy $E_0$')
+    ax.set_title(r'Majorana hybridization splitting  ($t = \Delta = 1$, OBC)')
+    ax.legend(fontsize=9)
+
+    save_fig(fig, 'block1_06_majorana_splitting.pdf')
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 def build_parser():
