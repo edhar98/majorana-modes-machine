@@ -226,7 +226,62 @@
 	\end{column}
   \end{columns}
 \end{frame}
+% ── Topology Conceptual Bridge ────────────────────────────────────────────────
+\section{Topology \& Protection}
 
+\begin{frame}{Topology: Continuity and Invariance}
+  \begin{columns}[T]
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+        \item \textbf{Topological Equivalence}: Two shapes are equivalent if they can be transformed into each other via ``continuous deformation'' (stretching, bending).
+        \item \textbf{Invariants}: Properties that remain unchanged during deformation (e.g., number of holes / Genus).
+        \item \textbf{Physical Link}: Tuning Hamiltonian parameters ($t, \mu$) is essentially a ``continuous deformation'' of the wave function.
+      \end{itemize}
+      \vfill
+      \begin{block}{Core Intuition}
+        You cannot turn a {\color{trivial}Sphere} (0 holes) into a {\color{topological}Donut} (1 hole) without ``tearing'' the surface (Gap Closing).
+      \end{block}
+    \end{column}
+    \begin{column}{0.35\textwidth}
+      \centering
+      % 
+      \begin{tikzpicture}[scale=0.8]
+        \node at (0,0) {\textit{Topology is ``Rubber Geometry''}};
+        \draw[thick, topological] (0,-1) ellipse (1.2 and 0.6);
+        \draw[thick, topological] (-0.4,-0.9) arc (180:360:0.4 and 0.2);
+        \draw[thick, topological] (-0.3,-1.0) arc (180:0:0.3 and 0.15);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Mapping to $k$-space: The Winding Number}
+  The Kitaev Hamiltonian in $d_z$-$d_y$ plane:
+  \begin{equation}
+    d_z(k) = -2t \cos k - \mu, \quad d_y(k) = 2\Delta \sin k \notag
+  \end{equation}
+  \begin{itemize}
+    \item \textbf{{\color{trivial}Trivial Phase} ($|\mu| > 2t$)}: The trajectory does not enclose the origin, $\winding = 0$.
+    \item \textbf{{\color{topological}Topological Phase} ($|\mu| < 2t$)}: The trajectory \textbf{winds around the origin} ($E=0$ singularity), $\winding = 1$.
+  \end{itemize}
+  \vfill
+  \begin{alertblock}{What is Protection?}
+    As long as the circle doesn't cross the origin (Gap remains open), parameter fluctuations only ``deform'' the circle but cannot change the \textbf{integer} winding number.
+  \end{alertblock}
+  % 
+\end{frame}
+
+\begin{frame}{The Consequence: Zero-Energy Edge States}
+  \begin{itemize}
+    \item \textbf{Bulk-Boundary Correspondence}: A non-trivial winding ($\winding=1$) in the bulk necessitates an edge state to compensate the discontinuity at the vacuum interface.
+    \item \textbf{Inevitability}: This compensation appears as a state with \textbf{eigenvalue strictly at 0} (Majorana Zero Mode).
+    \item \textbf{Spatial Profile}: Unlike bulk waves, these states are exponentially localized at the chain ends.
+  \end{itemize}
+  \begin{center}
+    % 
+    \textit{Edge ``unpaired'' sites $\implies$ Topologically protected zero modes}
+  \end{center}
+\end{frame}
 % ── Summary ───────────────────────────────────────────────────────────────────
 \section{Summary}
 
