@@ -65,28 +65,30 @@ def plot_bulk_dispersion(t=T, delta=DELTA, **_):
 @plot(2, "BdG d-vector winding loops in (n_z, n_y) plane")
 def plot_winding_loops(t=T, delta=DELTA, **_):
     k_arr = np.linspace(-np.pi, np.pi, 600)
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+    fig, ax = plt.subplots(figsize=(6, 6))
 
-    for ax, (params, phase, label) in zip(axes, CASES):
+    all_lim = 0.0
+    for params, phase, label in CASES:
         mu     = params['mu']
         nz, ny = bdg_vector(k_arr, mu, t, delta)
         nu     = winding_number(mu, t, delta)
 
-        ax.plot(nz, ny, color=COLORS[phase], lw=2)
-        ax.axhline(0, color='k', lw=0.5)
-        ax.axvline(0, color='k', lw=0.5)
-        ax.plot(0, 0, 'k+', ms=12, mew=2, zorder=5)
+        ax.plot(nz, ny, color=COLORS[phase], lw=2,
+                label=f'{label}  ($\\nu={nu}$)')
+        all_lim = max(all_lim, np.max(np.abs(nz)), np.max(np.abs(ny)))
 
-        lim = max(np.max(np.abs(nz)), np.max(np.abs(ny))) * 1.25
-        ax.set_xlim(-lim, lim)
-        ax.set_ylim(-lim, lim)
-        ax.set_aspect('equal')
-        ax.set_title(f'{label}\n$\\nu = {nu}$')
-        ax.set_xlabel(r'$n_z(k)$')
+    ax.axhline(0, color='k', lw=0.5)
+    ax.axvline(0, color='k', lw=0.5)
+    ax.plot(0, 0, 'k+', ms=14, mew=2, zorder=5)
 
-    axes[0].set_ylabel(r'$n_y(k)$')
-    fig.suptitle(r'BdG $\mathbf{n}(k)$ loop as $k$ sweeps the BZ', fontsize=14)
-    fig.tight_layout()
+    lim = all_lim * 1.15
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+    ax.set_aspect('equal')
+    ax.set_xlabel(r'$n_z(k)$')
+    ax.set_ylabel(r'$n_y(k)$')
+    ax.set_title(r'BdG $\mathbf{n}(k)$ loop as $k$ sweeps the BZ')
+    ax.legend(loc='upper right')
 
     save_fig(fig, 'block1_02_winding_loops.pdf')
 

@@ -162,18 +162,24 @@
 
 \begin{frame}{Winding number $\nu$}
   As $k$ sweeps the BZ, the vector $\mathbf{n}(k)=(n_z,n_y)$ traces a closed loop.
-  \begin{equation}
-    \theta_k = \arg(n_z + i n_y), \qquad
-    \winding = \frac{1}{2\pi}\int_\mathrm{BZ} \partial_k\theta_k\, dk
-  \end{equation}
 
-  \begin{center}
-    \includegraphics[width=0.7\linewidth]{block1_02_winding_loops.pdf}
-  \end{center}
-  \begin{itemize}
-    \item $\nu=0$: loop does \emph{not} enclose origin $\to$ trivial
-    \item $|\nu|=1$: loop winds once around origin $\to$ topological
-  \end{itemize}
+  \begin{columns}[T]
+    \begin{column}{0.35\textwidth}
+	  \begin{center}
+		\includegraphics[width=0.9\linewidth]{block1_02_winding_loops.pdf}
+	  \end{center}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+	  \begin{equation}
+		\theta_k = \arg(n_z + i n_y), \qquad
+		\winding = \frac{1}{2\pi}\int_\mathrm{BZ} \partial_k\theta_k\, dk \notag
+	  \end{equation}
+	  \begin{itemize}
+		\item $\nu=0$: loop does \emph{not} enclose origin $\to$ trivial
+		\item $|\nu|=1$: loop winds once around origin $\to$ topological
+	  \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Phase diagram}
