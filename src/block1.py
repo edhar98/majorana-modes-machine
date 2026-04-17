@@ -1,11 +1,11 @@
 """
-main.py — Block 1 runner: generates physics-bridge plots.
+block1.py — Block 1 runner: generates physics-bridge plots.
 
 Usage:
-    python main.py                     # generate all plots
-    python main.py --plots 1 3         # only plots 1 and 3
-    python main.py --list              # list available plots
-    python main.py --L 50 --plots 4   # override chain length for plot 4
+    python block1.py                     # generate all plots
+    python block1.py --plots 1 3         # only plots 1 and 3
+    python block1.py --list              # list available plots
+    python block1.py --L 50 --plots 4   # override chain length for plot 4
 """
 
 import argparse

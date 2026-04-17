@@ -33,7 +33,7 @@ The goal is to bridge abstract theoretical physics and the quantum software stac
 │   ├── kitaev_chain.py         # KitaevChain class — real-space BdG (OBC)
 │   ├── bdg_bulk.py             # Bulk BdG dispersion, gap, d-vector
 │   ├── winding.py              # Topological winding number ν
-│   └── main.py                 # Block 1 runner — CLI, generates all plots
+│   └── block1.py               # Block 1 runner — CLI, generates all plots
 │
 ├── plots/                      # Generated figures (PDF)
 │
@@ -61,9 +61,9 @@ Key results implemented:
 
 ```bash
 cd src
-python main.py                  # all plots
-python main.py --plots 4 --L 100  # single plot, custom chain length
-python main.py --list           # show available plots
+python block1.py                      # all plots
+python block1.py --plots 4 --L 100   # single plot, custom chain length
+python block1.py --list               # show available plots
 ```
 
 ### Requirements
