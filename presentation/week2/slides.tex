@@ -179,12 +179,12 @@
 \end{frame}
 
 \begin{frame}{BdG Formalism and Pseudospin Projection}
-  To cast $H$ into a bilinear form, we introduce the Nambu spinor $\Psi_k = \begin{pmatrix} c_k \\ c^\dagger_{-k} \end{pmatrix}$. To avoid double-counting degrees of freedom, the summation is strictly restricted to half the Brillouin zone ($k > 0$):
+  Use the Nambu spinor $\Psi_k = \begin{pmatrix} c_k \\ c^\dagger_{-k} \end{pmatrix}$ to cast $H$ into a bilinear form.:
   \begin{equation}
     H = \sum_{k>0} \Psi^\dagger_k h(k) \Psi_k, \quad
     h(k) = \begin{pmatrix} \xi_k & 2i\Delta\sin(k) \\ -2i\Delta\sin(k) & -\xi_k \end{pmatrix}
   \end{equation}
-  where the normal-state dispersion is $\xi_k = -\mu - 2t\cos(k)$. Projecting $h(k)$ onto the Pauli basis $\vec{\sigma}$:
+  normal-state dispersion $\xi_k = -\mu - 2t\cos(k)$. 
   \begin{equation}
     h(k) = n_y(k)\sigma^y + n_z(k)\sigma^z \implies 
     \begin{cases}
@@ -192,12 +192,12 @@
       n_y(k) = -2\Delta\sin(k)
     \end{cases}
   \end{equation}
-  The bulk energy spectrum is $E_k = \pm\sqrt{n_z(k)^2 + n_y(k)^2}$. The topological phase transition requires the bulk gap to close ($E_k = 0$). This occurs strictly at the high-symmetry points $k=0, \pi$ where $n_y(k) \equiv 0$, yielding the critical condition $\mu = \pm 2t$.
+  $E_k = \pm\sqrt{n_z(k)^2 + n_y(k)^2}$. The topological phase transition : $E_k = 0$. This occurs at the  points $k=0, \pi$ where $n_y(k) \equiv 0$,condition $\mu = \pm 2t$.
 \end{frame}
 
 \begin{frame}{Bulk dispersion: topological / critical / trivial}
   \begin{center}
-    \includegraphics[width=0.8\linewidth]{Bulk_Dispersion.png}
+    \includegraphics[width=0.8\linewidth]{block1_01_bulk_dispersion.png}
   \end{center}
   Gap closes at $k=0$ when $\mu=-2t$ (and at $k=\pi$ when $\mu=+2t$).
 \end{frame}
