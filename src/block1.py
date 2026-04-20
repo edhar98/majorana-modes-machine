@@ -215,6 +215,54 @@ def plot_majorana_splitting(t=T, delta=DELTA, L=100, **_):
 
     save_fig(fig, 'block1_06_majorana_splitting.pdf')
 
+@plot(7, "Continuous deformation of d-vector trajectory (mu sweep)")
+def plot_trajectory_deformation(t=T, delta=0.5, **_):
+    """
+    Shows how the Hamiltonian loop deforms and crosses the origin.
+    This integrates the logic from your provided snippet.
+    """
+    # Use a specific set of mu values to show the transition
+    mu_vals = [0.0, 1.0, 2.0, 3.0] 
+    k = np.linspace(-np.pi, np.pi, 300)
+    
+    fig, ax = plt.subplots(figsize=(7, 7))
+
+    for mu_val in mu_vals:
+        # Using the existing bdg_vector function from bdg_bulk.py
+        nz, ny = bdg_vector(k, mu_val, t, delta)
+        
+        # Determine label and style
+        if abs(mu_val) < 2*t:
+            label = f'Topological ($\mu={mu_val}$)'
+            color = COLORS['topological']
+            ls = '-'
+        elif abs(mu_val) == 2*t:
+            label = f'Critical ($\mu={mu_val}$)'
+            color = COLORS['critical']
+            ls = '--'
+        else:
+            label = f'Trivial ($\mu={mu_val}$)'
+            color = COLORS['trivial']
+            ls = ':'
+
+        ax.plot(nz, ny, label=label, color=color, ls=ls, lw=2)
+
+    # Mark the origin (The Singularity)
+    ax.scatter([0], [0], color='black', s=100, zorder=5) 
+    ax.annotate("The 'Singularity' (E=0)", (0.1, 0.1), fontsize=10, fontweight='bold')
+    
+    ax.axhline(0, color='k', lw=0.5, alpha=0.5)
+    ax.axvline(0, color='k', lw=0.5, alpha=0.5)
+    
+    ax.set_xlabel('$n_z(k)$')
+    ax.set_ylabel('$n_y(k)$')
+    ax.set_title(f"Continuous Deformation ($t={t}, \Delta={delta}$)")
+    ax.legend(loc='upper right', fontsize=9)
+    ax.set_aspect('equal')
+    
+    # Save using your existing utility
+    save_fig(fig, 'block1_07_trajectory_deformation.pdf')
+
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
