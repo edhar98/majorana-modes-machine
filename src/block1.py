@@ -23,9 +23,10 @@ T     = 1.0
 DELTA = 1.0
 
 CASES = [
-    (dict(mu=-3.0), 'trivial',     r'Trivial $\mu = -3t$'),
-    (dict(mu=-2.0), 'critical',    r'Critical $\mu = -2t$'),
-    (dict(mu=-1.0), 'topological', r'Topological $\mu = -t$'),
+    (dict(mu=3.0), 'trivial',     r'Trivial $\mu = 3t$'),
+    (dict(mu=2.0), 'critical',    r'Critical $\mu = 2t$'),
+    (dict(mu=1.0), 'topological', r'Topological $\mu = t$'),
+    (dict(mu=0.0), 'topological', r'Topological $\mu = 0$'),
 ]
 
 PLOT_REGISTRY = {}   # filled by @plot decorator below
@@ -62,35 +63,53 @@ def plot_bulk_dispersion(t=T, delta=DELTA, **_):
     save_fig(fig, 'block1_01_bulk_dispersion.pdf')
 
 
-@plot(2, "BdG d-vector winding loops in (n_z, n_y) plane")
-def plot_winding_loops(t=T, delta=DELTA, **_):
-    k_arr = np.linspace(-np.pi, np.pi, 600)
-    fig, ax = plt.subplots(figsize=(6, 6))
+@plot(2, "Continuous deformation of d-vector trajectory (mu sweep)")
+def plot_trajectory_deformation(t=T, delta=0.5, **_):
+    """
+    Shows how the Hamiltonian loop deforms and crosses the origin.
+    This integrates the logic from your provided snippet.
+    """
+    # Use a specific set of mu values to show the transition
+    mu_vals = [0.0, 1.0, 2.0, 3.0] 
+    k = np.linspace(-np.pi, np.pi, 300)
+    
+    fig, ax = plt.subplots(figsize=(7, 7))
 
-    all_lim = 0.0
-    for params, phase, label in CASES:
-        mu     = params['mu']
-        nz, ny = bdg_vector(k_arr, mu, t, delta)
-        nu     = winding_number(mu, t, delta)
+    for mu_val in mu_vals:
+        # Using the existing bdg_vector function from bdg_bulk.py
+        nz, ny = bdg_vector(k, mu_val, t, delta)
+        
+        # Determine label and style
+        if abs(mu_val) < 2*t:
+            label = f'Topological ($\mu={mu_val}$)'
+            color = COLORS['topological']
+            ls = '-'
+        elif abs(mu_val) == 2*t:
+            label = f'Critical ($\mu={mu_val}$)'
+            color = COLORS['critical']
+            ls = '--'
+        else:
+            label = f'Trivial ($\mu={mu_val}$)'
+            color = COLORS['trivial']
+            ls = ':'
 
-        ax.plot(nz, ny, color=COLORS[phase], lw=2,
-                label=f'{label}  ($\\nu={nu}$)')
-        all_lim = max(all_lim, np.max(np.abs(nz)), np.max(np.abs(ny)))
+        ax.plot(nz, ny, label=label, color=color, ls=ls, lw=2)
 
-    ax.axhline(0, color='k', lw=0.5)
-    ax.axvline(0, color='k', lw=0.5)
-    ax.plot(0, 0, 'k+', ms=14, mew=2, zorder=5)
-
-    lim = all_lim * 1.15
-    ax.set_xlim(-lim, lim)
-    ax.set_ylim(-lim, lim)
+    # Mark the origin (The Singularity)
+    ax.scatter([0], [0], color='black', s=100, zorder=5) 
+    ax.annotate("The 'Singularity' (E=0)", (0.1, 0.1), fontsize=10, fontweight='bold')
+    
+    ax.axhline(0, color='k', lw=0.5, alpha=0.5)
+    ax.axvline(0, color='k', lw=0.5, alpha=0.5)
+    
+    ax.set_xlabel('$n_z(k)$')
+    ax.set_ylabel('$n_y(k)$')
+    ax.set_title(f"Continuous Deformation ($t={t}, \Delta={delta}$)")
+    ax.legend(loc='upper right', fontsize=9)
     ax.set_aspect('equal')
-    ax.set_xlabel(r'$n_z(k)$')
-    ax.set_ylabel(r'$n_y(k)$')
-    ax.set_title(r'BdG $\mathbf{n}(k)$ loop as $k$ sweeps the BZ')
-    ax.legend(loc='upper right')
-
-    save_fig(fig, 'block1_02_winding_loops.pdf')
+    
+    # Save using your existing utility
+    save_fig(fig, 'block1_02_trajectory_deformation.pdf')
 
 
 @plot(3, "Phase diagram: bulk gap + winding number vs mu")
@@ -215,53 +234,6 @@ def plot_majorana_splitting(t=T, delta=DELTA, L=100, **_):
 
     save_fig(fig, 'block1_06_majorana_splitting.pdf')
 
-@plot(7, "Continuous deformation of d-vector trajectory (mu sweep)")
-def plot_trajectory_deformation(t=T, delta=0.5, **_):
-    """
-    Shows how the Hamiltonian loop deforms and crosses the origin.
-    This integrates the logic from your provided snippet.
-    """
-    # Use a specific set of mu values to show the transition
-    mu_vals = [0.0, 1.0, 2.0, 3.0] 
-    k = np.linspace(-np.pi, np.pi, 300)
-    
-    fig, ax = plt.subplots(figsize=(7, 7))
-
-    for mu_val in mu_vals:
-        # Using the existing bdg_vector function from bdg_bulk.py
-        nz, ny = bdg_vector(k, mu_val, t, delta)
-        
-        # Determine label and style
-        if abs(mu_val) < 2*t:
-            label = f'Topological ($\mu={mu_val}$)'
-            color = COLORS['topological']
-            ls = '-'
-        elif abs(mu_val) == 2*t:
-            label = f'Critical ($\mu={mu_val}$)'
-            color = COLORS['critical']
-            ls = '--'
-        else:
-            label = f'Trivial ($\mu={mu_val}$)'
-            color = COLORS['trivial']
-            ls = ':'
-
-        ax.plot(nz, ny, label=label, color=color, ls=ls, lw=2)
-
-    # Mark the origin (The Singularity)
-    ax.scatter([0], [0], color='black', s=100, zorder=5) 
-    ax.annotate("The 'Singularity' (E=0)", (0.1, 0.1), fontsize=10, fontweight='bold')
-    
-    ax.axhline(0, color='k', lw=0.5, alpha=0.5)
-    ax.axvline(0, color='k', lw=0.5, alpha=0.5)
-    
-    ax.set_xlabel('$n_z(k)$')
-    ax.set_ylabel('$n_y(k)$')
-    ax.set_title(f"Continuous Deformation ($t={t}, \Delta={delta}$)")
-    ax.legend(loc='upper right', fontsize=9)
-    ax.set_aspect('equal')
-    
-    # Save using your existing utility
-    save_fig(fig, 'block1_07_trajectory_deformation.pdf')
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
