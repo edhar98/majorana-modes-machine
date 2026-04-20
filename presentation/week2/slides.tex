@@ -76,6 +76,49 @@
   \end{columns}
 \end{frame}
 
+\begin{frame}{What does the Kitaev Hamiltonian describe?}
+
+  \begin{itemize}
+    \item \textbf{Lattice sites $j$:} positions along a 1D chain
+    \item \textbf{$c_j^\dagger, c_j$:} create / annihilate a fermion at site $j$
+    \item \textbf{Chemical potential $\mu$:} controls how many particles occupy the chain
+    \item \textbf{Hopping $t$:} allows particles to move between neighboring sites
+    \item \textbf{Pairing $\Delta$:} creates or annihilates \emph{pairs} of fermions on neighboring sites
+  \end{itemize}
+
+  \medskip
+  \begin{block}{Key idea}
+    Competition between \textbf{hopping} and \textbf{pairing} leads to two distinct phases:
+    a trivial phase and a \textbf{topological phase}.
+  \end{block}
+\end{frame}
+
+% ── Majorana fermions & motivation ────────────────────────────────────────────
+\begin{frame}{What are Majorana fermions and why simulate them?}
+  \begin{itemize}
+    \item A \textbf{Majorana fermion} is a particle that is its own antiparticle:
+    \[
+      \gamma = \gamma^\dagger
+    \]
+
+    \item In the Kitaev chain, ordinary fermions split into two \textbf{Majorana modes}:
+    \[
+      c_j = \frac{1}{\sqrt{2}}(\gamma_{A,j} + i\gamma_{B,j})
+    \]
+
+    \item In the \textbf{topological phase}, these Majoranas:
+    \begin{itemize}
+      \item pair up \emph{between sites}
+      \item leave \textbf{unpaired zero-energy modes at the edges}
+    \end{itemize}
+  \end{itemize}
+
+  \medskip
+  \begin{block}{Why is this interesting?}
+    Edge Majorana modes are \textbf{robust} (protected by topology) and candidates for \textbf{fault-tolerant quantum computation}. Simulating the model helps understand topological phases and non-local quantum information storage.
+  \end{block}
+\end{frame}
+
 % ── Majorana representation ───────────────────────────────────────────────────
 \section{Majorana Representation}
 
