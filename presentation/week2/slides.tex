@@ -166,38 +166,43 @@
 % ── BdG Hamiltonian ───────────────────────────────────────────────────────────
 \section{BdG Hamiltonian \& Spectrum}
 
-\begin{frame}{From real space to momentum space}
-  Fourier transform + Nambu spinor $\Psi^\dagger_k = (c^\dagger_k,\, c_{-k})$:
+\begin{frame}{Momentum Space Mapping: Fourier Transform}
+  The tight-binding Hamiltonian in real space is defined as:
   \begin{equation}
-    H_K = \sum_{k>0} \Psi^\dagger_k\, h(k)\, \Psi_k, \qquad
-    h(k) = \begin{pmatrix} \xi_k & 2i\Delta\sin k \\ -2i\Delta\sin k & -\xi_k \end{pmatrix}
+    H = \sum_{j} \left[ -t(c^\dagger_j c_{j+1} + \text{h.c.}) - \mu\left(c^\dagger_j c_j - \frac{1}{2}\right) + \Delta(c_j c_{j+1} + c^\dagger_{j+1} c^\dagger_j) \right]
   \end{equation}
-  with $\xi_k = -\mu - 2t\cos k$.
-
-  \medskip
-  Rewritten as a two-band / Dirac Hamiltonian:
+  Applying the Fourier transform $c_j = \frac{1}{\sqrt{N}} \sum_{k} e^{ikj} c_k$, the kinetic and chemical potential terms diagonalize trivially. The pairing term requires antisymmetrization due to fermionic statistics ($c_k c_{-k} = -c_{-k} c_k$):
   \begin{equation}
-    h(k) = n_y(k)\,\sigma^y + n_z(k)\,\sigma^z, \qquad
-    E_k  = \sqrt{n_z^2 + n_y^2}
+    \Delta \sum_k e^{ik} c_k c_{-k} = \Delta \sum_{k>0} (e^{ik} - e^{-ik}) c_k c_{-k} = 2i\Delta \sum_{k>0} \sin(k) c_k c_{-k}
   \end{equation}
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \[ n_z(k) = -\mu - 2t\cos k \]
-      \[ n_y(k) = -2\Delta\sin k  \]
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \textbf{Gap closes when}
-      \[ \mu = \pm 2t \]
-      Phase boundaries of the Kitaev chain.
-    \end{column}
-  \end{columns}
+  This isolates the odd-parity $p$-wave superconducting nature of the model in momentum space.
 \end{frame}
 
-\begin{frame}{Bulk dispersion: trivial / critical / topological}
+\begin{frame}{BdG Formalism and Pseudospin Projection}
+  To cast $H$ into a bilinear form, we introduce the Nambu spinor $\Psi_k = \begin{pmatrix} c_k \\ c^\dagger_{-k} \end{pmatrix}$. To avoid double-counting degrees of freedom, the summation is strictly restricted to half the Brillouin zone ($k > 0$):
+  \begin{equation}
+    H = \sum_{k>0} \Psi^\dagger_k h(k) \Psi_k, \quad
+    h(k) = \begin{pmatrix} \xi_k & 2i\Delta\sin(k) \\ -2i\Delta\sin(k) & -\xi_k \end{pmatrix}
+  \end{equation}
+  where the normal-state dispersion is $\xi_k = -\mu - 2t\cos(k)$. Projecting $h(k)$ onto the Pauli basis $\vec{\sigma}$:
+  \begin{equation}
+    h(k) = n_y(k)\sigma^y + n_z(k)\sigma^z \implies 
+    \begin{cases}
+      n_z(k) = -\mu - 2t\cos(k) \\
+      n_y(k) = -2\Delta\sin(k)
+    \end{cases}
+  \end{equation}
+  The bulk energy spectrum is $E_k = \pm\sqrt{n_z(k)^2 + n_y(k)^2}$. The topological phase transition requires the bulk gap to close ($E_k = 0$). This occurs strictly at the high-symmetry points $k=0, \pi$ where $n_y(k) \equiv 0$, yielding the critical condition $\mu = \pm 2t$.
+\end{frame}
+
+\begin{frame}{Bulk dispersion: topological / critical / trivial}
   \begin{center}
-    \includegraphics[width=0.7\linewidth]{block1_01_bulk_dispersion.pdf}
+    \includegraphics[width=0.7\linewidth]{Bulk_Dispersion.png}
   \end{center}
   Gap closes at $k=0$ when $\mu=-2t$ (and at $k=\pi$ when $\mu=+2t$).
+
+
+  While bulk dispersion reveals the gapless critical boundaries, its scalar nature inherently erases the underlying vector components; because topologically distinct states can exhibit identical energy spectra, we must evaluate the winding number to recover this lost phase information.
 \end{frame}
 
 % ── Winding number ────────────────────────────────────────────────────────────
@@ -205,24 +210,18 @@
 
 \begin{frame}{Winding number $\nu$}
   As $k$ sweeps the BZ, the vector $\mathbf{n}(k)=(n_z,n_y)$ traces a closed loop.
+  \begin{equation}
+    \theta_k = \arg(n_z + i n_y), \qquad
+    \winding = \frac{1}{2\pi}\int_\mathrm{BZ} \partial_k\theta_k\, dk
+  \end{equation}
 
-  \begin{columns}[T]
-    \begin{column}{0.35\textwidth}
-	  \begin{center}
-		\includegraphics[width=\linewidth]{block1_02_trajectory_deformation.pdf}
-	  \end{center}
-    \end{column}
-    \begin{column}{0.6\textwidth}
-	  \begin{equation}
-		\theta_k = \arg(n_z + i n_y), \qquad
-		\winding = \frac{1}{2\pi}\int_\mathrm{BZ} \partial_k\theta_k\, dk \notag
-	  \end{equation}
-	  \begin{itemize}
-		\item $\nu=0$: loop does \emph{not} enclose origin $\to$ trivial
-		\item $|\nu|=1$: loop winds once around origin $\to$ topological
-	  \end{itemize}
-    \end{column}
-  \end{columns}
+  \begin{center}
+    \includegraphics[width=0.7\linewidth]{block1_02_winding_loops.png}
+  \end{center}
+  \begin{itemize}
+    \item $\nu=0$: loop does \emph{not} enclose origin $\to$ trivial
+    \item $|\nu|=1$: loop winds once around origin $\to$ topological
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{Phase diagram}
