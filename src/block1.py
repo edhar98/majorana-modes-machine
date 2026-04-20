@@ -23,10 +23,10 @@ T     = 1.0
 DELTA = 1.0
 
 CASES = [
-    (dict(mu=3.0), 'trivial',     r'Trivial $\mu = 3t$'),
-    (dict(mu=2.0), 'critical',    r'Critical $\mu = 2t$'),
-    (dict(mu=1.0), 'topological', r'Topological $\mu = t$'),
-    (dict(mu=0.0), 'topological', r'Topological $\mu = 0$'),
+    (dict(mu=-3.0), 'trivial',     r'Trivial $\mu = -3t$'),
+    (dict(mu=-2.0), 'critical',    r'Critical $\mu = -2t$'),
+    (dict(mu=-1.0), 'topological', r'Topological $\mu = -t$'),
+    (dict(mu=0.0),  'topological', r'Topological $\mu = 0$'),
 ]
 
 PLOT_REGISTRY = {}   # filled by @plot decorator below
@@ -69,31 +69,15 @@ def plot_trajectory_deformation(t=T, delta=0.5, **_):
     Shows how the Hamiltonian loop deforms and crosses the origin.
     This integrates the logic from your provided snippet.
     """
-    # Use a specific set of mu values to show the transition
-    mu_vals = [0.0, 1.0, 2.0, 3.0] 
     k = np.linspace(-np.pi, np.pi, 300)
-    
+
     fig, ax = plt.subplots(figsize=(7, 7))
 
-    for mu_val in mu_vals:
-        # Using the existing bdg_vector function from bdg_bulk.py
+    for params, phase, label in CASES:
+        mu_val = params['mu']
         nz, ny = bdg_vector(k, mu_val, t, delta)
-        
-        # Determine label and style
-        if abs(mu_val) < 2*t:
-            label = f'Topological ($\mu={mu_val}$)'
-            color = COLORS['topological']
-            ls = '-'
-        elif abs(mu_val) == 2*t:
-            label = f'Critical ($\mu={mu_val}$)'
-            color = COLORS['critical']
-            ls = '--'
-        else:
-            label = f'Trivial ($\mu={mu_val}$)'
-            color = COLORS['trivial']
-            ls = ':'
-
-        ax.plot(nz, ny, label=label, color=color, ls=ls, lw=2)
+        ls = '--' if phase == 'critical' else (':' if phase == 'trivial' else '-')
+        ax.plot(nz, ny, label=label, color=COLORS[phase], ls=ls, lw=2)
 
     # Mark the origin (The Singularity)
     ax.scatter([0], [0], color='black', s=100, zorder=5) 
