@@ -12,7 +12,6 @@
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage{tikz}
-\usepackage{comment}
 \graphicspath{{../../plots/}}   % pull figures from ../plots/
 
 % ── Custom colors (match Python palette) ──────────────────────────────────────
@@ -56,7 +55,7 @@
           + \Delta \sum_j \!\bigl(\cdag_j \cdag_{j+1} + \mathrm{h.c.}\bigr)
   \end{equation}
   \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
+    \begin{column}{0.45\textwidth}
       \textbf{Physical ingredients}
       \begin{itemize}
         \item Spinless (or spin-polarized) fermions
@@ -65,7 +64,11 @@
         \item Chemical potential $\mu$ tunes filling
       \end{itemize}
     \end{column}
-    \begin{column}{0.5\textwidth}
+    \begin{column}{0.45\textwidth}
+	  \centering
+	  \includegraphics[width=\linewidth]{../../img/setup.png}
+      
+	  
       \textbf{Questions we will answer}
       \begin{itemize}
         \item When does topology emerge?
@@ -76,22 +79,6 @@
   \end{columns}
 \end{frame}
 
-%\begin{frame}{What does the Kitaev Hamiltonian describe?}
-%
-%  \begin{itemize}
-%    \item \textbf{Lattice sites $j$:} positions along a 1D chain
-%    \item \textbf{$c_j^\dagger, c_j$:} create / annihilate a fermion at site $j$
-%    \item \textbf{Chemical potential $\mu$:} controls how many particles occupy the chain
-%    \item \textbf{Hopping $t$:} allows particles to move between neighboring sites
-%    \item \textbf{Pairing $\Delta$:} creates or annihilates \emph{pairs} of fermions on neighboring sites
-%  \end{itemize}
-%
-%  \medskip
-%  \begin{block}{Key idea}
-%    Competition between \textbf{hopping} and \textbf{pairing} leads to two distinct phases:
-%    a trivial phase and a \textbf{topological phase}.
-%  \end{block}
-%\end{frame}
 
 % ── Majorana fermions & motivation ────────────────────────────────────────────
 \begin{frame}{What are Majorana fermions and why simulate them?}
@@ -146,22 +133,6 @@
   \end{alertblock}
 \end{frame}
 
-%\begin{frame}{Trivial vs.\ topological pairing}
-%  \begin{columns}
-%    \begin{column}{0.5\textwidth}
-%      \centering
-%      \textbf{\color{trivial}Trivial regime}\\[4pt]
-%      Dominant \emph{onsite} pairing $i\gA\gB$.\\
-%      No protected boundary mode.
-%    \end{column}
-%    \begin{column}{0.5\textwidth}
-%      \centering
-%      \textbf{\color{topological}Topological regime} ($\mu=0,\, t=\Delta$)\\[4pt]
-%      Bond pairing $i\gamma_{B,j}\gamma_{A,j+1}$.\\
-%      \textbf{One unpaired Majorana at each edge.}
-%    \end{column}
-%  \end{columns}
-%\end{frame}
 
 % ── BdG Hamiltonian ───────────────────────────────────────────────────────────
 \section{BdG Hamiltonian \& Spectrum}
@@ -197,7 +168,7 @@
 
 \begin{frame}{Bulk dispersion: topological / critical / trivial}
   \begin{center}
-    \includegraphics[width=0.6\linewidth]{block1_01_bulk_dispersion.png}
+    \includegraphics[width=\linewidth]{block1_01_bulk_dispersion.png}
   \end{center}
   Gap closes at $k=0$ when $\mu=-2t$ (and at $k=\pi$ when $\mu=+2t$).
 \end{frame}
@@ -213,7 +184,7 @@
   \end{equation}
 
   \begin{center}
-    \includegraphics[width=0.8\linewidth]{block1_02_winding_loops.png}
+    \includegraphics[width=0.6\linewidth]{block1_02_winding_loops.png}
   \end{center}
   \begin{itemize}
     \item $\nu=0$: loop does \emph{not} enclose origin $\to$ trivial
@@ -228,66 +199,19 @@
   Bulk gap vanishes at $\mu = \pm 2t$; winding number jumps across the transition.
 \end{frame}
 
-\begin{comment}
-% ── Finite-size & edge modes ──────────────────────────────────────────────────
-\section{Finite-Size Results}
-
-\begin{frame}{Finite-size spectrum (OBC): edge modes appear}
-  \begin{center}
-    \includegraphics[width=0.78\linewidth]{block1_04_finite_size_spectrum.pdf}
-  \end{center}
-  {\color{edgemode}Pink} curve: near-zero mode pinned inside the gap in the topological phase.
-\end{frame}
-
-\begin{frame}{Real-space BdG snapshot}
-  \begin{center}
-    \includegraphics[width=0.82\linewidth]{block1_05_realspace_snapshot.pdf}
-  \end{center}
-  Left (trivial): uniform gap.
-  Right (topological): two eigenvalues near zero — the Majorana pair.
-\end{frame}
-
-\begin{frame}{Majorana hybridization splitting vs system size}
-  \begin{columns}[T]
-    \begin{column}{0.6\textwidth}
-	  \begin{center}
-		\includegraphics[width=\linewidth]{block1_06_majorana_splitting.pdf}
-	  \end{center}
-    \end{column}
-    \begin{column}{0.35\textwidth}
-      \textbf{Key result} — at the symmetric point $t=\Delta$:
-      \begin{equation}
-        E_0(L) \approx 2t\!\left(\frac{|\mu|}{2t}\right)^{\!L} \notag
-      \end{equation}
-	  \begin{itemize}
-	  	\item Straight lines on the semilog scale confirm \textbf{exponential} decay.
-	  	\item $\text{Slope} = \ln(|\mu|/2t) = -1/\xi$ measures the \textbf{coherence length} $\xi$
-	  \end{itemize}
-	\end{column}
-  \end{columns}
-\end{frame}
-\end{comment}
-
 
 % ── Topology Conceptual Bridge ────────────────────────────────────────────────
 \section{Topology \& Protection}
 
 \begin{frame}{Topology: Continuity and Invariance}
   \begin{columns}[T]
-    \begin{column}{0.6\textwidth}
+    \begin{column}{0.62\textwidth}
       \begin{itemize}
         \item \textbf{Topological Equivalence}: Two shapes are equivalent if they can be transformed into each other via ``continuous deformation'' (stretching, bending).
-        \item \textbf{Invariants}: Properties that remain unchanged during deformation (e.g., number of holes / Genus).
-        \item \textbf{Physical Link}: Tuning Hamiltonian parameters ($t, \mu$) is essentially a ``continuous deformation'' of the wave function.
       \end{itemize}
-      \vfill
-      \begin{block}{Core Intuition}
-        You cannot turn a {\color{trivial}Sphere} (0 holes) into a {\color{topological}Donut} (1 hole) without ``tearing'' the surface (Gap Closing).
-      \end{block}
     \end{column}
     \begin{column}{0.35\textwidth}
       \centering
-      % 
       \begin{tikzpicture}[scale=0.8]
         \node at (0,0) {\textit{Topology is ``Rubber Geometry''}};
         \draw[thick, topological] (0,-1) ellipse (1.2 and 0.6);
@@ -296,6 +220,13 @@
       \end{tikzpicture}
     \end{column}
   \end{columns}
+  \begin{itemize}
+    \item \textbf{Invariants}: Properties that remain unchanged during deformation (e.g., number of holes / Genus).
+    \item \textbf{Physical Link}: Tuning Hamiltonian parameters ($t, \mu$) is essentially a ``continuous deformation'' of the wave function.
+  \end{itemize}
+  \begin{block}{Core Intuition}
+    You cannot turn a {\color{trivial}Sphere} (0 holes) into a {\color{topological}Donut} (1 hole) without ``tearing'' the surface (Gap Closing).
+  \end{block}
 \end{frame}
 
 \begin{frame}{Mapping to $k$-space: The Winding Number}
@@ -333,7 +264,6 @@
     \item The Kitaev Hamiltonian hosts \textbf{two phases} separated by gap closings at $\mu=\pm 2t$.
     \item Majorana representation reveals the \textbf{sweet-spot} picture directly ($\mu=0,\,t=\Delta$).
     \item The BdG d-vector winding number $\nu\in\{0,1\}$ is the \textbf{topological invariant}.
-    % \item OBC spectra show \textbf{near-zero edge modes} in the topological phase — numerical confirmation of bulk-boundary correspondence.
   \end{enumerate}
   \vfill
   \textbf{Next (Block 2):} Finite size \& edge modes → Jordan–Wigner transform → qubit encoding → quantum circuit for ground-state preparation.
