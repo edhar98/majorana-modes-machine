@@ -1,0 +1,34 @@
+name: Compile Weekly Slides
+on: [push]
+
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          # This finds all .tex files in your presentation subfolders
+          root_file: presentation/**/slides.tex
+          glob_root_file: true
+          # Crucial: runs compilation inside each week's folder so relative paths work
+          work_in_root_file_dir: true
+
+      - name: Organize PDFs for Web
+        run: |
+          mkdir -p web_output
+          # Find all generated PDFs and copy them to a flat folder for the web
+          # We rename them to week1.pdf, week2.pdf based on their parent folder
+          find presentation -name "*.pdf" | while read file; do
+            folder=$(basename $(dirname "$file"))
+            cp "$file" "web_output/${folder}.pdf"
+          done
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web_output
