@@ -93,7 +93,7 @@ def plot_trajectory_deformation(t=T, delta=0.5, **_):
     ax.set_aspect('equal')
     
     # Save using your existing utility
-    save_fig(fig, 'block1_02_trajectory_deformation.pdf')
+    save_fig(fig, 'block1_07_trajectory_deformation.pdf')
 
 
 @plot(3, "Phase diagram: bulk gap + winding number vs mu")
