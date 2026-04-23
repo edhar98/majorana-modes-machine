@@ -74,6 +74,18 @@ pip install numpy matplotlib
 
 ---
 
+## Slides
+
+Weekly presentation slides are compiled to PDF and published via GitHub Pages:
+
+| Week | Topic | PDF |
+|------|-------|-----|
+| 1 | The Physics Bridge — Kitaev chain, BdG, topological invariant | [week1.pdf](https://edhar98.github.io/majorana-modes-machine/week1.pdf) |
+| 2 | The Physics Bridge (cont.) — winding number, phase diagram | [week2.pdf](https://edhar98.github.io/majorana-modes-machine/week2.pdf) |
+| 3 | Finite-Size Physics & Edge Modes — spectra, localization, splitting | [week3.pdf](https://edhar98.github.io/majorana-modes-machine/week3.pdf) |
+
+---
+
 ## Reference
 
 - Kitaev, A. Yu. (2001). *Unpaired Majorana fermions in quantum wires.* Physics-Uspekhi, 44(10S), 131.
