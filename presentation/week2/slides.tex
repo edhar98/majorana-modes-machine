@@ -46,7 +46,7 @@
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{The Kitaev Hamiltonian}
+\section{The Kitaev Hamiltonian \& Edge Modes}
 
 \begin{frame}{Starting point: the lattice Kitaev Hamiltonian}
   \begin{equation}
@@ -65,113 +65,51 @@
       \end{itemize}
     \end{column}
     \begin{column}{0.45\textwidth}
-	  \centering
-	  \includegraphics[width=\linewidth]{../../img/setup.png}
+    \centering
+    \includegraphics[width=\linewidth]{../../img/setup.png}
       
-	  
       \textbf{Questions we will answer}
       \begin{itemize}
         \item When does topology emerge?
         \item How do edge zero modes appear?
-        \item What is the topological invariant?
       \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
-
-% ── Majorana fermions & motivation ────────────────────────────────────────────
-\begin{frame}{What are Majorana fermions and why simulate them?}
-  \begin{itemize}
-    \item The \textbf{Majorana operator} is Hermitian:
-    \[
-      \gamma = \gamma^\dagger
-    \]
-
-    \item In the Kitaev chain, ordinary fermions split into two \textbf{Majorana modes}:
-    \[
-      c_j = \frac{1}{\sqrt{2}}(\gamma_{A,j} + i\gamma_{B,j})
-    \]
-
-    \item In the \textbf{topological phase}, these Majoranas:
-    \begin{itemize}
-      \item pair up \emph{between sites}
-      \item leave \textbf{unpaired zero-energy modes at the edges}
-    \end{itemize}
-  \end{itemize}
-
-  \medskip
-  \begin{block}{Why is this interesting?}
-    Edge Majorana modes are \textbf{robust} (protected by topology) and candidates for \textbf{fault-tolerant quantum computation}. Simulating the model helps understand topological phases and non-local quantum information storage.
-  \end{block}
-\end{frame}
-
-% ── Majorana representation ───────────────────────────────────────────────────
-\section{Majorana Representation}
-
-\begin{frame}{Majorana operators}
-  Define
+\begin{frame}{Majorana Representation \& The ``Sweet Spot''}
+  Ordinary fermions can be split into two Hermitian \textbf{Majorana operators}:
   \begin{equation}
     \gamma_{A,j} = \frac{c_j + \cdag_j}{\sqrt{2}}, \qquad
     \gamma_{B,j} = \frac{i(\cdag_j - c_j)}{\sqrt{2}}
   \end{equation}
-  so that $\{\gamma_{\alpha,i}, \gamma_{\beta,j}\} = 2\delta_{\alpha\beta}\delta_{ij}$.
-
-  \medskip
-  Rewriting the Hamiltonian:
-  \begin{equation}
-    H_K = -\mu\!\sum_j \!\Bigl(i\gA\gB + \tfrac{1}{2}\Bigr)
-          + i\!\sum_j \!\Bigl[
-              (\Delta+t)\,\gamma_{B,j}\gamma_{A,j+1}
-             +(\Delta-t)\,\gamma_{A,j}\gamma_{B,j+1}
-            \Bigr]
-  \end{equation}
+  
+  By rewriting $H_K$ in terms of Majoranas (see Appendix for details), we find a special limit:
 
   \begin{alertblock}{Sweet spot: $\mu = 0$, $t = \Delta$}
-    Only inter-site coupling $i\gamma_{B,j}\gamma_{A,j+1}$ survives.
-    Open boundaries leave \textbf{one unpaired Majorana at each end}.
+    The intra-site coupling vanishes. Only inter-site coupling $i\gamma_{B,j}\gamma_{A,j+1}$ survives.
+    In a chain with open boundaries, this leaves \textbf{one unpaired Majorana zero-mode at each end}.
   \end{alertblock}
+
+  \begin{block}{Why is this interesting?}
+    These edge Majorana modes are \textbf{robust} (protected by topology) and candidates for \textbf{fault-tolerant quantum computation}.
+  \end{block}
 \end{frame}
 
-
-% ── BdG Hamiltonian ───────────────────────────────────────────────────────────
-\section{BdG Hamiltonian \& Spectrum}
-
-\begin{frame}{Momentum Space Mapping: Fourier Transform}
-  The tight-binding Hamiltonian in real space is defined as:
-  \begin{equation}
-    H = \sum_{j} \left[ -t(c^\dagger_j c_{j+1} + \text{h.c.}) - \mu\left(c^\dagger_j c_j - \frac{1}{2}\right) + \Delta(c_j c_{j+1} + c^\dagger_{j+1} c^\dagger_j) \right]
-  \end{equation}
-  Applying the Fourier transform $c_j = \frac{1}{\sqrt{N}} \sum_{k} e^{ikj} c_k$, the kinetic and chemical potential terms diagonalize trivially. The pairing term requires antisymmetrization due to fermionic statistics ($c_k c_{-k} = -c_{-k} c_k$):
-  \begin{equation}
-    \Delta \sum_k e^{ik} c_k c_{-k} = \Delta \sum_{k>0} (e^{ik} - e^{-ik}) c_k c_{-k} = 2i\Delta \sum_{k>0} \sin(k) c_k c_{-k}
-  \end{equation}
-  This isolates the odd-parity $p$-wave superconducting nature of the model in momentum space.
-\end{frame}
-
-\begin{frame}{BdG Formalism and Pseudospin Projection}
-  Use the Nambu spinor $\Psi_k = \begin{pmatrix} c_k \\ c^\dagger_{-k} \end{pmatrix}$ to cast $H$ into a bilinear form.:
-  \begin{equation}
-    H = \sum_{k>0} \Psi^\dagger_k h(k) \Psi_k, \quad
-    h(k) = \begin{pmatrix} \xi_k & 2i\Delta\sin(k) \\ -2i\Delta\sin(k) & -\xi_k \end{pmatrix}
-  \end{equation}
-  normal-state dispersion $\xi_k = -\mu - 2t\cos(k)$. 
-  \begin{equation}
-    h(k) = n_y(k)\sigma^y + n_z(k)\sigma^z \implies 
-    \begin{cases}
-      n_z(k) = -\mu - 2t\cos(k) \\
-      n_y(k) = -2\Delta\sin(k)
-    \end{cases}
-  \end{equation}
-  $E_k = \pm\sqrt{n_z(k)^2 + n_y(k)^2}$. The topological phase transition: $E_k = 0$. 
-This occurs at the points $k=\{0, \pi\}$, where $n_y(k) \equiv 0$ with condition $\mu = \pm 2t$.
-\end{frame}
+% ── BdG Spectrum (Main Results) ───────────────────────────────────────────────
+\section{Bulk Spectrum \& Phase Transition}
 
 \begin{frame}{Bulk dispersion: topological / critical / trivial}
+  Applying a Fourier transform and using the BdG formalism (see Appendix), the energy spectrum is given by:
+  \begin{equation}
+    E_k = \pm\sqrt{n_z(k)^2 + n_y(k)^2} = \pm\sqrt{(-\mu - 2t\cos k)^2 + (-2\Delta\sin k)^2}
+  \end{equation}
+  
+  The topological phase transition occurs when the \textbf{bulk gap closes} ($E_k = 0$). This happens at $k=\{0, \pi\}$ when $\mu = \pm 2t$.
+
   \begin{center}
     \includegraphics[width=\linewidth]{block1_01_bulk_dispersion.png}
   \end{center}
-  Gap closes at $k=0$, when $\mu=-2t$ (and at $k=\pi$, when $\mu=+2t$).
 \end{frame}
 
 % ── Winding number ────────────────────────────────────────────────────────────
@@ -250,6 +188,67 @@ This occurs at the points $k=\{0, \pi\}$, where $n_y(k) \equiv 0$ with condition
   \end{enumerate}
   \vfill
   \textbf{Next (Block 2):} Finite size \& edge modes → Jordan–Wigner transform → qubit encoding → quantum circuit for ground-state preparation.
+\end{frame}
+
+
+% ══════════════════════════════════════════════════════════════════════════════
+% ── Appendix ──────────────────────────────────────────────────────────────────
+\appendix
+
+\begin{frame}
+  \centering
+  \Huge \textbf{Appendix}
+\end{frame}
+
+\begin{frame}{Appendix A: Full Majorana Representation}
+  Recall the Majorana operators:
+  \begin{equation}
+    \gamma_{A,j} = \frac{c_j + \cdag_j}{\sqrt{2}}, \qquad
+    \gamma_{B,j} = \frac{i(\cdag_j - c_j)}{\sqrt{2}}
+  \end{equation}
+  where $\{\gamma_{\alpha,i}, \gamma_{\beta,j}\} = 2\delta_{\alpha\beta}\delta_{ij}$.
+
+  \medskip
+  Rewriting the full Kitaev Hamiltonian in the Majorana basis yields:
+  \begin{equation}
+    H_K = -\mu\!\sum_j \!\Bigl(i\gA\gB + \tfrac{1}{2}\Bigr)
+          + i\!\sum_j \!\Bigl[
+              (\Delta+t)\,\gamma_{B,j}\gamma_{A,j+1}
+             +(\Delta-t)\,\gamma_{A,j}\gamma_{B,j+1}
+            \Bigr]
+  \end{equation}
+  \emph{Note how setting $\mu=0$ and $t=\Delta$ simplifies this to just the $i\gamma_{B,j}\gamma_{A,j+1}$ term.}
+\end{frame}
+
+\begin{frame}{Appendix B: Momentum Space Mapping}
+  The tight-binding Hamiltonian in real space:
+  \begin{equation}
+    H = \sum_{j} \left[ -t(c^\dagger_j c_{j+1} + \text{h.c.}) - \mu\left(c^\dagger_j c_j - \frac{1}{2}\right) + \Delta(c_j c_{j+1} + c^\dagger_{j+1} c^\dagger_j) \right]
+  \end{equation}
+  Applying the Fourier transform $c_j = \frac{1}{\sqrt{N}} \sum_{k} e^{ikj} c_k$, the kinetic and chemical potential terms diagonalize trivially. The pairing term requires antisymmetrization due to fermionic statistics ($c_k c_{-k} = -c_{-k} c_k$):
+  \begin{equation}
+    \Delta \sum_k e^{ik} c_k c_{-k} = \Delta \sum_{k>0} (e^{ik} - e^{-ik}) c_k c_{-k} = 2i\Delta \sum_{k>0} \sin(k) c_k c_{-k}
+  \end{equation}
+  This isolates the odd-parity $p$-wave superconducting nature of the model in momentum space.
+\end{frame}
+
+\begin{frame}{Appendix C: BdG Formalism and Pseudospin}
+  Use the Nambu spinor $\Psi_k = \begin{pmatrix} c_k \\ c^\dagger_{-k} \end{pmatrix}$ to cast $H$ into a bilinear form:
+  \begin{equation}
+    H = \sum_{k>0} \Psi^\dagger_k h(k) \Psi_k, \quad
+    h(k) = \begin{pmatrix} \xi_k & 2i\Delta\sin(k) \\ -2i\Delta\sin(k) & -\xi_k \end{pmatrix}
+  \end{equation}
+  where the normal-state dispersion is $\xi_k = -\mu - 2t\cos(k)$. 
+  
+  Expanding $h(k)$ in Pauli matrices:
+  \begin{equation}
+    h(k) = n_y(k)\sigma^y + n_z(k)\sigma^z \implies 
+    \begin{cases}
+      n_z(k) = -\mu - 2t\cos(k) \\
+      n_y(k) = -2\Delta\sin(k)
+    \end{cases}
+  \end{equation}
+  Diagonalizing this yields the bulk dispersion $E_k = \pm\sqrt{n_z(k)^2 + n_y(k)^2}$.
 \end{frame}
 
 \end{document}
