@@ -93,12 +93,12 @@ def plot_trajectory_deformation(t=T, delta=0.5, **_):
     
     ax.set_xlabel('$n_z(k)$')
     ax.set_ylabel('$n_y(k)$')
-    ax.set_title(f"Continuous Deformation ($t={t}, \Delta={delta}$)")
+    ax.set_title(rf"Continuous Deformation ($t={t}, \Delta={delta}$)")
     ax.legend(loc='upper right', fontsize=9)
     ax.set_aspect('equal')
     
     clean_axes(ax)
-    save_fig(fig, 'block1_07_trajectory_deformation.pdf')
+    save_fig(fig, 'block1_02_trajectory_deformation.pdf')
 
 
 @plot(3, "Phase diagram: bulk gap + winding number vs mu")
@@ -190,7 +190,7 @@ def plot_realspace_snapshot(t=T, delta=DELTA, L=20, **_):
     edge_patch = mpatches.Patch(color=COLORS['edge'], label='near-zero mode')
     fig.legend(handles=[edge_patch], loc='lower center', frameon=True)
     fig.suptitle(rf'Full BdG spectrum in real space  ($L = {L}$, OBC)', fontsize=14)
-    fig.tight_layout(rect=[0, 0.06, 1, 1])
+    fig.tight_layout(rect=[0, 0.06, 1, 0.94])
 
     save_fig(fig, f'block1_05_realspace_snapshot.pdf')
 
@@ -234,9 +234,9 @@ def plot_bulk_dispersion_panels(t=T, delta=DELTA, **_):
     Adapted from the original bulk_dispersion.py script.
     """
     mu_values = {
-        'Topological ($|\mu| < 2t$)': 0.0,
-        'Critical ($|\mu| = 2t$)': 2.0 * t,
-        'Trivial ($|\mu| > 2t$)': 3.0 * t
+        r'Topological ($|\mu| < 2t$)': 0.0,
+        r'Critical ($|\mu| = 2t$)': 2.0 * t,
+        r'Trivial ($|\mu| > 2t$)': 3.0 * t
     }
     k = np.linspace(-np.pi, np.pi, 500)
     
@@ -270,6 +270,49 @@ def plot_bulk_dispersion_panels(t=T, delta=DELTA, **_):
     plt.tight_layout(rect=[0, 0.12, 1, 0.92]) 
     
     save_fig(fig, 'block1_07_bulk_dispersion_panels.pdf')
+
+
+@plot(9, "np.abs fix: sign-filter artefact vs abs (appendix)")
+def plot_npabs_comparison(t=T, delta=DELTA, L=100, **_):
+    mu_scan = np.linspace(-4.5 * t, 4.5 * t, 600)
+    mu_c1, mu_c2 = critical_mu(t)
+
+    E0_abs  = np.zeros(len(mu_scan))
+    E0_sign = np.zeros(len(mu_scan))
+
+    for i, mu in enumerate(mu_scan):
+        evals = np.linalg.eigvalsh(
+            KitaevChain(L=L, t=t, mu=mu, delta=delta).build_hamiltonian()
+        )
+        E0_abs[i]  = np.sort(np.abs(evals))[0]
+        pos        = evals[evals >= 0]
+        E0_sign[i] = pos[0] if len(pos) > 0 else np.nan
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
+    titles = [
+        r"Wrong: evals[evals $\geq$ 0]  — spurious spikes",
+        r"Correct: np.sort(np.abs(evals))  — exact",
+    ]
+    colors_method = ['firebrick', COLORS['edge']]
+
+    for ax, data, title, col in zip(axes, [E0_sign, E0_abs], titles, colors_method):
+        ax.plot(mu_scan / t, data, color=col, lw=1.2)
+        ax.axvspan(mu_c1/t, mu_c2/t, alpha=0.10, color='steelblue')
+        ax.axvline(mu_c1/t, color='gray', ls='--', lw=1)
+        ax.axvline(mu_c2/t, color='gray', ls='--', lw=1)
+        ax.axhline(0, color='k', lw=0.7, ls=':')
+        ax.set_xlabel(r'$\mu\,/\,t$')
+        ax.set_title(title, fontsize=10)
+        ax.set_ylim(bottom=0)
+        clean_axes(ax)
+
+    axes[0].set_ylabel('Lowest quasiparticle energy $E_0$')
+    fig.suptitle(
+        rf'Sign-filter artefact vs $|E|$ fix  ($L={L}$, $t=\Delta=1$, OBC)',
+        fontsize=13,
+    )
+    fig.tight_layout(rect=[0, 0, 1, 0.93])
+    save_fig(fig, 'block1_09_npabs_comparison.pdf')
 
 
 @plot(8, "Winding loops in Complex Plane 1x3 panels")
