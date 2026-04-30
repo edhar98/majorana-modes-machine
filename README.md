@@ -17,8 +17,8 @@ The goal is to bridge abstract theoretical physics and the quantum software stac
 
 | Block | Topic | Status |
 |-------|-------|--------|
-| 1 | **The Physics Bridge** — Kitaev chain, finite-size spectra, topological diagnostics | ✅ |
-| 2 | **The Qubit Encoding** — Fermion-to-qubit mapping, ideal circuit simulation | 🔜 |
+| 1 | **The Physics Bridge** — Kitaev chain, BdG bulk, winding number, phase diagram | ✅ |
+| 2 | **Finite-Size Physics & Qubit Encoding** — Edge modes, Majorana splitting, Jordan-Wigner transform, parity sectors | ✅ |
 | 3 | **Measuring Topology** — Circuit-based measurements, edge & string observables | 🔜 |
 | 4 | **The NISQ Reality Check** — Noise modeling, mitigation, robustness | 🔜 |
 
@@ -53,9 +53,7 @@ Key results implemented:
 - **Real-space BdG** (open boundary conditions) — exact diagonalization via `KitaevChain`
 - **Bulk dispersion** $E_k = \sqrt{(-\mu - 2t\cos k)^2 + (2\Delta \sin k)^2}$
 - **Phase diagram** — bulk gap and winding number $\nu$ vs $\mu/t$
-- **Finite-size spectrum** — near-zero edge modes in the topological phase ($|\mu| < 2t$)
 - **Winding number** — numerical BZ integral of the BdG d-vector angle
-
 
 ### Run
 
@@ -64,6 +62,28 @@ cd src
 python block1.py                      # all plots
 python block1.py --plots 4 --L 100   # single plot, custom chain length
 python block1.py --list               # show available plots
+```
+
+---
+
+## Block 2 — Finite-Size Physics & Qubit Encoding
+
+Key results implemented:
+
+- **Finite-size OBC spectrum** — near-zero edge modes in the topological phase ($|\mu| < 2t$)
+- **Edge mode localization** — exponential decay of probability density from chain ends
+- **Majorana hybridization splitting** — $E_0(L) \sim (|\mu|/2t)^L$ exponential decay with chain length
+- **Jordan-Wigner transform** — `c_j = (∏_{k<j} Z_k) σ^-_j` mapping fermions to qubits
+- **Qubit Hamiltonian** — $H = -\frac{\mu}{2}\sum Z_j + \frac{t-\Delta}{2}\sum X_jX_{j+1} + \frac{t+\Delta}{2}\sum Y_jY_{j+1}$
+- **Parity gap** — $|E_0^+ - E_0^-|$ exponentially small in topological phase, validating JW mapping
+
+### Run
+
+```bash
+cd src
+python block1.py --plots 6 7 8       # finite-size plots (in block1 runner)
+python block2.py                      # qubit encoding plots
+python block2.py --list               # show available plots
 ```
 
 ### Requirements
@@ -82,7 +102,8 @@ Weekly presentation slides are compiled to PDF and published via GitHub Pages:
 |------|-------|-----|
 | 1 | The Physics Bridge — Kitaev chain, BdG, topological invariant | [week1.pdf](https://edhar98.github.io/majorana-modes-machine/week1.pdf) |
 | 2 | The Physics Bridge (cont.) — winding number, phase diagram | [week2.pdf](https://edhar98.github.io/majorana-modes-machine/week2.pdf) |
-| 3 | Finite-Size Physics & Edge Modes — spectra, localization, splitting | [week3.pdf](https://edhar98.github.io/majorana-modes-machine/week3.pdf) |
+| 3 | Blocks 1 & 2 — Physics Bridge + Finite-Size Physics & Edge Modes | [week3.pdf](https://edhar98.github.io/majorana-modes-machine/week3.pdf) |
+| 4 | Block 2 (cont.) — Jordan-Wigner transform, qubit encoding, parity sectors | [week4.pdf](https://edhar98.github.io/majorana-modes-machine/week4.pdf) |
 
 ---
 
