@@ -1,0 +1,33 @@
+# Project Context
+This is a graduate seminar project on the 1D Kitaev chain and its topological phase transition. It combines theoretical physics and quantum software stack using exact diagonalization, free-fermion methods, and quantum-circuit emulation.
+
+## Tech Stack
+- **Python**: numpy, matplotlib (Simulation and visualization)
+- **LaTeX**: Beamer (Presentations)
+
+## Run Commands
+- Block 1 (The Physics Bridge): `python block1.py` or `python block1.py --list`
+- Block 2 (Qubit Encoding): `python block2.py` or `python block2.py --list`
+
+## Code Style & Structure
+- **DRY & KISS**: No duplication. Keep it minimal and optimized.
+- **Strict Typing**: Declare explicit types everywhere. Use named parameters.
+- **Duplicate Guard**: Check for existing logic before writing anything new.
+- **Fail-Fast**: Validate all inputs early and raise clear errors.
+- **No Comments**: DO NOT write comments in code. No exceptions.
+- **No Mock Data**: NEVER use mock data, mock functions, or similar placeholders.
+
+## Research & Planning
+- **Understand Intent**: Clarify underlying goals by reviewing full conversations and documentation.
+- **Map Context**: Use file search and analysis to locate affected modules.
+- **Define Scope**: Enumerate components in scope; identify cross-project impacts.
+- **Generate Hypotheses**: Assess feasibility, risks, and alignment with project standards.
+- **Select Strategy**: Choose the solution with optimal reliability, extensibility, and minimal risk.
+
+## AI Interaction Rules
+- **Critical Engagement**: Challenge assumptions, verify facts, be blunt and precise.
+- **Task Focus**: Stick to the explicit request. No tangents, no fluff.
+- **Solution First**: Provide the simplest correct fix immediately.
+- **Git Commits**: Start with a dash (-), be short and clear, separate each logical change.
+- **No Affirmations**: DO NOT affirm correctness (e.g., "you're right"). It's distracting.
+- **No Terminal Commands**: DO NOT attempt to execute terminal commands. Just provide them; the user will run them.
