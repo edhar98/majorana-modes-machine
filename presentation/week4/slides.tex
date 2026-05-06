@@ -192,7 +192,7 @@
 \section{Numerical Verification}
 
 \begin{frame}[fragile]{Building the qubit Hamiltonian in code}
-  \begin{lstlisting}
+  \begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
 def kitaev_qubit_hamiltonian(L, t=1.0, mu=0.0, delta=1.0):
     dim = 2 ** L
     H = np.zeros((dim, dim), dtype=complex)
@@ -207,8 +207,9 @@ def kitaev_qubit_hamiltonian(L, t=1.0, mu=0.0, delta=1.0):
     return H
   \end{lstlisting}
 
-  \medskip
+  \vspace{-0.5em}
   \begin{block}{Tensor-product helpers}
+    \small
     \texttt{pauli\_at(op, j, L)} embeds a single-site Pauli at site $j$ via
     $I \otimes \cdots \otimes \mathrm{op}_j \otimes \cdots \otimes I$.
     \texttt{two\_site(A, B, j, L)} places $A_j \otimes B_{j+1}$.
@@ -218,7 +219,7 @@ def kitaev_qubit_hamiltonian(L, t=1.0, mu=0.0, delta=1.0):
 
 \begin{frame}{Parity gap (qubit) vs BdG splitting — cross-check}
   \begin{center}
-    \includegraphics[width=\linewidth]{block2_01_parity_gap_vs_bdg.pdf}
+    \includegraphics[width=\linewidth,height=0.65\textheight,keepaspectratio]{block2_01_parity_gap_vs_bdg.pdf}
   \end{center}
   Both methods give the same exponential decay in the topological phase and
   the same gap size in the trivial phase — confirming the JW mapping is exact.
@@ -226,7 +227,7 @@ def kitaev_qubit_hamiltonian(L, t=1.0, mu=0.0, delta=1.0):
 
 \begin{frame}{Many-body qubit spectrum}
   \begin{center}
-    \includegraphics[width=0.82\linewidth]{block2_02_qubit_spectrum.pdf}
+    \includegraphics[width=0.82\linewidth,height=0.65\textheight,keepaspectratio]{block2_02_qubit_spectrum.pdf}
   \end{center}
   Even (blue) and odd (red) parity sectors are degenerate inside the
   topological phase and split outside — the bulk-boundary correspondence
