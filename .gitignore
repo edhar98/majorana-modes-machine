@@ -11,8 +11,8 @@
 .~lock.*
 
 # Local notes and notebooks (kept locally, not tracked)
-notes/
-notebooks/
+# notes/
+# notebooks/
 
 # Course materials (kept locally, not tracked)
 *.pptx

@@ -1,0 +1,135 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{Derivation: Qubit Encoding and the Jordan-Wigner Transform}
+\author{Seminar notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Setup: The Jordan-Wigner Transform}
+
+The goal is to map the fermionic Kitaev chain to a system of qubits. Fermionic operators obey the anticommutation relations:
+\begin{equation}
+  \{c_i, c_j^\dagger\} = \delta_{ij}, \quad \{c_i, c_j\} = 0.
+\end{equation}
+Qubit operators on different sites commute: $[\sigma_i^\alpha, \sigma_j^\beta] = 0$ for $i \neq j$. To simulate fermions with qubits, we must encode the fermionic anticommutation into the qubit algebra. This is achieved using the Jordan-Wigner transform, which attaches a ``string'' of Pauli $Z$ operators to each fermionic lowering operator to act as a parity counter for the preceding sites:
+\begin{equation}
+  c_j = \left( \prod_{k=0}^{j-1} Z_k \right) \sigma_j^-, \qquad
+  c_j^\dagger = \left( \prod_{k=0}^{j-1} Z_k \right) \sigma_j^+.
+\end{equation}
+Here, $\sigma^\pm = \frac{1}{2}(X \pm iY)$. The operators $X, Y, Z$ are the standard Pauli matrices acting on the two-level qubit system at site $j$:
+\begin{equation}
+  X = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}, \quad
+  Y = \begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}, \quad
+  Z = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}.
+\end{equation}
+These matrices satisfy the standard Pauli algebra $X^2 = Y^2 = Z^2 = I$, anticommute with each other ($\{X, Y\} = 0$, etc.), and form the basis for observing the state of the qubit. The $Z$-string flips sign when an earlier site is occupied (because $Z |1\rangle = -|1\rangle$), restoring the correct anticommutation relations between operators at different sites.
+
+\section{Derivation of the Qubit Hamiltonian}
+
+We start with the Kitaev Hamiltonian in open boundary conditions:
+\begin{equation}
+  H_K = -\mu \sum_{j=0}^{L-1} c_j^\dagger c_j - t \sum_{j=0}^{L-2} (c_j^\dagger c_{j+1} + \text{h.c.}) + \Delta \sum_{j=0}^{L-2} (c_j^\dagger c_{j+1}^\dagger + \text{h.c.}).
+\end{equation}
+We apply the Jordan-Wigner mapping term by term.
+
+\subsection{Chemical Potential Term}
+The number operator at site $j$ maps to the single-qubit $Z$ basis:
+\begin{equation}
+  c_j^\dagger c_j = \sigma_j^+ \sigma_j^- = \left( \frac{X_j + iY_j}{2} \right) \left( \frac{X_j - iY_j}{2} \right) = \frac{I - Z_j}{2}.
+\end{equation}
+Summing this yields the transverse field term:
+\begin{equation}
+  -\mu \sum_j c_j^\dagger c_j = -\frac{\mu}{2} \sum_j (I - Z_j) \cong \frac{\mu}{2} \sum_j Z_j \quad \text{(dropping constant offsets)}.
+\end{equation}
+\textit{Note:} In the presentation, the sign of the transverse field is $-\frac{\mu}{2} \sum Z_j$. This arises if we map the empty fermionic state to the $|0\rangle$ state (where $Z=+1$), meaning $c_j^\dagger c_j = \frac{I - Z_j}{2}$. Dropping the $\frac{I}{2}$ gives the $-\frac{\mu}{2} Z_j$ term as written in the slides.
+
+\subsection{Hopping Term}
+For the hopping term $c_j^\dagger c_{j+1}$, the $Z$-strings partially cancel:
+\begin{align*}
+  c_j^\dagger c_{j+1} 
+  &= \left( \prod_{k=0}^{j-1} Z_k \right) \sigma_j^+ \cdot \left( \prod_{m=0}^{j} Z_m \right) \sigma_{j+1}^- \\
+  &= \sigma_j^+ Z_j \sigma_{j+1}^- = \sigma_j^+ (I - 2\sigma_j^+ \sigma_j^-) \sigma_{j+1}^- \\
+  &= - \sigma_j^+ \sigma_{j+1}^-.
+\end{align*}
+Adding its Hermitian conjugate:
+\begin{equation}
+  c_j^\dagger c_{j+1} + \text{h.c.} = - (\sigma_j^+ \sigma_{j+1}^- + \sigma_j^- \sigma_{j+1}^+) = - \frac{X_j X_{j+1} + Y_j Y_{j+1}}{2}.
+\end{equation}
+Multiplying by $-t$, we get the $XX$ and $YY$ coupling.
+
+\subsection{Pairing Term}
+Similarly, for the pairing term $c_j^\dagger c_{j+1}^\dagger$:
+\begin{align*}
+  c_j^\dagger c_{j+1}^\dagger 
+  &= \sigma_j^+ Z_j \sigma_{j+1}^+ = - \sigma_j^+ \sigma_{j+1}^+.
+\end{align*}
+Adding its Hermitian conjugate:
+\begin{equation}
+  c_j^\dagger c_{j+1}^\dagger + \text{h.c.} = - (\sigma_j^+ \sigma_{j+1}^+ + \sigma_j^- \sigma_{j+1}^-) = - \frac{X_j X_{j+1} - Y_j Y_{j+1}}{2}.
+\end{equation}
+Multiplying by $\Delta$, this generates an asymmetric $XX$ and $YY$ coupling.
+
+\subsection{Full Qubit Hamiltonian}
+Combining all terms, we obtain the Kitaev Hamiltonian in the qubit basis:
+\begin{align}
+  H &= -\frac{\mu}{2} \sum_j Z_j 
+      + t \sum_j \left( \frac{X_j X_{j+1} + Y_j Y_{j+1}}{2} \right)
+      - \Delta \sum_j \left( \frac{X_j X_{j+1} - Y_j Y_{j+1}}{2} \right) \nonumber \\
+    &= -\frac{\mu}{2} \sum_j Z_j 
+      + \frac{t - \Delta}{2} \sum_j X_j X_{j+1} 
+      + \frac{t + \Delta}{2} \sum_j Y_j Y_{j+1}.
+\end{align}
+This is the transverse-field $XY$ model. 
+
+\section{The Sweet Spot $t = \Delta$}
+At the ``sweet spot'' ($t=\Delta$), the $X_j X_{j+1}$ terms perfectly cancel. The Hamiltonian simplifies to a transverse-field Ising-like model but with $YY$ interactions:
+\begin{equation}
+  H = -\frac{\mu}{2} \sum_j Z_j + t \sum_j Y_j Y_{j+1}.
+\end{equation}
+If $\mu=0$ (deep inside the topological phase), the Hamiltonian is purely $H = t \sum_j Y_j Y_{j+1}$. The boundary operators $X_0$ and $X_{L-1}$ do not appear in this Hamiltonian, meaning they form zero-energy modes that are exactly decoupled from the bulk. These correspond to the localized Majorana edge modes.
+
+\section{Fermion Parity and Topological Degeneracy}
+
+\subsection{Fermion Parity Operator}
+The total fermion parity operator is defined as the parity of the number of fermions:
+\begin{equation}
+  P_f = (-1)^{\sum_j c_j^\dagger c_j}.
+\end{equation}
+Using the number operator identity $c_j^\dagger c_j = (I - Z_j)/2$, each factor becomes $(-1)^{(1-Z_j)/2} = Z_j$. Thus, the total parity operator in the qubit basis is simply the product of all $Z$ operators:
+\begin{equation}
+  P = \prod_{j=0}^{L-1} Z_j.
+\end{equation}
+
+\subsection{Conservation and Parity Gap}
+Because the Kitaev Hamiltonian only creates or destroys fermions in pairs (via the $\Delta$ term) and moves them one by one (via the $t$ term), the total parity is conserved: $[H, P] = 0$. The eigenstates can be block-diagonalized into the even ($P=+1$) and odd ($P=-1$) parity sectors.
+
+In the topological phase, the emergence of Majorana zero modes provides a zero-energy excitation that toggles the parity without changing the overall energy of the system. In a finite system, the left and right Majorana modes overlap, lifting the exact degeneracy by an energy $E_0(L) \sim (|\mu|/2t)^L$. The difference in energy between the lowest even and odd states is exactly this \textbf{parity gap}:
+\begin{equation}
+  |E_0^{(+)} - E_0^{(-)}| \approx 2t \left( \frac{|\mu|}{2t} \right)^L.
+\end{equation}
+This gap vanishes exponentially with the system size $L$, manifesting the bulk-boundary correspondence in the many-body spectrum.
+
+\subsection{Many-Body Qubit Spectrum vs Finite-Size BdG Spectrum}
+
+The \textbf{finite-size BdG spectrum} describes single-particle quasiparticle excitations. Because of particle-hole symmetry, these excitation energies always come in $\pm E$ pairs. The lowest positive energy $E_0$ represents the energy cost to add a single Bogoliubov quasiparticle to the ground state. In the topological phase, this lowest excitation is the hybridized Majorana mode, and $E_0 \to 0$ exponentially as $L \to \infty$.
+
+The \textbf{many-body qubit spectrum}, on the other hand, represents the total energies of all $2^L$ many-body states of the system. Because $[H, P] = 0$, every many-body state belongs to either the even parity sector (blue curves in the presentation) or the odd parity sector (red curves). The lowest energy state in the even sector $E_0^{(+)}$ is the overall ground state of the system with an even number of fermions. The lowest energy state in the odd sector $E_0^{(-)}$ is the ground state with an odd number of fermions.
+
+\paragraph{Why Even and Odd Parity Curves Do Not Overlap (Finite-Size Effects):}
+In an infinite chain ($L \to \infty$) inside the topological phase, the left and right Majorana edge modes are infinitely separated and exact zero-energy modes. Toggling the occupation of the non-local fermionic state formed by these two Majoranas changes the parity of the system without costing any energy. Hence, the even and odd many-body ground states become perfectly degenerate, and the curves would exactly overlap.
+
+However, in a \textbf{finite-size} chain, the left and right Majorana modes are not perfectly localized; their wavefunctions decay exponentially but have a finite overlap in the bulk of the chain. This finite overlap causes the Majorana modes to hybridize and split away from exact zero energy by the amount $E_0(L)$.
+
+Because toggling the parity now requires occupying this hybridized mode, it costs a small, non-zero energy $E_0(L)$. Therefore, the odd-parity ground state lies slightly higher in energy than the even-parity ground state:
+\begin{equation}
+  E_0^{(-)} - E_0^{(+)} = E_0(L) \approx 2t \left( \frac{|\mu|}{2t} \right)^L.
+\end{equation}
+This is why the blue (even) and red (odd) curves in the many-body spectrum do not perfectly overlap for finite $L$. The gap between them is precisely the finite-size BdG splitting. As one tunes $\mu$ towards the critical point $|\mu| = 2t$, the Majorana localization length (coherence length) diverges. The overlap between the edge modes becomes macroscopic, the splitting $E_0(L)$ becomes large, and the parity gap visibly opens, eventually merging into the bulk gap in the trivial phase.
+
+\end{document}
