@@ -84,48 +84,71 @@ def plot_qubit_spectrum(t=T, delta=DELTA, L=8, **_):
     mu_c1, mu_c2 = critical_mu(t)
     mu_scan = np.linspace(-3.5 * t, 3.5 * t, 100)
     N_SHOW  = 4  # lowest levels per parity sector to plot
+    N_SHOW_BDG = 6
 
     from jordan_wigner import spectrum_by_parity
 
     even_levels = np.zeros((len(mu_scan), N_SHOW))
     odd_levels  = np.zeros((len(mu_scan), N_SHOW))
+    bdg_levels  = np.zeros((len(mu_scan), N_SHOW_BDG))
 
     for i, mu in enumerate(mu_scan):
         ev, od = spectrum_by_parity(L, t, mu, delta)
         even_levels[i] = ev[:N_SHOW]
         odd_levels[i]  = od[:N_SHOW]
+        
+        chain = KitaevChain(L=L, t=t, mu=mu, delta=delta)
+        bdg_levels[i] = chain.positive_spectrum()[:N_SHOW_BDG]
 
     # shift so GS is at 0
     gs = np.minimum(even_levels[:, 0], odd_levels[:, 0])
     even_levels -= gs[:, None]
     odd_levels  -= gs[:, None]
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), sharey=False)
 
+    # ── Left: BdG Spectrum ──
+    ax1.plot(mu_scan / t, bdg_levels[:, 0], color=COLORS['edge'], lw=2,
+             label='near-zero (edge) mode', zorder=3)
+    for i in range(1, N_SHOW_BDG):
+        ax1.plot(mu_scan / t, bdg_levels[:, i], color=COLORS['bulk'],
+                 lw=1.2, alpha=0.7, label='bulk bands' if i == 1 else None)
+
+    ax1.axvspan(mu_c1 / t, mu_c2 / t, alpha=0.08, color='steelblue', label='topological')
+    ax1.axvline(mu_c1 / t, color='gray', ls='--', lw=1)
+    ax1.axvline(mu_c2 / t, color='gray', ls='--', lw=1)
+    ax1.axhline(0, color='k', lw=0.7, ls=':')
+
+    ax1.set_xlabel(r'$\mu\,/\,t$')
+    ax1.set_ylabel(r'Quasiparticle energy $E_n$')
+    ax1.set_title(rf'Finite-size BdG spectrum ($L={L}$)', fontsize=13)
+    ax1.set_ylim(bottom=-0.1)
+    ax1.legend(fontsize=10)
+    clean_axes(ax1)
+
+    # ── Right: Many-Body Qubit Spectrum ──
     for i in range(N_SHOW):
         lw = 2.0 if i == 0 else 1.0
         al = 1.0 if i == 0 else 0.5
-        ax.plot(mu_scan / t, even_levels[:, i],
-                color=COLORS['topological'], lw=lw, alpha=al,
-                label='even parity' if i == 0 else None)
-        ax.plot(mu_scan / t, odd_levels[:, i],
-                color=COLORS['trivial'], lw=lw, alpha=al, ls='--',
-                label='odd parity' if i == 0 else None)
+        ax2.plot(mu_scan / t, even_levels[:, i],
+                 color=COLORS['topological'], lw=lw, alpha=al,
+                 label='even parity' if i == 0 else None)
+        ax2.plot(mu_scan / t, odd_levels[:, i],
+                 color=COLORS['trivial'], lw=lw, alpha=al, ls='--',
+                 label='odd parity' if i == 0 else None)
 
-    ax.axvspan(mu_c1 / t, mu_c2 / t, alpha=0.08, color='steelblue')
-    ax.axvline(mu_c1 / t, color='gray', ls='--', lw=1)
-    ax.axvline(mu_c2 / t, color='gray', ls='--', lw=1)
-    ax.axhline(0, color='k', lw=0.7, ls=':')
+    ax2.axvspan(mu_c1 / t, mu_c2 / t, alpha=0.08, color='steelblue')
+    ax2.axvline(mu_c1 / t, color='gray', ls='--', lw=1)
+    ax2.axvline(mu_c2 / t, color='gray', ls='--', lw=1)
+    ax2.axhline(0, color='k', lw=0.7, ls=':')
 
-    ax.set_xlabel(r'$\mu\,/\,t$')
-    ax.set_ylabel(r'Energy above GS')
-    ax.set_title(
-        rf'Many-body qubit spectrum ($L={L}$, $t=\Delta=1$, OBC)',
-        fontsize=13,
-    )
-    ax.set_ylim(bottom=-0.1)
-    ax.legend(fontsize=10)
-    clean_axes(ax)
+    ax2.set_xlabel(r'$\mu\,/\,t$')
+    ax2.set_ylabel(r'Energy above GS')
+    ax2.set_title(rf'Many-body qubit spectrum ($L={L}$)', fontsize=13)
+    ax2.set_ylim(bottom=-0.1)
+    ax2.legend(fontsize=10)
+    clean_axes(ax2)
+
     fig.tight_layout()
     save_fig(fig, 'block2_02_qubit_spectrum.pdf')
 

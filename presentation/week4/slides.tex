@@ -99,7 +99,7 @@
     c_j^\dagger = \Bigl(\prod_{k=0}^{j-1} Z_k\Bigr) \sigma_j^+
   \end{equation}
   where $\sigma^{\pm} = \tfrac{1}{2}(X \pm iY)$ are the qubit raising/lowering
-  operators and $Z_k$ acts only on qubit $k$.
+  operators, $X, Y, Z$ are the standard Pauli matrices, and $Z_k$ acts only on qubit $k$.
 
   \vspace{-0.5em}
   \begin{columns}[T]
@@ -226,13 +226,13 @@ def kitaev_qubit_hamiltonian(L, t=1.0, mu=0.0, delta=1.0):
   the same gap size in the trivial phase — confirming the JW mapping is exact.
 \end{frame}
 
-\begin{frame}{Many-body qubit spectrum}
+\begin{frame}{Many-body qubit spectrum vs BdG spectrum}
   \begin{center}
-    \includegraphics[width=0.82\linewidth,height=0.65\textheight,keepaspectratio]{block2_02_qubit_spectrum.pdf}
+    \includegraphics[width=\linewidth,height=0.7\textheight,keepaspectratio]{block2_02_qubit_spectrum.pdf}
   \end{center}
   Even (blue) and odd (red) parity sectors are degenerate inside the
   topological phase and split outside — the bulk-boundary correspondence
-  is manifest directly in the many-body spectrum.
+  is manifest directly in the many-body spectrum alongside the BdG modes.
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════════════
