@@ -1,0 +1,85 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{enumitem}
+\usepackage{braket}
+
+\title{Project Status and Week 5 Execution Plan: \\ Majorana Modes in the Machine}
+\author{Project Working Group}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Current Project Status (End of Block 2)}
+The project is currently at the conclusion of Block 2 (The Qubit Encoding) and is transitioning into Block 3 (Measuring Topology). The completed technical milestones are objectively outlined below:
+
+\subsection{Block 1: Physical Model Construction and Finite-Size Analysis}
+\begin{itemize}
+    \item Defined the lattice Hamiltonian for the Kitaev chain.
+    \item Derived the topological phase transition condition under the Majorana representation: $\mu = 0, t = \Delta$.
+    \item Computed the Bogoliubov-de Gennes (BdG) spectrum and the Winding Number topological invariant.
+    \item \textbf{Edge Modes and Finite-Size Effects:} Proved the existence of near-zero energy modes in the topological phase under Open Boundary Conditions (OBC). Quantified the exponential decay relationship of the Majorana hybridization splitting energy: $E_0(L) \approx 2t(|\mu|/2t)^L$.
+\end{itemize}
+
+\subsection{Block 2: Qubit Encoding}
+\begin{itemize}
+    \item Implemented the Jordan-Wigner (JW) transformation to map fermionic operators to spin/qubit operators.
+    \item \textbf{Exact Diagonalization and Spectral Verification:} Derived the qubit Hamiltonian:
+    $$H = -\frac{\mu}{2}\sum_j Z_j + \frac{t-\Delta}{2}\sum_j X_j X_{j+1} + \frac{t+\Delta}{2}\sum_j Y_j Y_{j+1}$$
+    \item Verified the conservation of the parity operator $P = \prod_{j=0}^{L-1} Z_j$.
+    \item Achieved exact numerical agreement between the many-body qubit spectrum and the BdG quasiparticle spectrum regarding the topological phase transition points and parity gap characteristics.
+\end{itemize}
+
+\section{Progress Deviation and Critical Assessment}
+Based on a 14-week schedule, each of the four blocks should average 3.5 weeks. Currently entering Week 5, the timeline is nominally ahead. However, a critical review of the codebase (e.g., the \texttt{kitaev\_qubit\_hamiltonian} function) reveals that the current implementation relies entirely on generating $2^L \times 2^L$ dense complex matrices (\texttt{dim = 2**L, np.zeros((dim, dim), dtype=complex)}) and invoking classical linear algebra libraries for exact diagonalization. 
+
+This is a highly inefficient computational physics methodology. The space complexity scales exponentially with system size $L$. The current numerical verification remains strictly at the mathematical matrix level and lacks any actual Quantum Circuit Simulation.
+
+\section{Week 5 Technical Execution Plan (Block 3 Initiation)}
+The explicit goal for the upcoming phase is: ``Measuring topology - circuit-based measurements, edge \& string observables.'' In Week 5, the use of dense matrices for exact diagonalization must be strictly deprecated. The architecture must fully transition to gate-based quantum circuit construction and observable measurement simulations.
+
+\subsection{Core Module 1: Computational Architecture Migration}
+This module requires the complete removal of \texttt{numpy}-based tensor products and exact diagonalization (ED).
+\begin{itemize}
+    \item \textbf{Configure Quantum Circuit Simulation Framework:} Instantiate simulator backends from a quantum software stack (e.g., Qiskit, Cirq, or PennyLane). Both a \texttt{statevector\_simulator} (for exact state output) and a \texttt{qasm\_simulator} (for statistical sampling) must be configured.
+    \item \textbf{Construct State Preparation Circuits:} Write functions to generate Parameterized Quantum Circuits (PQC). Assign an initial state $\ket{0}$ to all qubits and apply single-qubit rotation gates (e.g., $RY$) and two-qubit entangling gates (e.g., $CX$ or $CZ$).
+    \item \textbf{Configure Optimization Loop:} If utilizing a Variational Quantum Eigensolver (VQE), integrate classical non-gradient optimizers (e.g., COBYLA, L-BFGS-B). The loss function must be the expectation value of the Hamiltonian $H$, iteratively updating the circuit parameters.
+\end{itemize}
+
+\subsection{Core Module 2: Ground State Fidelity Verification}
+The state output by the circuit must undergo rigorous mathematical validation to ensure correct ground state preparation.
+\begin{itemize}
+    \item \textbf{Set Finite-Size Benchmarks:} Strictly limit the system size to $L \in [4, 8]$. Extract the optimized circuit parameters $\vec{\theta}_{opt}$ and the corresponding statevector $\ket{\psi(\vec{\theta}_{opt})}$.
+    \item \textbf{Calculate Overlap:} Extract the lowest eigenstate $\ket{\psi_{ED}}$ computed via Exact Diagonalization in Block 2. Calculate the fidelity $F = |\langle \psi_{ED} | \psi(\vec{\theta}_{opt}) \rangle|^2$.
+    \item \textbf{Execution Standard:} Fidelity must exceed $0.99$. If the value falls below this threshold, it indicates insufficient circuit depth (weak ansatz expressivity) or the optimizer trapping in local minima. The workflow must halt here to adjust the circuit structure; proceeding to measurements is prohibited until this metric is met.
+\end{itemize}
+
+\subsection{Core Module 3: Quantum Measurement Protocol for Edge Modes}
+Majorana operators must be mapped to hardware-executable measurement instructions.
+\begin{itemize}
+    \item \textbf{Implement Local Operator $\langle X_0 \rangle$ Measurement:} Corresponds to the left Majorana mode $\gamma_{A,0}$. In the circuit, apply a Hadamard gate ($H$ gate) on qubit 0 at the final state to achieve X-basis rotation, followed by a Z-basis measurement.
+    \item \textbf{Implement Non-local Operator Measurement:} Corresponds to the right Majorana mode $\gamma_{B,L-1}$, requiring the measurement of the Pauli string $Y_{L-1} \prod_{k=0}^{L-2} Z_k$. In the circuit, directly execute Z-basis measurements on qubits 0 through $L-2$; for qubit $L-1$, apply an $S^\dagger$ gate followed by an $H$ gate for Y-basis rotation before measurement.
+    \item \textbf{Execute Shot-based Sampling:} Discard analytical expectation values from statevectors. Configure \texttt{shots=8192}, execute the circuit, and tally the 0/1 counts for each qubit state. Write post-processing code to calculate joint parity, extract the statistical expectation values of the operators, and compute the standard error.
+\end{itemize}
+
+\section{Progress Node Assessment (Week 5 Boundaries)}
+Given the high technical barrier of transitioning from classical matrix diagonalization to parameterized quantum circuits, the Week 5 progress targets are strictly delineated below:
+
+\subsection{Mandatory Milestones (Week 5 Redlines)}
+\begin{itemize}
+    \item Modules 1 and 2 must be fully operational. The ground state preparation circuit must achieve $>0.99$ fidelity for small sizes ($L \le 8$).
+    \item The measurement code framework for Module 3 must be established, capable of outputting data points with error bars for $\langle X_0 \rangle$ and $\langle Y_{L-1} \prod_{k=0}^{L-2} Z_k \rangle$ via shot statistics.
+\end{itemize}
+
+\subsection{Out of Scope (Postponed to Week 6)}
+\begin{itemize}
+    \item \textbf{Full Phase Diagram Scanning for String Order Parameters:} Scanning operators of the form $\langle X_i \prod Z_k X_j \rangle$ across the full parameter space ($\mu \in [-3t, 3t]$). These non-local operators involve extreme measurement overhead and require complex measurement grouping. Attempting this in Week 5 will cause severe timeline overruns.
+    \item \textbf{Large-Scale Extension:} Attempting to scale the system size $L > 10$.
+\end{itemize}
+
+\end{document}
