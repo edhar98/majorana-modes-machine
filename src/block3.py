@@ -222,6 +222,32 @@ def plot_vqe_test(t=T, delta=DELTA, L=4, **_):
     fig.tight_layout()
     save_fig(fig, 'block3_01_vqe_observables_test.pdf')
 
+@plot(2, "Visualize VQE Ansatz and Measurement Circuits")
+def plot_circuit_visualizations(L=4, **_):
+    """Draw and save the VQE ansatz and measurement circuits."""
+    import os
+    ansatz = create_vqe_ansatz(L, reps=1)
+    
+    # Save Ansatz (decomposed to see the gates clearly)
+    fig_ansatz = ansatz.decompose().draw('mpl')
+    # draw() returns a matplotlib Figure if 'mpl' is used
+    save_fig(fig_ansatz, 'block3_02_vqe_ansatz.pdf')
+    
+    # Local Measurement Circuit
+    qc_local = ansatz.copy()
+    qc_local.h(0)
+    qc_local.measure_all()
+    fig_local = qc_local.decompose().draw('mpl')
+    save_fig(fig_local, 'block3_03_meas_local.pdf')
+    
+    # SOP Measurement Circuit
+    qc_string = ansatz.copy()
+    qc_string.sdg(L - 1)
+    qc_string.h(L - 1)
+    qc_string.measure_all()
+    fig_string = qc_string.decompose().draw('mpl')
+    save_fig(fig_string, 'block3_04_meas_sop.pdf')
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 def build_parser() -> argparse.ArgumentParser:
