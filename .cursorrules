@@ -2,7 +2,8 @@
 This is a graduate seminar project on the 1D Kitaev chain and its topological phase transition. It combines theoretical physics and quantum software stack using exact diagonalization, free-fermion methods, and quantum-circuit emulation.
 
 ## Tech Stack
-- **Python**: numpy, matplotlib (Simulation and visualization)
+- **Python**: numpy, matplotlib, qiskit, scipy (Simulation and visualization)
+- **Python Environment**: `/opt/python-envs/myenv/bin/` (Use this for all Python commands)
 - **LaTeX**: Beamer (Presentations)
 
 ## Run Commands
@@ -14,7 +15,7 @@ This is a graduate seminar project on the 1D Kitaev chain and its topological ph
 - **Strict Typing**: Declare explicit types everywhere. Use named parameters.
 - **Duplicate Guard**: Check for existing logic before writing anything new.
 - **Fail-Fast**: Validate all inputs early and raise clear errors.
-- **No Comments**: DO NOT write comments in code. No exceptions.
+- **Commenting**: Use module docstrings and structural headers (e.g., `# ── Section ──`). Keep inline comments concise and strictly for explaining physics parameters (e.g., "transverse field", "XX coupling"), non-obvious logic, or workarounds. Do not write redundant, line-by-line narrations.
 - **No Mock Data**: NEVER use mock data, mock functions, or similar placeholders.
 
 ## Research & Planning
