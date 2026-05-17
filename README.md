@@ -104,6 +104,7 @@ Weekly presentation slides are compiled to PDF and published via GitHub Pages:
 | 2 | The Physics Bridge (cont.) — winding number, phase diagram | [week2.pdf](https://edhar98.github.io/majorana-modes-machine/week2.pdf) |
 | 3 | Blocks 1 & 2 — Physics Bridge + Finite-Size Physics & Edge Modes | [week3.pdf](https://edhar98.github.io/majorana-modes-machine/week3.pdf) |
 | 4 | Block 2 (cont.) — Jordan-Wigner transform, qubit encoding, parity sectors | [week4.pdf](https://edhar98.github.io/majorana-modes-machine/week4.pdf) |
+| 5 | Block 3 Qubit encoding, Ground State preparation | [week5.pdf](https://edhar98.github.io/majorana-modes-machine/week5.pdf) |
 
 ---
 
