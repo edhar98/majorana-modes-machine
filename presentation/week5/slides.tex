@@ -12,6 +12,9 @@
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
 \graphicspath{{../../plots/}}
 
 % --- Custom Colors ---
@@ -82,8 +85,8 @@
     \begin{exampleblock}{CNOT(0,1) Operation}
         If $q_0$ is 1, flip $q_1$. In the vector:
         \begin{enumerate}
-            \item $\ket{1000}$ (Index 9) satisfies the condition.
-            \item It is transformed into $\ket{1100}$ (Index 13).
+            \item $\ket{1000}$ (Index 8) satisfies the condition.
+            \item It is transformed into $\ket{1100}$ (Index 12).
         \end{enumerate}
         Physical meaning: isolated excitations are combined into \textbf{paired states}, building the topological correlations needed for Majoranas.
     \end{exampleblock}
@@ -117,30 +120,68 @@
     \end{tabular}
     }
     \end{table}
-
-    \vspace{0.3cm}
-    \textbf{Algebraic Operator Action:}
-    \begin{itemize}
-        \item \textbf{$R_y$ Tensor Product:} $\hat{U}_1 = R_y(\theta_0) \otimes I^{\otimes 3}$. Splits probability amplitude between index 0 and index 8.
-        \item \textbf{CNOT Permutation Matrix:} $\hat{U}_2 = \text{CNOT}_{0\to 1} \otimes I^{\otimes 2}$. Executes conditional dimension shift: $\alpha|1000\rangle \xrightarrow{} \alpha|1100\rangle$.
-    \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Hamiltonian Simplification: The Pure YY Limit}
     \centering
-    \fbox{\begin{minipage}{0.8\textwidth}
+    \fbox{\begin{minipage}{0.95\textwidth}
         \centering
         \textbf{General Qubit Mapping (Block 2):} \\
         $H_K = -\frac{\mu}{2}\sum Z_j + \frac{t-\Delta}{2}\sum X_j X_{j+1} + \frac{t+\Delta}{2}\sum Y_j Y_{j+1}$ \\
         \vspace{0.3cm}
         \textbf{Topological Sweet Spot ($t = \Delta$, $\mu = 0$):} \\
-        $\mathbf{H = \sum_{j=0}^{L-2} Y_j Y_{j+1}}$
+        $\mathbf{H = \sum_{j=0}^{L-2} Y_j Y_{j+1} \equiv i \sum_{j=0}^{L-2} \gamma_{j,1} \gamma_{j+1,2}}$
     \end{minipage}}
+
+    \vspace{0.2cm}
     \begin{itemize}
-        \item \textbf{XX Cancellation:} Setting $t = \Delta$ (hopping = pairing) mathematically eliminates all $X_j X_{j+1}$ terms.
-        \item \textbf{Field Removal:} Setting $\mu = 0$ removes the transverse $Z$ fields, reaching the deepest topological phase.
+        \item \textbf{Algebraic Cancellation:} Setting $t = \Delta$ strictly eliminates all $X_j X_{j+1}$ components.
+        \item \textbf{Pairing Shift Geometry:} The pure $Y_j Y_{j+1}$ interaction fundamentally alters the topology by coupling the \textbf{left mode ($\gamma_{j,1}$)} to the \textbf{right mode ($\gamma_{j+1,2}$)}, effectively isolating the inner edge modes.
     \end{itemize}
+
+    \vspace{0.1cm}
+    % Majorana Coupling Visualization using TikZ
+    \begin{center}
+    \resizebox{0.75\textwidth}{!}{
+    \begin{tikzpicture}[
+        maj/.style={circle, fill=black, inner sep=2pt},
+        iso/.style={circle, fill=red, inner sep=2.5pt},
+        qubit/.style={draw, thick, dashed, rounded corners, inner sep=10pt}
+    ]
+        % Define Qubit Boundaries
+        \draw[qubit] (-0.6, -0.6) rectangle (1.6, 0.4) node[midway, yshift=-0.7cm] {Qubit $0$};
+        \draw[qubit] (2.4, -0.6) rectangle (4.6, 0.4) node[midway, yshift=-0.7cm] {Qubit $1$};
+        \draw[qubit] (5.4, -0.6) rectangle (7.6, 0.4) node[midway, yshift=-0.7cm] {Qubit $2$};
+        \draw[qubit] (8.4, -0.6) rectangle (10.6, 0.4) node[midway, yshift=-0.7cm] {Qubit $3$};
+
+        % Define Majorana Modes
+        \node[maj, label=below:{$\gamma_{0,1}$}] (g01) at (0,0) {};
+        \node[iso, label=below:{\textcolor{red}{$\gamma_{0,2}$}}] (g02) at (1,0) {};
+        
+        \node[maj, label=below:{$\gamma_{1,1}$}] (g11) at (3,0) {};
+        \node[maj, label=below:{$\gamma_{1,2}$}] (g12) at (4,0) {};
+        
+        \node[maj, label=below:{$\gamma_{2,1}$}] (g21) at (6,0) {};
+        \node[maj, label=below:{$\gamma_{2,2}$}] (g22) at (7,0) {};
+        
+        \node[iso, label=below:{\textcolor{red}{$\gamma_{3,1}$}}] (g31) at (9,0) {};
+        \node[maj, label=below:{$\gamma_{3,2}$}] (g32) at (10,0) {};
+
+        % Draw YY Hamiltonian Couplings
+        \draw[thick, blue, <->] (g01) to[bend left=45] node[midway, above] {$Y_0 Y_1$} (g12);
+        \draw[thick, blue, <->] (g11) to[bend left=45] node[midway, above] {$Y_1 Y_2$} (g22);
+        \draw[thick, blue, <->] (g21) to[bend left=45] node[midway, above] {$Y_2 Y_3$} (g32);
+
+        % Annotate Isolated Topological Modes
+        \node[red, align=center] at (1, 1.4) {\textbf{Isolated}};
+        \draw[->, red, thick] (1, 1.2) -- (g02);
+
+        \node[red, align=center] at (9, 1.4) {\textbf{Isolated}};
+        \draw[->, red, thick] (9, 1.2) -- (g31);
+    \end{tikzpicture}
+    }
+    \end{center}
 \end{frame}
 
 
@@ -184,22 +225,46 @@
 \end{frame}
 
 
-\begin{frame}{Task 3: Measuring Topology via Basis Rotation}
-    \centering
-    \fbox{\begin{minipage}{0.6\textwidth}
-        \centering
-        \includegraphics[width=0.8\textwidth]{block3_Measurement.png}
-    \end{minipage}}
+
+
+\begin{frame}{Task 3: Basis Rotation via Hadamard Transform}
+    \begin{columns}[T]
+        
     
-    Hardware measures in $Z$-basis. Majoranas live in $X$-basis.
-    \begin{itemize}
-        \item \textbf{Observable ($X_0Z_1Z_2X_3$)}
-        \item \textbf{Hadamard ($H$) Gate:} Maps $X \to Z$.
-        \item Applied to $q_0$ and $q_3$ to extract the non-local correlation.
-    \end{itemize}
+        \begin{column}{0.4\textwidth}
+            \centering
+            \vspace{0.2cm}
+            \fbox{\begin{minipage}{\textwidth}
+                \centering
+                \includegraphics[width=0.95\textwidth]{block3_Measurement.png}
+            \end{minipage}}
+            
+            \vspace{0.4cm}
+            \textbf{Hardware Constraint:}\\
+            Superconducting qubits are strictly restricted to $Z$-basis projection. Majoranas require $X$-basis detection.
+        \end{column}
+        
+ 
+        \begin{column}{0.6\textwidth}
+            \small 
+            \textbf{Target Observable:} $\hat{O}_{corr} = -X_0Z_1Z_2X_3$
+            
+            \vspace{0.3cm}
+            \textbf{Algebraic Mapping ($H X H = Z$):} \\
+            \begin{align*}
+                H X H &= \frac{1}{\sqrt{2}} \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix} \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix} \frac{1}{\sqrt{2}} \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix} \\
+                &= \frac{1}{2} \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix} \begin{pmatrix} 1 & -1 \\ 1 & 1 \end{pmatrix} \\
+                &= \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix} \equiv Z
+            \end{align*}
+            
+            \vspace{-0.1cm}
+            \begin{itemize}
+                \item  $H$ is applied specifically to $q_0$ and $q_3$ to reconstruct the non-local string.
+            \end{itemize}
+        \end{column}
+        
+    \end{columns}
 \end{frame}
-
-
 
 
 
@@ -208,7 +273,7 @@
 
 \begin{frame}{Task 4: Numerical Evidence: The 1.0 Correlation}
     \centering
-    \fbox{\begin{minipage}{0.6\textwidth}
+    \fbox{\begin{minipage}{0.5\textwidth}
         \centering
         \includegraphics[width=0.8\textwidth]{block3_Correlation.png}
     \end{minipage}}
