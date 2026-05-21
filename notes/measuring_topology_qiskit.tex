@@ -129,4 +129,202 @@ Testing this framework at $L=4$ yields successful state preparation with fidelit
 
 As shown above, the non-local String Order Parameter remains robust in the topological phase but vanishes identically in the trivial phase, serving as a clear, detectable signature of the Kitaev chain's underlying topology on a quantum processor.
 
+\section{Week 5 Presentation Audit and Reconciliation}
+
+This section records the comparison between the Week 5 presentation
+(\texttt{presentation/week5/slides.tex}), the current note, the scripted
+implementation (\texttt{src/block3.py}), and the notebook used to generate the
+Week 5 presentation figures (\texttt{src/block3\_week5.ipynb}). The key point is
+that the Week 5 presentation is not a direct rendering of the broader
+\texttt{block3.py} workflow. It is a narrower, sweet-spot demonstration focused
+on gate-based measurement of a specific topological correlator.
+
+\subsection{What the Week 5 Presentation Actually Shows}
+
+The Week 5 deck is organized around four claims:
+\begin{enumerate}
+  \item Move from exact matrix math to gate-based simulation.
+  \item Prepare a ground state with a hardware-efficient VQE ansatz.
+  \item Identify the correct non-local string observable for the isolated edge
+        Majoranas.
+  \item Measure that observable by basis rotations and computational-basis
+        sampling.
+\end{enumerate}
+
+The presentation specializes to the topological sweet spot
+\begin{equation}
+  t=\Delta,\qquad \mu=0,
+\end{equation}
+where the Jordan-Wigner Hamiltonian reduces to
+\begin{equation}
+  H = \sum_{j=0}^{L-2} Y_jY_{j+1}.
+\end{equation}
+For $L=4$, the deck interprets this as a pure nearest-neighbor $YY$ coupling
+chain. In the Majorana picture used by the slides, these bonds leave two
+boundary Majoranas isolated, labelled there as $\gamma_{0,2}$ and
+$\gamma_{3,1}$. The central observable is therefore the boundary Majorana
+correlator
+\begin{equation}
+  i\gamma_{0,2}\gamma_{3,1}
+  = i(Y_0)(Z_0Z_1Z_2X_3)
+  = -X_0Z_1Z_2X_3.
+\end{equation}
+Up to the overall minus sign, the measured Pauli string is therefore
+\begin{equation}
+  O_{\mathrm{corr}} = X_0Z_1Z_2X_3.
+\end{equation}
+The measurement circuit applies Hadamards to qubits $0$ and $3$ so that the two
+$X$ factors are converted to $Z$-basis measurements:
+\begin{equation}
+  H X H = Z.
+\end{equation}
+The remaining $Z_1Z_2$ factors are already directly measurable in the
+computational basis. The reported numerical evidence is that local edge
+expectations such as $\langle Y_0\rangle$ vanish, while the non-local
+correlator has magnitude close to $1$.
+
+\subsection{What the Notebook Implements}
+
+The notebook \texttt{src/block3\_week5.ipynb} is the closest source to the Week
+5 figures. It does not implement the full $(\mu,t,\Delta)$ Hamiltonian used in
+\texttt{block3.py}. Instead, it builds the pure-YY Hamiltonian directly:
+\begin{equation}
+  H_{\mathrm{notebook}} = \sum_{j=0}^{L-2} Y_jY_{j+1},
+  \qquad L=4.
+\end{equation}
+The ansatz is a real hardware-efficient circuit:
+\begin{equation}
+  U(\theta)=\texttt{efficient\_su2}(L,\ \texttt{su2\_gates=['ry']},
+  \texttt{entanglement='linear'},\ \texttt{reps}=3).
+\end{equation}
+The optimizer is L-BFGS-B, not COBYLA. The cost function is also not just the
+physical energy. It adds a parity-selection term:
+\begin{equation}
+  C(\theta)=\langle H\rangle_\theta-\lambda\langle P\rangle_\theta,
+  \qquad
+  P=Z_0Z_1Z_2Z_3,\qquad \lambda=0.1.
+\end{equation}
+This explicitly biases the VQE result toward the even-parity sector. This is
+important because the topological sweet spot has a degenerate or nearly
+degenerate ground-state subspace. The notebook then checks the VQE state against
+the exact degenerate ground subspace:
+\begin{equation}
+  F_{\mathrm{subspace}}
+  = \sum_{n:\ E_n\approx E_0} |\langle E_n|\psi_{\mathrm{VQE}}\rangle|^2.
+\end{equation}
+This fidelity check is still exact diagonalization, but it is used as a
+small-system validation benchmark, not as the preparation method.
+
+The notebook measurement cell samples three observables with
+\texttt{AerSimulator} and \texttt{shots=8192}:
+\begin{align}
+  \langle Y_0\rangle,\\
+  \left\langle X_{L-1}\prod_{j=0}^{L-2}Z_j\right\rangle,\\
+  \left\langle X_0\left(\prod_{j=1}^{L-2}Z_j\right)X_{L-1}\right\rangle.
+\end{align}
+For $L=4$, the final observable is exactly
+\begin{equation}
+  \langle X_0Z_1Z_2X_3\rangle.
+\end{equation}
+This final correlator is the actual topological signature shown in the
+presentation.
+
+\subsection{Comparison with \texttt{block3.py}}
+
+The file \texttt{src/block3.py} is more general in intent, but it is not the
+same as the Week 5 notebook or slides.
+
+\begin{itemize}
+  \item \textbf{Hamiltonian:} \texttt{block3.py} constructs the full
+  Jordan-Wigner Hamiltonian
+  \[
+    H=-\frac{\mu}{2}\sum_j Z_j
+      +\frac{t-\Delta}{2}\sum_j X_jX_{j+1}
+      +\frac{t+\Delta}{2}\sum_j Y_jY_{j+1}.
+  \]
+  The notebook fixes the sweet spot and directly constructs only
+  $\sum_jY_jY_{j+1}$.
+
+  \item \textbf{Optimizer:} \texttt{block3.py} uses multi-start COBYLA. The
+  notebook uses a single L-BFGS-B run with a larger iteration budget.
+
+  \item \textbf{Parity handling:} \texttt{block3.py} handles degeneracy only
+  when evaluating fidelity, by summing overlap with the first two eigenstates
+  if they are nearly degenerate. The notebook adds the parity penalty directly
+  to the VQE cost function, so parity selection is part of optimization.
+
+  \item \textbf{Measured string:} \texttt{block3.py} measures a local
+  $\langle X_0\rangle$ and a string labelled
+  $\langle Y_{L-1}Z_{L-2}\cdots Z_0\rangle$. That is not the same observable
+  emphasized in the Week 5 deck. The deck and notebook emphasize the boundary
+  correlation
+  \[
+    \langle X_0Z_1\cdots Z_{L-2}X_{L-1}\rangle,
+  \]
+  which for $L=4$ is $\langle X_0Z_1Z_2X_3\rangle$.
+
+  \item \textbf{Scope of results:} \texttt{block3.py} aims to compare
+  topological, critical, and trivial points $(\mu=0,2t,3t)$. The notebook and
+  Week 5 deck only demonstrate the sweet-spot topological case and identify the
+  next task as sweeping $\mu$.
+\end{itemize}
+
+\subsection{Comparison with the Existing Notes}
+
+The earlier sections of these notes already contain the broad conceptual
+structure: use VQE for state preparation, avoid treating statevector loading as
+the final algorithm, and use shot-based sampling for observables. However, the
+Week 5 material refines several points:
+
+\begin{itemize}
+  \item The statement that the sweet-spot edge observables are simply
+  $X_0$ and $X_{L-1}$ is too local for the Week 5 demonstration. Single-edge
+  operators flip fermion parity, so their expectation value vanishes in a
+  parity eigenstate. The robust diagnostic is the parity-preserving two-edge
+  correlator.
+
+  \item The string observable in the shot-based sampling subsection should be
+  aligned with the deck when discussing Week 5:
+  \[
+    O_{\mathrm{Week\ 5}}
+    = X_0Z_1\cdots Z_{L-2}X_{L-1}.
+  \]
+  The earlier $Y_{L-1}Z_{L-2}\cdots Z_0$ string corresponds to a different
+  Majorana/string convention and is not the one used in the current
+  presentation.
+
+  \item The phrase ``exact diagonalization must be discarded'' should be read
+  carefully. ED should not be the state-preparation algorithm, but both
+  \texttt{block3.py} and the notebook still use ED as a small-$L$ validation
+  benchmark for fidelity. That is scientifically reasonable and should remain
+  allowed for validation.
+
+  \item The Week 5 presentation figure workflow is notebook-first. The PNG
+  figures used by the deck come from \texttt{src/block3\_week5.ipynb} and are
+  stored under \texttt{plots/block3\_*.png}, not from the PDF outputs generated
+  by the \texttt{block3.py} plot registry.
+\end{itemize}
+
+\subsection{Recommended Reconciliation}
+
+For the next Block 3 revision, the cleanest path is:
+\begin{enumerate}
+  \item Treat \texttt{src/block3\_week5.ipynb} and
+  \texttt{presentation/week5/slides.tex} as the Week 5 snapshot.
+  \item Refactor \texttt{src/block3.py} so it can reproduce the Week 5 sweet
+  spot first: pure $YY$ Hamiltonian, parity-penalized VQE, and measurement of
+  $X_0Z_1\cdots Z_{L-2}X_{L-1}$.
+  \item After that, extend the same circuit-measurement protocol to sweep
+  $\mu$ and recover the phase diagram from circuit-derived string correlations.
+  \item Keep exact diagonalization only as a validation path for small $L$:
+  energy checks, degenerate-subspace fidelity, and debugging of sign/string
+  conventions.
+\end{enumerate}
+
+With this reconciliation, the Week 5 deck becomes a valid proof-of-principle:
+it demonstrates that a VQE-prepared gate-level state can reveal topology through
+a parity-preserving non-local edge correlator. The broader \texttt{block3.py}
+workflow should then be adjusted to use the same correlator as its primary
+observable before attempting the full $\mu$ sweep.
+
 \end{document}
