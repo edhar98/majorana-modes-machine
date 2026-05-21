@@ -88,7 +88,6 @@ jobs:
           </html>
           HTML
 
-          cp web_output/index.html web_output/notes/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
