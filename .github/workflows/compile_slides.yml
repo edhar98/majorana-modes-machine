@@ -1,4 +1,4 @@
-name: Compile Weekly Slides
+name: Compile Slides and Notes
 on: [push]
 
 jobs:
@@ -8,24 +8,87 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Compile LaTeX
+      - name: Compile Presentation Slides
         uses: xu-cheng/latex-action@v3
         with:
-          # This finds all .tex files in your presentation subfolders
           root_file: presentation/**/slides.tex
           glob_root_file: true
-          # Crucial: runs compilation inside each week's folder so relative paths work
           work_in_root_file_dir: true
 
-      - name: Organize PDFs for Web
+      - name: Compile Notes
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: notes/*.tex
+          glob_root_file: true
+          work_in_root_file_dir: true
+
+      - name: Organize PDFs and Site Indexes
+        shell: bash
         run: |
-          mkdir -p web_output
-          # Find all generated PDFs and copy them to a flat folder for the web
-          # We rename them to week1.pdf, week2.pdf based on their parent folder
-          find presentation -name "*.pdf" | while read file; do
-            folder=$(basename $(dirname "$file"))
+          set -euo pipefail
+          mkdir -p web_output/notes
+          touch web_output/.nojekyll
+
+          find presentation -path "*/slides.pdf" | sort | while read -r file; do
+            folder=$(basename "$(dirname "$file")")
             cp "$file" "web_output/${folder}.pdf"
           done
+
+          find notes -maxdepth 1 -name "*.pdf" | sort | while read -r file; do
+            cp "$file" "web_output/notes/$(basename "$file")"
+          done
+
+          cat > web_output/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Majorana Modes in the Machine</title>
+            <style>
+              :root { color-scheme: light dark; }
+              body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem auto; max-width: 900px; padding: 0 1rem; line-height: 1.5; }
+              h1 { margin-bottom: 0.25rem; }
+              h2 { margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
+              ul { padding-left: 1.25rem; }
+              li { margin: 0.35rem 0; }
+              a { text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              .muted { color: #666; }
+            </style>
+          </head>
+          <body>
+            <h1>Majorana Modes in the Machine</h1>
+            <p class="muted">Seminar slides and notes generated from the repository.</p>
+            <h2>Presentations</h2>
+            <ul>
+          HTML
+
+          find web_output -maxdepth 1 -name 'week*.pdf' | sort -V | while read -r file; do
+            name=$(basename "$file" .pdf)
+            label="Week ${name#week}"
+            printf '              <li><a href="%s">%s slides</a></li>\n' "$(basename "$file")" "$label" >> web_output/index.html
+          done
+
+          cat >> web_output/index.html <<'HTML'
+            </ul>
+            <h2>Notes</h2>
+            <ul>
+          HTML
+
+          find web_output/notes -maxdepth 1 -name '*.pdf' | sort | while read -r file; do
+            base=$(basename "$file")
+            title=$(basename "$file" .pdf | tr '_' ' ')
+            printf '              <li><a href="notes/%s">%s</a></li>\n' "$base" "$title" >> web_output/index.html
+          done
+
+          cat >> web_output/index.html <<'HTML'
+            </ul>
+          </body>
+          </html>
+          HTML
+
+          cp web_output/index.html web_output/notes/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

@@ -1,6 +1,9 @@
-WEEKS := 1 2 3 4 5
+WEEKS := 1 2 3 4 5 6
 WEEK_TARGETS := $(addprefix week,$(WEEKS))
+WEEK_PDFS := $(addprefix presentation/week,$(addsuffix /slides.pdf,$(WEEKS)))
 CLEAN_TARGETS := $(addprefix clean-week,$(WEEKS))
+NOTE_TEX := $(wildcard notes/*.tex)
+NOTE_PDFS := $(NOTE_TEX:.tex=.pdf)
 PDFLATEX := pdflatex
 LATEX_FLAGS := -interaction=nonstopmode -halt-on-error
 
@@ -20,19 +23,34 @@ define delete_files
 endef
 endif
 
-.PHONY: all $(WEEK_TARGETS) clean $(CLEAN_TARGETS)
+.PHONY: all slides notes $(WEEK_TARGETS) clean clean-notes $(CLEAN_TARGETS)
 
-all: $(WEEK_TARGETS)
+all: slides notes
 
-define week_rule
-week$(1): presentation/week$(1)/slides.tex
-	$(CD) $(call native_path,presentation/week$(1)) && $(PDFLATEX) $(LATEX_FLAGS) slides.tex
-	$(CD) $(call native_path,presentation/week$(1)) && $(PDFLATEX) $(LATEX_FLAGS) slides.tex
+slides: $(WEEK_PDFS)
 
-presentation/week$(1)/slides.pdf: presentation/week$(1)/slides.tex
-	$(CD) $(call native_path,presentation/week$(1)) && $(PDFLATEX) $(LATEX_FLAGS) slides.tex
-	$(CD) $(call native_path,presentation/week$(1)) && $(PDFLATEX) $(LATEX_FLAGS) slides.tex
+notes: $(NOTE_PDFS)
 
+$(foreach week,$(WEEKS),$(eval week$(week): presentation/week$(week)/slides.pdf))
+
+presentation/week%/slides.pdf: presentation/week%/slides.tex
+	$(CD) $(call native_path,presentation/week$*) && $(PDFLATEX) $(LATEX_FLAGS) slides.tex
+	$(CD) $(call native_path,presentation/week$*) && $(PDFLATEX) $(LATEX_FLAGS) slides.tex
+
+presentation/week%/slides.tex:
+	@echo "No slides.tex found for week$*"
+	@exit 1
+
+notes/%.pdf: notes/%.tex
+	$(CD) notes && $(PDFLATEX) $(LATEX_FLAGS) $*.tex
+	$(CD) notes && $(PDFLATEX) $(LATEX_FLAGS) $*.tex
+
+clean: $(CLEAN_TARGETS) clean-notes
+
+clean-notes:
+	$(call delete_files, notes/*.aux notes/*.log notes/*.out notes/*.toc)
+
+define clean_week_rule
 clean-week$(1):
 	$(call delete_files,\
 		presentation/week$(1)/slides.aux \
@@ -44,10 +62,4 @@ clean-week$(1):
 		presentation/week$(1)/slides.vrb)
 endef
 
-$(foreach week,$(WEEKS),$(eval $(call week_rule,$(week))))
-
-presentation/week%/slides.tex:
-	@echo "No slides.tex found for week$*"
-	@exit 1
-
-clean: $(CLEAN_TARGETS)
+$(foreach week,$(WEEKS),$(eval $(call clean_week_rule,$(week))))
