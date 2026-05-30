@@ -36,7 +36,20 @@ Week 6 turns this single-point demonstration into a phase diagnostic. The parame
 \end{quote}
 
 This is still part of Block 3, not yet the full Block 4 noise study. The role of Week 6 is to define the ideal observable curve that later noisy-circuit simulations should be compared against.
+\section{From Week 5 to Week 6: What Changes Conceptually}
 
+Week 5 established that topology can be detected after Jordan--Wigner mapping using a non-local Pauli string evaluated on a single fine-tuned point in parameter space. However, that result does not yet demonstrate phase identification.
+
+Week 6 changes the question from:
+\begin{quote}
+``Does the observable work at a special point?''
+\end{quote}
+to:
+\begin{quote}
+``Does the observable reconstruct the full phase diagram?''
+\end{quote}
+
+This shift is essential: a topological phase is not defined by a single eigenstate property but by stability across a region in parameter space.
 \section{Qubit Hamiltonian Used in the Sweep}
 
 The Jordan-Wigner mapping gives the open-chain qubit Hamiltonian
@@ -89,6 +102,39 @@ which is the same Pauli string emphasized in the Week 5 deck, up to an overall s
 \begin{equation}
   |\langle O_{\mathrm{edge}}\rangle|.
 \end{equation}
+\section{Local Order vs Topological Order}
+
+A useful comparison is the transverse-field Ising model.
+
+\subsection*{Ising Model (Symmetry Breaking)}
+The Ising antiferromagnet is characterized by a local order parameter:
+\begin{equation}
+  \langle \sigma_i^z \rangle.
+\end{equation}
+
+Its phase transition is understood as spontaneous breaking of a $\mathbb{Z}_2$ symmetry. The key feature is that:
+\begin{itemize}
+  \item the order parameter is local,
+  \item the phase is directly visible in single-site observables,
+  \item correlations reflect domain structure.
+\end{itemize}
+
+\subsection*{Kitaev Chain (Topological Order)}
+In contrast, the Kitaev chain:
+\begin{itemize}
+  \item has no local order parameter,
+  \item preserves fermion parity in both phases,
+  \item encodes its phase in boundary correlations.
+\end{itemize}
+
+The relevant observable is non-local:
+\begin{equation}
+  \langle X_0 Z_1 \cdots Z_{L-2} X_{L-1} \rangle.
+\end{equation}
+
+\subsection*{Key Difference}
+Ising order is detected locally through symmetry breaking.  
+Kitaev order is detected globally through topology and edge coherence.
 
 \section{Measurement Protocol}
 
@@ -123,7 +169,27 @@ with standard error
   \approx \sqrt{\frac{1-\langle O\rangle^2}{N}}.
 \end{equation}
 The Week 6 script uses a binomial sampling model with $N=4096$ shots to emulate this final measurement layer.
+\section{Finite-Size and Observable Dependence}
 
+\subsection*{Finite-size effects}
+In small systems, the sharp phase transition at $|\mu|=2t$ becomes a smooth crossover. As system size increases:
+\begin{itemize}
+  \item the crossover sharpens,
+  \item the topological regime becomes better defined,
+  \item edge coherence becomes more stable.
+\end{itemize}
+
+\subsection*{Local vs non-local observables}
+Local operators such as $\langle Z_0 \rangle$ show weak sensitivity to the phase transition. In contrast, the non-local string operator:
+\begin{equation}
+  \langle X_0 Z_1 \cdots X_{L-1} \rangle
+\end{equation}
+exhibits a sharp distinction between phases.
+
+This highlights a key principle:
+\begin{quote}
+Topology is not detectable by local probes alone.
+\end{quote}
 \section{Validation Path Used in the Current Script}
 
 The current Week 6 implementation is in \texttt{src/block3\_week6.py}. It is intentionally a validation script rather than the final hardware-style VQE sweep. For each $\mu$ value it:
@@ -159,7 +225,32 @@ The expected qualitative behavior is:
 \end{itemize}
 
 The left panel therefore gives the measurement-side signature, while the right panel gives a spectrum-side check from the qubit Hamiltonian. The point of the figure is not that exact diagonalization is the final algorithm. The point is that the chosen Pauli string carries the same phase information as the more traditional parity-gap diagnostic.
+\section{Physical Interpretation of the Numerical Results}
 
+The numerical sweep encodes three distinct regimes:
+
+\subsection*{Topological phase ($|\mu| < 2t$)}
+\begin{itemize}
+  \item Majorana edge modes remain spatially separated.
+  \item The non-local string remains finite.
+  \item Edge-to-edge coherence is preserved.
+\end{itemize}
+
+\subsection*{Critical point ($|\mu| \approx 2t$)}
+\begin{itemize}
+  \item Bulk gap closes.
+  \item Correlation length diverges.
+  \item The system becomes highly sensitive to finite-size effects.
+\end{itemize}
+
+\subsection*{Trivial phase ($|\mu| > 2t$)}
+\begin{itemize}
+  \item Edge modes hybridize locally.
+  \item Non-local correlations vanish.
+  \item The string expectation collapses to zero.
+\end{itemize}
+
+This structure explains why the non-local correlator acts as a phase diagnostic.
 \section{Connection to VQE}
 
 The final Block 3 version should replace the exact even-parity eigenstate in the sweep with a VQE-prepared state
@@ -183,7 +274,18 @@ After optimization, the same Pauli-string measurement protocol estimates
 \end{equation}
 
 The small-$L$ exact curve from Week 6 should be kept as a benchmark. It can answer whether VQE error, shot noise, or sign/string-convention mistakes are responsible when the circuit curve deviates from the expected phase diagram.
+\section{Robustness Against Noise (Conceptual Outlook)}
 
+Although Week 6 is formulated in an ideal setting, the observable is already structured for hardware implementation.
+
+Expected effects of noise:
+\begin{itemize}
+  \item reduction of contrast in $\langle O_{\mathrm{edge}} \rangle$,
+  \item smoothing of the phase boundary,
+  \item but preservation of qualitative separation between phases for moderate noise.
+\end{itemize}
+
+This motivates Block 4, where depolarizing and readout noise models will be explicitly included in the circuit-level simulation.
 \section{Bridge to Block 4}
 
 Block 4 will ask whether this diagnostic survives realistic near-term hardware effects. The Week 6 curve defines the ideal reference. The natural Block 4 extensions are:
