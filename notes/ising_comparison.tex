@@ -1,0 +1,371 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\geometry{margin=2.5cm}
+
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle#1|}
+
+\title{Antiferromagnetic Ising Model vs the Kitaev-Chain Qubit Hamiltonian}
+\author{Seminar notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Purpose}
+
+The Jordan-Wigner mapping turns the Kitaev chain into a spin-chain Hamiltonian.
+At first sight this can look similar to an Ising model, especially at the
+sweet spot $t=\Delta$, where only one two-qubit coupling remains. These notes
+clarify the relationship between a standard antiferromagnetic Ising model and
+the qubit Hamiltonian used in this project.
+
+The main message is:
+\begin{quote}
+  The Kitaev-chain qubit Hamiltonian can be written as an Ising-like spin
+  model, but its physical interpretation is not the same as an ordinary
+  antiferromagnet. The spin variables are a fermionic encoding, and the
+  topological information appears most naturally in parity sectors and
+  non-local strings.
+\end{quote}
+
+\section{Background: Ising Spins, Operators, and Eigenstates}
+
+The Ising model starts from a very simple local degree of freedom: each site has
+a two-state variable. In the classical model this variable is written as
+\begin{equation}
+  S_j = \pm 1.
+\end{equation}
+One may call $S_j=+1$ ``spin up'' and $S_j=-1$ ``spin down'', but the important
+point is only that every site has two possible values.
+
+In the quantum version, the two states at site $j$ become a two-dimensional
+Hilbert space. We usually choose the $Z$ basis
+\begin{equation}
+  \ket{\uparrow}_j = \ket{0}_j,
+  \qquad
+  \ket{\downarrow}_j = \ket{1}_j,
+\end{equation}
+with
+\begin{equation}
+  Z_j\ket{\uparrow}_j=+\ket{\uparrow}_j,
+  \qquad
+  Z_j\ket{\downarrow}_j=-\ket{\downarrow}_j.
+\end{equation}
+Thus the classical variable $S_j$ is represented by the eigenvalue of the Pauli
+operator $Z_j$:
+\begin{equation}
+  S_j \longleftrightarrow Z_j.
+\end{equation}
+
+If we use physical spin-$\frac{1}{2}$ operators, they are related to Pauli
+matrices by
+\begin{equation}
+  S_j^\alpha = \frac{\hbar}{2}\sigma_j^\alpha,
+  \qquad \alpha=x,y,z.
+\end{equation}
+In quantum-information notation we usually set $\hbar=1$ and write the
+Hamiltonian directly with Pauli matrices $X,Y,Z$. This absorbs factors of
+$1/2$ into the coupling constants. For example,
+\begin{equation}
+  J_z S_j^z S_{j+1}^z
+  = \frac{J_z\hbar^2}{4} Z_jZ_{j+1}.
+\end{equation}
+So when these notes write $JZ_jZ_{j+1}$, $J$ is the effective Pauli-basis
+coupling, not necessarily the microscopic spin-coupling constant before the
+$S^z=(\hbar/2)Z$ conversion.
+For a chain of $L$ spins, the computational basis states are tensor products
+\begin{equation}
+  \ket{s_0s_1\cdots s_{L-1}}
+  = \ket{s_0}\otimes\ket{s_1}\otimes\cdots\otimes\ket{s_{L-1}},
+\end{equation}
+where each $s_j$ is either $\uparrow$ or $\downarrow$.
+
+\subsection{Two-spin bond energies}
+
+The elementary Ising interaction is one bond:
+\begin{equation}
+  H_{j,j+1}=J Z_jZ_{j+1}.
+\end{equation}
+Because $Z_jZ_{j+1}$ is diagonal in the $Z$ basis, the four two-spin basis
+states are already eigenstates:
+\begin{align}
+  Z_jZ_{j+1}\ket{\uparrow\uparrow} &= +\ket{\uparrow\uparrow}, \\
+  Z_jZ_{j+1}\ket{\downarrow\downarrow} &= +\ket{\downarrow\downarrow}, \\
+  Z_jZ_{j+1}\ket{\uparrow\downarrow} &= -\ket{\uparrow\downarrow}, \\
+  Z_jZ_{j+1}\ket{\downarrow\uparrow} &= -\ket{\downarrow\uparrow}.
+\end{align}
+Therefore the bond energies are
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+State & $Z_jZ_{j+1}$ eigenvalue & Bond energy \\
+\midrule
+$\ket{\uparrow\uparrow}$ & $+1$ & $+J$ \\
+$\ket{\downarrow\downarrow}$ & $+1$ & $+J$ \\
+$\ket{\uparrow\downarrow}$ & $-1$ & $-J$ \\
+$\ket{\downarrow\uparrow}$ & $-1$ & $-J$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+For an antiferromagnet, $J>0$, so the lower-energy bond states are
+\begin{equation}
+  \ket{\uparrow\downarrow},\qquad \ket{\downarrow\uparrow}.
+\end{equation}
+For a ferromagnet, $J<0$, so the lower-energy bond states are
+\begin{equation}
+  \ket{\uparrow\uparrow},\qquad \ket{\downarrow\downarrow}.
+\end{equation}
+This sign convention is why the antiferromagnetic Ising model is usually written
+with $J>0$ in $J\sum Z_jZ_{j+1}$.
+
+\subsection{Many-spin eigenstates without a transverse field}
+
+For
+\begin{equation}
+  H_0=J\sum_{j=0}^{L-2}Z_jZ_{j+1},
+\end{equation}
+every computational-basis product state is an eigenstate, because all bond
+operators commute:
+\begin{equation}
+  [Z_jZ_{j+1},Z_kZ_{k+1}]=0.
+\end{equation}
+If a configuration has $N_{\mathrm{same}}$ aligned bonds and
+$N_{\mathrm{opp}}$ opposite bonds, its energy is
+\begin{equation}
+  E=J(N_{\mathrm{same}}-N_{\mathrm{opp}}),
+  \qquad
+  N_{\mathrm{same}}+N_{\mathrm{opp}}=L-1.
+\end{equation}
+For $J>0$, minimizing the energy means maximizing $N_{\mathrm{opp}}$.
+On an open chain this gives the two staggered ground states
+\begin{equation}
+  \ket{\uparrow\downarrow\uparrow\downarrow\cdots},
+  \qquad
+  \ket{\downarrow\uparrow\downarrow\uparrow\cdots},
+\end{equation}
+with ground-state energy
+\begin{equation}
+  E_0=-J(L-1).
+\end{equation}
+A domain wall is a local defect where one bond fails to alternate; each such
+bad bond changes its contribution from $-J$ to $+J$, costing
+\begin{equation}
+  \Delta E_{\text{bad bond}}=2J.
+\end{equation}
+
+\subsection{What the transverse field changes}
+
+The transverse-field Ising model adds a term such as
+\begin{equation}
+  -h\sum_j X_j.
+\end{equation}
+This term is not diagonal in the $Z$ basis, because
+\begin{equation}
+  X_j\ket{\uparrow}_j=\ket{\downarrow}_j,
+  \qquad
+  X_j\ket{\downarrow}_j=\ket{\uparrow}_j.
+\end{equation}
+Therefore the product states that were exact eigenstates of $H_0$ are no longer
+exact eigenstates when $h\neq 0$. The transverse field flips spins and creates
+quantum superpositions of different classical configurations. The competition
+between $J$ and $h$ is the source of the quantum phase transition.
+
+\section{Reference Model: The Antiferromagnetic Ising Chain}
+
+A classical nearest-neighbor Ising chain is often written as
+\begin{equation}
+  H_{\mathrm{Ising}}
+  = J\sum_{j=0}^{L-2} S_j S_{j+1},
+  \qquad S_j=\pm 1.
+\end{equation}
+For $J>0$, neighboring spins prefer opposite signs:
+\begin{equation}
+  S_jS_{j+1}=-1.
+\end{equation}
+Thus the two classical ground-state patterns are the two staggered
+configurations
+\begin{equation}
+  (+,-,+,-,\ldots), \qquad (-,+,-,+,\ldots).
+\end{equation}
+The order parameter is local after including the alternating sign:
+\begin{equation}
+  m_{\mathrm{stag}}
+  = \frac{1}{L}\sum_{j=0}^{L-1}(-1)^j S_j.
+\end{equation}
+
+The quantum transverse-field antiferromagnetic Ising chain is commonly written
+as
+\begin{equation}
+  H_{\mathrm{AFI}}
+  = J\sum_{j=0}^{L-2} Z_jZ_{j+1}
+    - h\sum_{j=0}^{L-1} X_j,
+  \qquad J>0.
+\end{equation}
+Here the $Z_jZ_{j+1}$ term favors staggered $Z$-basis order, while the
+transverse field $X_j$ creates quantum fluctuations. The transition is between
+an ordered antiferromagnetic phase and a disordered paramagnetic phase. In this
+model, the natural diagnostic is still local or nearly local: staggered
+magnetization and spin-spin correlations in the ordering direction.
+
+\section{Our Qubit Hamiltonian}
+
+The Jordan-Wigner transform maps the open Kitaev chain to
+\begin{equation}
+  H_K
+  =
+  -\frac{\mu}{2}\sum_{j=0}^{L-1} Z_j
+  +\frac{t-\Delta}{2}\sum_{j=0}^{L-2} X_jX_{j+1}
+  +\frac{t+\Delta}{2}\sum_{j=0}^{L-2} Y_jY_{j+1}.
+  \label{eq:kitaev-qubit}
+\end{equation}
+This is a transverse-field anisotropic $XY$ chain, not a generic
+$Z_jZ_{j+1}$ Ising chain. The spin operators in Eq.~\eqref{eq:kitaev-qubit}
+encode fermion occupation and fermion parity. In particular,
+\begin{equation}
+  n_j=c_j^\dagger c_j=\frac{I-Z_j}{2},
+  \qquad
+  P=\prod_{j=0}^{L-1}Z_j.
+\end{equation}
+The $Z$ field is the chemical-potential term, not an external magnetic field
+acting on physical spins.
+
+At the sweet spot $t=\Delta$, the $XX$ coupling cancels:
+\begin{equation}
+  H_K(t=\Delta)
+  =
+  -\frac{\mu}{2}\sum_j Z_j
+  +t\sum_{j=0}^{L-2}Y_jY_{j+1}.
+  \label{eq:sweet-spot}
+\end{equation}
+At $\mu=0$, this becomes a pure nearest-neighbor $YY$ model:
+\begin{equation}
+  H_K(t=\Delta,\mu=0)
+  =
+  t\sum_{j=0}^{L-2}Y_jY_{j+1}.
+  \label{eq:pure-yy}
+\end{equation}
+Since $t>0$ in our conventions, each $Y_jY_{j+1}$ bond energetically prefers
+opposite $Y$ eigenvalues. In this narrow algebraic sense, the sweet-spot
+Hamiltonian is antiferromagnetic in the $Y$ basis.
+
+\section{Why the Similarity Is Limited}
+
+\subsection{The ordering direction is different}
+
+The standard antiferromagnetic Ising chain has an interaction $Z_jZ_{j+1}$ and
+therefore orders in the $Z$ basis. Our sweet-spot Hamiltonian has
+$Y_jY_{j+1}$ interactions. A single-qubit basis rotation can map $Y$ to $Z$:
+\begin{equation}
+  R_x\!\left(\frac{\pi}{2}\right) Y R_x^\dagger\!\left(\frac{\pi}{2}\right)=Z.
+\end{equation}
+After such a rotation, Eq.~\eqref{eq:pure-yy} looks like an Ising coupling.
+However, this is a basis change inside the qubit encoding. It does not turn the
+Majorana system into an ordinary magnetic material.
+
+\subsection{The field term has a fermionic meaning}
+
+In the transverse-field Ising model, the field competes with spin order. In the
+Kitaev-chain qubit Hamiltonian, the $Z$ term comes from the chemical potential:
+\begin{equation}
+  -\mu c_j^\dagger c_j
+  \mapsto
+  -\frac{\mu}{2}Z_j
+  \quad
+  \text{up to a constant convention.}
+\end{equation}
+Changing $\mu$ changes the fermion filling tendency and drives the system
+through the topological transition at
+\begin{equation}
+  |\mu|=2t.
+\end{equation}
+Thus the same-looking transverse field has a different microscopic origin.
+
+\subsection{The diagnostic is not local staggered magnetization}
+
+An antiferromagnetic Ising phase can be detected by local staggered order:
+\begin{equation}
+  \langle (-1)^j Z_j\rangle \neq 0
+  \quad
+  \text{or}
+  \quad
+  \langle Z_iZ_j\rangle \sim (-1)^{i-j}.
+\end{equation}
+The Kitaev chain, by contrast, is a topological superconducting phase. In a
+fixed-parity eigenstate, single-edge Majorana operators flip parity and have
+zero expectation value. The robust observable is a parity-preserving non-local
+string, for example
+\begin{equation}
+  O_{\mathrm{edge}}
+  =
+  X_0Z_1\cdots Z_{L-2}X_{L-1}.
+\end{equation}
+For $L=4$, this is
+\begin{equation}
+  O_{\mathrm{edge}}=X_0Z_1Z_2X_3.
+\end{equation}
+This is the central difference for the seminar: the Ising antiferromagnet is
+organized by conventional symmetry breaking, while the Kitaev phase is
+diagnosed through parity, edge-mode degeneracy, and non-local strings.
+
+\section{Comparison Table}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.22\linewidth}p{0.33\linewidth}p{0.36\linewidth}}
+\toprule
+Feature & Antiferromagnetic Ising chain & Kitaev-chain qubit Hamiltonian \\
+\midrule
+Typical form
+& $J\sum Z_jZ_{j+1}-h\sum X_j$
+& $-\frac{\mu}{2}\sum Z_j+\frac{t-\Delta}{2}\sum XX+\frac{t+\Delta}{2}\sum YY$ \\[3pt]
+Coupling sign
+& $J>0$ favors opposite neighboring spins
+& $t>0$ at $t=\Delta$ favors opposite $Y$ eigenvalues \\[3pt]
+Order
+& staggered local spin order
+& topological edge correlations \\[3pt]
+Natural diagnostic
+& staggered magnetization
+& parity gap and non-local string order \\[3pt]
+Degrees of freedom
+& physical or effective spins
+& qubits encoding fermions via Jordan-Wigner \\[3pt]
+Phase transition
+& symmetry-breaking transition
+& topological transition at $|\mu|=2t$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Gauge and Sign Conventions}
+
+The word ``antiferromagnetic'' depends on both the coupling sign and the chosen
+spin basis. For a two-site Pauli coupling
+\begin{equation}
+  H=J_\alpha\sum_j \sigma_j^\alpha\sigma_{j+1}^\alpha,
+\end{equation}
+$J_\alpha>0$ favors opposite eigenvalues of $\sigma^\alpha$, while
+$J_\alpha<0$ favors equal eigenvalues. In one dimension, some sign changes can
+also be moved around by staggered basis rotations. Therefore, calling
+Eq.~\eqref{eq:pure-yy} ``antiferromagnetic in the $Y$ basis'' is a statement
+about the qubit Hamiltonian's algebraic form, not the main physical content of
+the Kitaev phase.
+
+\section{Takeaway}
+
+The sweet-spot Kitaev-chain Hamiltonian resembles an antiferromagnetic Ising
+chain after choosing the appropriate spin basis:
+\begin{equation}
+  H_K(t=\Delta,\mu=0)=t\sum_jY_jY_{j+1}.
+\end{equation}
+But the project should not present the physics as ordinary antiferromagnetism.
+The qubits encode fermions, $Z$ measures local occupation parity, and the
+important phase information is not a local staggered magnetization. It is the
+topological structure: nearly degenerate parity sectors, Majorana edge modes,
+and non-local strings such as $X_0Z_1\cdots Z_{L-2}X_{L-1}$.
+
+\end{document}
