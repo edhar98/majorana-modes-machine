@@ -105,366 +105,73 @@
 \end{frame}
 
 % ----------------------------------------------------------------------------
-\begin{frame}{Ising vs Kitaev: What is the Order?}
-
-\begin{columns}[T]
-
-\begin{column}{0.48\textwidth}
-\textbf{Ising (Symmetry Breaking)}
-
-\begin{itemize}
-  \item Order parameter: $\langle \sigma^z \rangle$
-  \item Phase defined by symmetry breaking
-  \item Local correlations detect the phase
-  \item Excitations are domain walls
-\end{itemize}
-
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\textbf{Kitaev Chain (Topology)}
-
-\begin{itemize}
-  \item No local order parameter
-  \item Phase defined globally
-  \item Edge modes encode information
-  \item Excitations are fermionic quasiparticles
-\end{itemize}
-
-\end{column}
-
-\end{columns}
-
-\begin{block}{Key Difference}
-Ising phases are local and symmetry-based.  
-Kitaev phases are global and information-based.
-\end{block}
-
-\end{frame}
-% ----------------------------------------------------------------------------
-
-\begin{frame}{Why Local Probes Fail in the Kitaev Chain}
-
-\begin{block}{Ising intuition works because}
-\begin{itemize}
-  \item Local magnetization captures the phase
-  \item Order parameter is directly measurable
-\end{itemize}
-\end{block}
-
-\begin{block}{But in Kitaev systems}
-\begin{itemize}
-  \item All bulk phases look locally similar (gapped)
-  \item No local observable distinguishes topology
-  \item Edge physics is invisible to local measurements
-\end{itemize}
-\end{block}
-
-\begin{alertblock}{Conclusion}
-A non-local observable is required to access topology experimentally.
-\end{alertblock}
-
-\end{frame}
-
-% ----------------------------------------------------------------------------
-
-% \begin{frame}{Symmetry Breaking vs Topology}
-
-% \centering
-
-% % ================= HAMILTONIANS =================
-% \begin{columns}
-% \begin{column}{0.48\textwidth}
-% \centering
-% \small
-% \textbf{Ising Hamiltonian}
-% \[
-% H = J\sum_i Z_i Z_{i+1} - h\sum_i X_i
-% \]
-% \end{column}
-
-% \begin{column}{0.48\textwidth}
-% \centering
-% \small
-% \textbf{Kitaev (JW qubit form)}
-% \[
-% H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j  
-% \]
-% \end{column}
-% \end{columns}
-
-% \vspace{0.2cm}
-
-% \begin{columns}[T]
-
-% % ================= ISING =================
-% \begin{column}{0.48\textwidth}
-
-% \centering
-% \textbf{Ising Chain}
-
-% \vspace{0.1cm}
-
-% \begin{columns}
-% \begin{column}{0.48\textwidth}
-% \centering
-% \textbf{Ordered}
-
-% \begin{tikzpicture}[scale=0.55]
-% \foreach \x in {0,1,2,3,4}{
-%   \draw[fill=blue!20] (\x,0) circle (0.17);
-%   \draw[->,thick] (\x,0) -- (\x,0.5);
-% }
-% \end{tikzpicture}
-
-% \vspace{0.05cm}
-% $\langle \sigma^z \rangle \neq 0$
-
-% \end{column}
-
-% \begin{column}{0.48\textwidth}
-% \centering
-% \textbf{Disordered}
-
-% \begin{tikzpicture}[scale=0.55]
-% \foreach \x in {0,1,2,3,4}{
-%   \draw[fill=blue!20] (\x,0) circle (0.17);
-% }
-% \draw[->,thick] (0,0)--(0,0.5);
-% \draw[->,thick] (1,0)--(1,-0.5);
-% \draw[->,thick] (2,0)--(2,0.5);
-% \draw[->,thick] (3,0)--(3,-0.5);
-% \draw[->,thick] (4,0)--(4,0.5);
-% \end{tikzpicture}
-
-% \vspace{0.05cm}
-% $\langle \sigma^z \rangle = 0$
-
-% \end{column}
-% \end{columns}
-
-% \end{column}
-
-% % ================= KITAEV =================
-% \begin{column}{0.48\textwidth}
-
-% \centering
-% \textbf{Kitaev Chain}
-
-% \vspace{0.1cm}
-
-% \begin{columns}
-
-% \begin{column}{0.48\textwidth}
-% \centering
-% \textbf{Trivial}
-
-% \begin{tikzpicture}[scale=0.55]
-% \foreach \x in {0,1,2,3,4}{
-%   \draw[fill=gray!20] (\x,0) circle (0.17);
-%   \draw[thick] (\x,0) -- ++(0.8,0);
-% }
-% \end{tikzpicture}
-
-% \vspace{0.05cm}
-% $|\mu|>2t$
-
-% \end{column}
-
-% \begin{column}{0.48\textwidth}
-% \centering
-% \textbf{Topological}
-
-% \begin{tikzpicture}[scale=0.55]
-
-% \foreach \x in {0,1,2,3,4}{
-%   \draw[fill=gray!20] (\x,0) circle (0.17);
-% }
-
-% \draw[fill=red!70] (0,0) circle (0.23);
-% \draw[fill=red!70] (5,0) circle (0.23);
-
-% \draw[dashed,thick]
-% (0.2,0.35) .. controls (2,0.9) .. (3.8,0.35);
-
-% \end{tikzpicture}
-
-% \vspace{0.05cm}
-% $|\mu|<2t$
-
-% \end{column}
-
-% \end{columns}
-
-% \end{column}
-
-% \end{columns}
-
-% \end{frame}
-% ----------------------------------------------------------------------------
 \begin{frame}{Symmetry Breaking vs Topology}
-
-\centering
-
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\centering
 \small
-\textbf{Ising Hamiltonian}
-\[
-H = J\sum_i Z_i Z_{i+1} - h\sum_i X_i
-\]
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\centering
-\small
-\textbf{Kitaev (JW qubit form)}
-\[
-H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j  
-\]
-\end{column}
-\end{columns}
-
-\vspace{0.2cm}
-
 \begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{AFM transverse-field Ising chain}
+    \[
+      H = J\sum_j Z_jZ_{j+1} - h\sum_j X_j,\quad J>0
+    \]
 
-% ================= ISING =================
-\begin{column}{0.48\textwidth}
+    \begin{tikzpicture}[scale=0.52]
+      \foreach \x in {0,1,2,3,4}{\draw[fill=blue!15] (\x,0) circle (0.18);}
+      \draw[->,thick] (0,0)--(0,0.55);
+      \draw[->,thick] (1,0)--(1,-0.55);
+      \draw[->,thick] (2,0)--(2,0.55);
+      \draw[->,thick] (3,0)--(3,-0.55);
+      \draw[->,thick] (4,0)--(4,0.55);
+    \end{tikzpicture}
 
-\centering
-\textbf{Ising Chain}
+    \vspace{0.35cm}
+
+    \[
+      m_{\mathrm{stag}}=\frac{1}{L}\sum_j(-1)^j Z_j\neq0
+    \]
+    \footnotesize Two locally distinguishable Neel states; local domain-wall excitations.
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{Kitaev chain at $t=\Delta$}
+    \[
+      H = t\sum_jY_jY_{j+1}-\frac{\mu}{2}\sum_jZ_j
+    \]
+
+    \begin{tikzpicture}[scale=0.5]
+      \foreach \x in {0,1,2,3,4,5,6,7,8}{\draw[fill=gray!15] (\x,0) circle (0.18);}
+      \draw[thick] (1,0)--(2,0);
+      \draw[thick] (3,0)--(4,0);
+      \draw[thick] (5,0)--(6,0);
+      \draw[thick] (7,0)--(8,0);
+      \draw[fill=red!65] (0,0) circle (0.24);
+      \draw[fill=red!65] (9,0) circle (0.24);
+      \draw[dashed,thick,red!70] (0.2,0.35) .. controls (4.5,0.9) .. (8.8,0.35);
+    \end{tikzpicture}
+
+    \begin{tikzpicture}[scale=0.5]
+    \foreach \x in {0,1,2,3,4,5,6,7,8,9}
+    {
+      \draw[fill=gray!20] (\x,0) circle (0.18);
+    }
+    \draw[thick] (0,0)--(1,0);
+    \draw[thick] (2,0)--(3,0);
+    \draw[thick] (4,0)--(5,0);
+    \draw[thick] (6,0)--(7,0);
+    \draw[thick] (8,0)--(9,0);
+    \end{tikzpicture}
+
+    \[
+      P=\prod_j Z_j,\quad O_{\mathrm{edge}}=X_0Z\cdots ZX_{L-1}
+    \]
+    \footnotesize Low-energy states differ by parity; Majorana edge degeneracy is non-local.
+  \end{column}
+\end{columns}
 
 \vspace{0.1cm}
-
-\begin{columns}
-
-\begin{column}{0.48\textwidth}
-\centering
-
-\vspace{0.2cm}
-\textbf{Ordered}
-
-\vspace{0.4cm}
-
-\begin{tikzpicture}[scale=0.6]
-\foreach \x in {0,1,2,3,4}{
-  \draw[fill=blue!20] (\x,0) circle (0.18);
-  \draw[->,thick] (\x,0) -- (\x,0.55);
-}
-\end{tikzpicture}
-
-\[
-\langle \sigma^z \rangle \neq 0
-\]
-
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\centering
-
-\vspace{0.3cm}
-\textbf{Disordered}
-
-\vspace{0.4cm}
-
-\begin{tikzpicture}[scale=0.6]
-\foreach \x in {0,1,2,3,4}
-  \draw[fill=blue!20] (\x,0) circle (0.18);
-
-\draw[->,thick] (0,0)--(0,0.55);
-\draw[->,thick] (1,0)--(1,-0.55);
-\draw[->,thick] (2,0)--(2,0.55);
-\draw[->,thick] (3,0)--(3,-0.55);
-\draw[->,thick] (4,0)--(4,0.55);
-\end{tikzpicture}
-
-\[
-\langle \sigma^z \rangle = 0
-\]
-
-\end{column}
-
-\end{columns}
-
-\end{column}
-
-% ================= KITAEV =================
-\begin{column}{0.48\textwidth}
-
-\centering
-\textbf{Kitaev Chain}
-
-\vspace{0.2cm}
-
-\begin{columns}
-
-\begin{column}{0.48\textwidth}
-\centering
-
-\vspace{0.2cm}
-\textbf{Trivial}
-
-\vspace{0.4cm}
-
-\begin{tikzpicture}[scale=0.6]
-\foreach \x in {0,1,2,3,4,5}
-{
-  \draw[fill=gray!20] (\x,0) circle (0.18);
-}
-\draw[thick] (0,0)--(1,0);
-\draw[thick] (2,0)--(3,0);
-\draw[thick] (4,0)--(5,0);
-\end{tikzpicture}
-
-\vspace{0.2cm}
-\[
-|\mu|>2t
-\]
-
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\centering
-
-\vspace{0.2cm}
-
-\textbf{Topological}
-
-\vspace{0.3cm}
-
-\begin{tikzpicture}[scale=0.6]
-\foreach \x in {0,1,2,3,4,5}
-{
-  \draw[fill=gray!20] (\x,0) circle (0.18);
-}
-
-\draw[fill=red!70] (0,0) circle (0.25);
-\draw[fill=red!70] (5,0) circle (0.25);
-
-\draw[dashed,thick]
-(0.2,0.35) .. controls (2.5,1.0) .. (4.8,0.35);
-
-\draw[thick] (1,0)--(2,0);
-\draw[thick] (3,0)--(4,0);
-
-\end{tikzpicture}
-
-\[
-|\mu|<2t
-\]
-
-\end{column}
-
-\end{columns}
-
-\end{column}
-
-\end{columns}
-
-
-
+\centering\footnotesize
+\textbf{Same Ising-like algebra, different physics:} local Neel order versus parity sectors and edge-to-edge coherence.
 \end{frame}
 
 % ----------------------------------------------------------------------------
@@ -483,22 +190,17 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
     \begin{column}{0.52\textwidth}
       \textbf{Circuit-level measurement}
 
-      \begin{itemize}
-        \item Prepare the ground state using the VQE ansatz.
-
-        \item Rotate qubits with $X$ factors into the $Z$ basis using Hadamards.
-
-        \item Measure all qubits and multiply bit parities to estimate $\langle O_{\mathrm{edge}}\rangle$.
-
-        \item The protocol converts a topological property into experimentally accessible bitstring statistics.
-
-        \item The observable is hardware-compatible because it is a Pauli string.
+      \begin{itemize}\small
+        \item Current validation: exact even-parity ground state from diagonalization.
+        \item Hardware target: parity-constrained VQE state preparation.
+        \item Apply Hadamards on qubits carrying $X$ factors.
+        \item Measure all qubits and multiply outcomes to estimate $\langle O_{\mathrm{edge}}\rangle$.
       \end{itemize}
     \end{column}
 
     \begin{column}{0.44\textwidth}
 
-      \begin{block}{Shot estimator ($N = 4096$)}
+      \begin{block}{Shot estimator ($N = 4096$)}\small
 
         Each shot returns an eigenvalue $m_s = \pm 1$.
 
@@ -508,7 +210,7 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
           \sigma \approx \sqrt{\frac{1-\langle O\rangle^2}{N}}
         \]
 
-        At $N=4096$, $\sigma \lesssim 0.016$ in the topological window. Error bars are omitted from sweep plots for clarity.
+        For any $\pm1$ estimator with $N=4096$, $\sigma\leq 1/\sqrt{N}\approx0.016$. Error bars are omitted from the sweep plot for clarity.
 
       \end{block}
 
@@ -560,7 +262,7 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
 
 \begin{itemize}\footnotesize
   \item Bulk gap closes
-  \item Correlation diverges
+  \item Correlation length diverges
   \item Edge delocalization
 \end{itemize}
 
@@ -581,9 +283,9 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
 \vspace{0.2cm}
 
 \begin{itemize}\footnotesize
-  \item Edge modes hybridize
-  \item No long-range order
-  \item String collapses
+  \item No protected localized zero modes
+  \item Parity gap becomes finite
+  \item Edge string becomes small
 \end{itemize}
 
 \vspace{0.2cm}
@@ -612,22 +314,19 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
 \begin{columns}
 
 % ---------------- PLOT ----------------
-\begin{column}{0.62\textwidth}
+\begin{column}{0.70\textwidth}
   \centering
   \includegraphics[width=\textwidth]{block3_week6_phase_sweep.pdf}
 \end{column}
 
 % ---------------- TEXT ----------------
-\begin{column}{0.36\textwidth}
-\small
+\begin{column}{0.28\textwidth}
+\footnotesize
 
 \begin{itemize}
-  \item Parameters fixed: $t = \Delta = 1$; sweep is 1D in $\mu$
-  \item Topological window: $|\mu| < 2t$
-  \item String correlator detects edge coherence
-  \item Sharp decay outside phase
-  \item Shot estimator follows same trend
-  \item Parity gap matches transition point
+  \item $L=4$, $t=\Delta=1$; sweep $\mu$
+  \item Edge string: measurable diagnostic
+  \item Parity gap: ED cross-check
 \end{itemize}
 
 \end{column}
@@ -640,7 +339,7 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
 
 % CHANGE 3: Added explicit note that L = 4, 6, 8 are still far from the
 % thermodynamic limit; the scaling trend is the key takeaway, not convergence.
-\begin{frame}{Finite-Size Scaling}
+\begin{frame}{Finite-Size Scaling: Non-Local Observable}
 
 \begin{columns}
 
@@ -655,9 +354,8 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
 \begin{itemize}
   \item Small $L$: smooth crossover
   \item Larger $L$: sharper boundary
-  \item $L = 4, 6, 8$ remain far from the thermodynamic limit; the sharpening \emph{trend} is the key result
-  \item Approaches thermodynamic limit
-  \item Edge coherence becomes well-defined
+  \item $L = 4, 6, 8$ remain far from the thermodynamic limit
+  \item The sharpening \emph{trend}, not convergence, is the result
 \end{itemize}
 
 \end{column}
@@ -668,28 +366,27 @@ H = \frac{t+\Delta}{2}\sum_j Y_jY_{j+1} -\frac{\mu}{2}\sum_j Z_j
 
 % ----------------------------------------------------------------------------
 
-\begin{frame}{Local vs Non-Local Observables}
-
+\begin{frame}{Finite-Size Scaling: Local Observable}
 \begin{columns}
 
 \begin{column}{0.62\textwidth}
   \centering
-  \includegraphics[width=\textwidth]{block3_week6_local_vs_nonlocal.pdf}
+  \includegraphics[width=\textwidth]{block3_week6_finite_size_local.pdf}
 \end{column}
 
 \begin{column}{0.36\textwidth}
 \small
 
 \begin{itemize}
-  \item Local $Z_0$: weak phase signal
-  \item Non-local string: sharp diagnostic
-  \item Topology is not locally visible
-  \item Edge physics is inherently global
+  \item Local observable shows weak dependence on system size
+  \item No sharpening near the phase transition
+  \item Confirms that topology is not locally detectable
 \end{itemize}
 
 \end{column}
 
 \end{columns}
+
 
 \end{frame}
 % ----------------------------------------------------------------------------
@@ -758,17 +455,17 @@ for mu in mu_values:
 \begin{frame}{Main Conclusions}
 
   \begin{itemize}
-    \item Topological phases require non-local observables.
-    \item A measurable Pauli-string correlator reconstructs the Kitaev phase boundary.
-    \item The diagnostic survives finite-size effects and statistical sampling.
-    \item Quantum measurements can therefore operationally detect topology.
+    \item The edge Pauli string is a measurable finite-size diagnostic of Kitaev topology.
+    \item Exact diagonalization shows string enhancement alongside near-degenerate parity sectors.
+    \item Synthetic shot sampling reproduces the ideal string-correlation trend.
+    \item A real VQE sweep and hardware-noise study remain the next validation steps.
   \end{itemize}
 
   \vspace{0.4cm}
 
   \begin{block}{Conceptual Message}
-    The transition is not characterized by symmetry breaking,
-    but by the emergence of long-range topological coherence.
+    Local observables may change across the transition, but parity-sector
+    degeneracy and non-local edge coherence identify the topological phase.
   \end{block}
 
 \end{frame}
