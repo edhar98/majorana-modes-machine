@@ -185,3 +185,35 @@ Standalone LaTeX documents. Source `.tex` files are tracked; generated `notes/*.
 - `matplotlib` titles and labels must use raw strings (`r"..."` or `rf"..."`) when they contain backslashes; avoid LaTeX-only commands like `\texttt{}` in `matplotlib` text (use plain text instead).
 - `fig.tight_layout(rect=[0, 0, 1, 0.93])` when a `suptitle` is present — without `rect`, the suptitle gets clipped.
 - Always call `clean_axes(ax)` (imported from `utils.py`) inside runner plots to override the global grid style with white background and visible spines.
+
+## Cursor Cloud specific instructions
+
+This repo has no long-running services. Development is batch Python simulation from `src/` plus optional local LaTeX builds.
+
+### Python environment
+
+- The documented venv path `/opt/python-envs/myenv/bin/` may not exist on Cloud VMs. Use system `python3` from the repo root after the update script runs.
+- There is no `requirements.txt`; the update script installs: `numpy`, `matplotlib`, `scipy`, `qiskit`, `qiskit-aer`, `qiskit-algorithms`, and `pylatexenc`.
+- `pylatexenc` is required for `block3.py --plots 2` (Qiskit `draw('mpl')` circuit diagrams). Without it, VQE numerics still run but circuit PDF export fails.
+
+### Running simulations
+
+```bash
+cd src
+python3 block1.py --list
+python3 block1.py --plots 1
+python3 block2.py --plots 1
+python3 block3.py --plots 2    # Week 5 VQE + circuit figures
+python3 block3.py --plots 3    # Week 6 phase sweep (fast)
+python3 block3.py --plots 7 --points 41   # Week 7 VQE mu-sweep (slow)
+```
+
+Figures save to `plots/` at the repo root. Plot 7 is the slowest Block 3 job.
+
+### LaTeX / Make
+
+- `pdflatex` is typically **not** installed on Cloud VMs. Slide and note PDFs are built in CI (`.github/workflows/compile_slides.yml`). For local PDF work, install TeX Live and run `make slides` / `make notes` from the repo root per the Commands section above.
+
+### Lint / tests
+
+- No pytest, ruff, or flake8 config. Sanity check: `python3 -m py_compile src/*.py`.
