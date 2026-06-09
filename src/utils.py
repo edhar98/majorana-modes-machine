@@ -39,6 +39,16 @@ def setup_style():
         'axes.spines.right': False,
     })
 
+# ── Axes cleanup ──────────────────────────────────────────────────────────────
+def clean_axes(ax):
+    ax.grid(False, which='both', axis='both')
+    ax.set_facecolor('white')
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color('black')
+        spine.set_linewidth(0.8)
+
+
 # ── Figure saving ─────────────────────────────────────────────────────────────
 def save_fig(fig, filename):
     """

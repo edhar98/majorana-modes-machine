@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D  # Added for custom legends in plot 8
 
-from utils        import setup_style, save_fig, COLORS
+from utils        import setup_style, save_fig, COLORS, clean_axes
 from kitaev_chain import KitaevChain
 from bdg_bulk     import bulk_energy, bulk_gap, bdg_vector, critical_mu
 from winding      import winding_number, winding_scan
@@ -38,17 +38,6 @@ def plot(n, description):
         PLOT_REGISTRY[n] = (fn, description)
         return fn
     return decorator
-
-# ── Utility function to forcefully clean grid and background ──────────────────
-def clean_axes(ax):
-    """Forcefully remove grids, reset background to white, and restore borders."""
-    ax.grid(False, which='both', axis='both') # Forcefully turn off both major and minor grid lines
-    ax.set_facecolor('white')                 # Force the background to pure white (removes gray backgrounds)
-    for spine in ax.spines.values():
-        spine.set_visible(True)               # Restore the surrounding borders (spines)
-        spine.set_color('black')
-        spine.set_linewidth(0.8)
-
 
 # ── Plot functions ────────────────────────────────────────────────────────────
 

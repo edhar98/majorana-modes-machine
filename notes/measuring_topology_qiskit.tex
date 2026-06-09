@@ -94,7 +94,7 @@ Following the theoretical framework and the Week 5 plan, the Python implementati
 We utilize Qiskit's \texttt{EfficientSU2} library to create a hardware-efficient ansatz. The circuit consists of alternating layers of single-qubit $RY(\theta)$ rotations and two-qubit linear entanglement gates ($CX$).
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.8\linewidth]{../plots/block3_02_vqe_ansatz.pdf}
+  \includegraphics[width=0.8\linewidth]{../plots/block3_week5_ansatz.pdf}
   \caption{The raw VQE ansatz circuit diagram for $L=4$ (reps=1 shown for clarity).}
 \end{figure}
 
@@ -108,14 +108,14 @@ Expectation values are derived via classical post-processing of $8192$ statistic
 For the local Majorana observable $\langle X_0 \rangle$, an $H$ gate is applied to qubit 0 immediately before measurement to switch the basis from $Z$ to $X$.
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.8\linewidth]{../plots/block3_03_meas_local.pdf}
+  \includegraphics[width=0.8\linewidth]{../plots/block3_week5_meas_local.pdf}
   \caption{The measurement circuit for the local observable $\langle X_0 \rangle$.}
 \end{figure}
 
 For the non-local string order parameter $\langle Y_{L-1} Z_{L-2} \dots Z_0 \rangle$, the intermediate qubits ($0$ through $L-2$) are measured directly in the $Z$-basis. Qubit $L-1$ undergoes an $S^\dagger$ followed by an $H$ gate to measure in the $Y$-basis.
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.8\linewidth]{../plots/block3_04_meas_sop.pdf}
+  \includegraphics[width=0.8\linewidth]{../plots/block3_week5_meas_sop.pdf}
   \caption{The measurement circuit for the non-local String Order Parameter (SOP).}
 \end{figure}
 

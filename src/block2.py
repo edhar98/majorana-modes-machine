@@ -12,7 +12,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils         import setup_style, save_fig, COLORS
+from utils         import setup_style, save_fig, COLORS, clean_axes
 from kitaev_chain  import KitaevChain
 from bdg_bulk      import critical_mu
 from jordan_wigner import parity_gap
@@ -27,15 +27,6 @@ def plot(n, description):
         PLOT_REGISTRY[n] = (fn, description)
         return fn
     return decorator
-
-
-def clean_axes(ax):
-    ax.grid(False, which='both', axis='both')
-    ax.set_facecolor('white')
-    for spine in ax.spines.values():
-        spine.set_visible(True)
-        spine.set_color('black')
-        spine.set_linewidth(0.8)
 
 
 # ── Plot functions ────────────────────────────────────────────────────────────
