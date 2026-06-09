@@ -103,6 +103,15 @@ A multi-start optimization loop using the COBYLA algorithm minimizes the energy 
 To ensure the heuristic VQE result is scientifically valid before proceeding to measurements, a strict checkpoint is enforced: the fidelity $F = |\langle\psi_{ED}|\psi_{VQE}\rangle|^2$ must exceed $0.99$. 
 Crucially, in the topological phase ($\mu = 0$), the ground state and the first excited state are near-degenerate. The code correctly handles this by summing the overlap probabilities across the degenerate subspace to accurately evaluate the achieved fidelity.
 
+\subsection{Optimizer Choice}
+The ground-state preparation is split between two SciPy optimizers depending on context. The Week 5 convergence study uses the gradient-based \texttt{L-BFGS-B}, whereas the multi-start preparation and the parity-constrained $\mu$-sweep use the derivative-free \texttt{COBYLA}. The reasoning:
+\begin{itemize}
+  \item \textbf{No analytic gradient.} We supply no gradient, so \texttt{L-BFGS-B} would fall back on finite differences, costing $O(n_\theta)$ extra circuit evaluations per step (here $n_\theta = (\text{reps}+1)\,L = 16$). \texttt{COBYLA} is derivative-free: it builds a linear trust-region model from a simplex of points and needs no gradient passes.
+  \item \textbf{Noise robustness.} This framework targets shot-based and, ultimately, NISQ-noisy estimators. Finite-difference gradients divide stochastic noise by the step size, which destabilizes \texttt{L-BFGS-B}'s line search and curvature updates; \texttt{COBYLA}'s trust-region model degrades far more gracefully. This is the standard motivation for derivative-free (or \texttt{SPSA}) optimizers in VQE.
+  \item \textbf{Caveat.} For the \emph{noiseless statevector} cost actually used in the sweep, the objective is smooth and \texttt{L-BFGS-B} would converge faster and more accurately; \texttt{COBYLA} is retained for forward-compatibility with the noisy Block~4 estimators. Empirically it reaches fidelity $\approx 1$ with zero random restarts across all $81$ sweep points.
+\end{itemize}
+Alternatives considered: \texttt{SPSA} (the standard for noisy hardware VQE, two evaluations per iteration regardless of $n_\theta$), and parameter-shift gradients feeding \texttt{L-BFGS-B}/Adam (exact circuit gradients at $2 n_\theta$ evaluations per step). Both are unnecessary for the $L=4$ noiseless problem.
+
 \subsection{Measurement Circuits}
 Expectation values are derived via classical post-processing of $8192$ statistical bitstring samples.
 For the local Majorana observable $\langle X_0 \rangle$, an $H$ gate is applied to qubit 0 immediately before measurement to switch the basis from $Z$ to $X$.
