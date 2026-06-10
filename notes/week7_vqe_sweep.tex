@@ -85,23 +85,81 @@ The single most important engineering change relative to Week 6 is that the opti
 
 \section{Warm-Start Continuation}
 
-The ground state of $H(\mu)$ evolves smoothly with $\mu$ away from the critical points. Continuation exploits this: the optimal parameters at one point are a good initial guess for the next.
+This section unpacks the three pieces of jargon used above: the star in $\theta_k^{*}$, the term ``warm start,'' and the phrase ``neighboring ground states seed one another.''
 
-\paragraph{Independent random starts (the Week 5/6 prototype style).}
+\subsection*{The variational circuit and the meaning of $\theta$}
+
+VQE does not store the quantum state directly. It stores a list of real numbers $\theta=(\theta_1,\dots,\theta_p)$, the rotation angles of the gates in the ansatz circuit $U(\theta)$. Applying that circuit to the all-zeros state produces a trial state
+\begin{equation}
+  \ket{\psi(\theta)} = U(\theta)\ket{0\cdots 0}.
+\end{equation}
+For the $L=4$ \texttt{EfficientSU2} ansatz with \texttt{reps}$=3$, each angle is the rotation of one $R_Y$ gate, and $\theta$ is the full vector of those angles. Choosing $\theta$ is choosing a state; optimizing $\theta$ is searching the state space the circuit can reach.
+
+\subsection*{Why $\theta_k$ carries a star}
+
+The bare symbol $\theta_k$ means ``some parameter vector while we are still at point $\mu_k$,'' including the initial guess and all the intermediate guesses the optimizer tries. The starred symbol $\theta_k^{*}$ is reserved for the \emph{converged, optimal} parameters: the specific angles the optimizer settles on after minimizing the cost at $\mu_k$,
+\begin{equation}
+  \theta_k^{*} = \arg\min_{\theta}\ C_{\mu_k}(\theta),
+  \qquad
+  C_{\mu_k}(\theta) = \langle H(\mu_k)\rangle_\theta + \lambda\bigl(1-\langle P\rangle_\theta\bigr)^2.
+\end{equation}
+So $\theta_k$ is a moving guess during the search, and $\theta_k^{*}$ is the final answer at that point. The star is the standard ``optimal value'' notation, exactly as in $x^{*}=\arg\min f(x)$. The state $\ket{\psi(\theta_k^{*})}$ is the VQE approximation to the ground state of $H(\mu_k)$, and it is the state on which the edge string is measured.
+
+\subsection*{What a ``warm start'' is}
+
+Any iterative optimizer needs a starting point. A \emph{cold start} begins from a generic or random $\theta$ that carries no information about the answer; the optimizer must then travel a long way through parameter space to reach the minimum. A \emph{warm start} begins from a point already believed to be close to the answer, so the optimizer only has to take a few small steps to converge.
+
+In the $\mu$ sweep the warm start is the converged solution of the previous point:
+\begin{equation}
+  \theta_k \;\xleftarrow{\ \text{initialize}\ }\; \theta_{k-1}^{*}.
+\end{equation}
+Concretely, after we finish optimizing at $\mu_{k-1}$ and obtain $\theta_{k-1}^{*}$, we do not throw those angles away. We hand them to the optimizer at $\mu_k$ as its initial guess and let it refine them. Because the optimizer starts near the answer, it needs far fewer iterations and is much less likely to wander off into a wrong local minimum.
+
+\subsection*{Why ``neighboring ground states seed one another''}
+
+The justification is physical, not just numerical. The ground state $\ket{\psi(\mu)}$ of the Kitaev chain changes \emph{smoothly} with $\mu$ everywhere except at the critical points $|\mu|=2t$. If two sweep points $\mu_{k-1}$ and $\mu_k$ are close, their ground states are nearly the same state, so the angles that prepare one are nearly the angles that prepare the other:
+\begin{equation}
+  \mu_k \approx \mu_{k-1}
+  \;\Longrightarrow\;
+  \ket{\psi(\mu_k)} \approx \ket{\psi(\mu_{k-1})}
+  \;\Longrightarrow\;
+  \theta_k^{*} \approx \theta_{k-1}^{*}.
+\end{equation}
+``Seeding'' is just the act of passing $\theta_{k-1}^{*}$ forward as the seed (initial guess) for the next optimization. ``Neighboring ground states seed one another'' therefore means: because adjacent ground states are physically close, each converged solution is an excellent initial guess for its neighbor, and the sweep can be run as one continuous chain
+\begin{equation}
+  \theta_0^{*} \to \theta_1^{*} \to \theta_2^{*} \to \cdots
+\end{equation}
+rather than as a set of unrelated optimizations. This is the technique called \emph{continuation} (or homotopy): solve an easy point first, then track the solution by taking small steps in the parameter $\mu$. The same warm-start chain can also be run in both directions across the grid, so that each point benefits from a well-converged neighbor.
+
+\subsection*{Cold vs.\ warm in the sweep}
+
+\paragraph{Independent random (cold) starts --- the Week 5/6 prototype style.}
 \begin{itemize}
-  \item repeat expensive optimization work at every point;
+  \item repeat the full, expensive optimization from scratch at every point;
   \item can converge to different local minima at adjacent $\mu$, producing artificial jumps;
   \item make the swept curve noisy even before shot noise is added.
 \end{itemize}
 
-\paragraph{Continuation in $\mu$.}
+\paragraph{Warm-start continuation in $\mu$.}
 \begin{itemize}
-  \item initialize $\theta_{k+1}$ from $\theta_k^{*}$;
-  \item track the smooth evolution of the ground state efficiently;
+  \item initialize $\theta_k$ from $\theta_{k-1}^{*}$;
+  \item track the smooth evolution of the ground state with only a few optimizer steps per point;
   \item keep random restarts only as a fallback when validation fails.
 \end{itemize}
 
-The expected difficulty is concentrated near $|\mu|=2t$, where the bulk gap closes and the optimal state changes fastest. This is exactly where warm starts and fidelity checks matter most, and where the recovery path is most likely to trigger.
+\subsection*{What ``deeper optimization'' means}
+
+When a warm-started point fails validation, the recovery path does ``deeper optimization.'' This does \emph{not} mean a deeper circuit; it means spending more optimization effort to dig out of a bad local minimum. In practice it combines:
+\begin{itemize}
+  \item \textbf{more iterations} --- raise the optimizer iteration cap (\texttt{maxiter}) so it is allowed to keep refining instead of stopping early;
+  \item \textbf{multiple restarts} --- launch several independent random initial guesses and keep the best converged result, instead of trusting the single warm-started run;
+  \item \textbf{a tighter parity penalty / re-selection} --- re-run while enforcing the even sector so the optimizer cannot escape into the wrong-parity minimum.
+\end{itemize}
+Only if even this fails would one consider a genuinely deeper ansatz (more \texttt{reps}); the depth scan in the next-to-last section shows \texttt{reps}$=3$ is already sufficient away from a handful of hard points, so ``deeper optimization'' is almost always about effort, not circuit depth.
+
+\subsection*{Where it is hardest}
+
+The expected difficulty is concentrated near $|\mu|=2t$, where the bulk gap closes, the ground state changes fastest, and the smoothness assumption behind warm starts is weakest. There the previous solution $\theta_{k-1}^{*}$ is a poorer seed, the optimizer is most likely to stall, and the recovery path (restarts plus deeper optimization) is most likely to trigger. This is exactly where the fidelity checks earn their place.
 
 \section{Parity Must Be Controlled}
 
