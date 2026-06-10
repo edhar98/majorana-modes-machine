@@ -83,6 +83,49 @@ The core of Week 7 is a loop over the $\mu$ grid. For each $\mu_k$ the workflow 
 
 The single most important engineering change relative to Week 6 is that the optimizer is no longer restarted independently at each $\mu$. Neighboring ground states seed one another.
 
+\section{The EfficientSU2 Ansatz}
+
+VQE needs a parameterized quantum circuit because the ground state is no longer obtained by diagonalizing the Hamiltonian. Instead, we choose a family of trial states
+\begin{equation}
+  \ket{\psi(\theta)} = U(\theta)\ket{0\cdots 0},
+\end{equation}
+and the classical optimizer changes the angles $\theta$ until the measured energy is minimized. The ansatz is therefore the search space of the algorithm: if it is too small, the correct ground state is not available no matter how good the optimizer is; if it is unnecessarily large, the optimization becomes slower and more unstable.
+
+In the code this family is Qiskit's \texttt{EfficientSU2}, restricted to
+\begin{verbatim}
+EfficientSU2(L, su2_gates=['ry'], entanglement='linear', reps=reps)
+\end{verbatim}
+This is a hardware-efficient ansatz: it is built directly from native-looking one-qubit rotations and nearest-neighbor entangling gates, rather than from a problem-specific exact diagonalization formula. In our restricted version the single-qubit layer contains only
+\begin{equation}
+  R_Y(\theta)=\exp\left(-i\frac{\theta}{2}Y\right),
+\end{equation}
+so each qubit gets a tunable real rotation. The entangling layer is a linear chain of CNOT gates, matching the one-dimensional geometry of the Kitaev chain. For $L=4$ one entangling layer connects neighboring qubits as a nearest-neighbor ladder, schematically
+\begin{equation}
+  (0,1),\ (1,2),\ (2,3),
+\end{equation}
+up to Qiskit's drawing/endian convention.
+
+This choice is useful for three reasons. First, the Kitaev Hamiltonian after Jordan--Wigner is a local nearest-neighbor qubit Hamiltonian, so a linear entangler is the natural circuit geometry. Second, the $R_Y$-only restriction keeps the state preparation real and greatly reduces the number of parameters compared with a full $R_X,R_Y,R_Z$ ansatz. That is appropriate here because the real matrix representation of the Hamiltonian admits real ED eigenvectors. Third, the CNOT layers are what allow the circuit to build the non-local correlations needed for the edge string $O_{\mathrm{edge}}$; independent $R_Y$ rotations alone would only prepare a product state.
+
+\section{What \texttt{reps}=3 Means}
+
+The argument \texttt{reps} is the ansatz depth parameter. It does not mean that the whole VQE optimization is repeated three times. It means that the circuit pattern itself contains three repeated entangling blocks. In Qiskit's \texttt{EfficientSU2} layout, the structure is approximately
+\begin{equation}
+  \bigl[ R_Y\ \text{layer} \bigr]
+  \left(\bigl[\text{linear CNOT layer}\bigr]\bigl[R_Y\ \text{layer}\bigr]\right)^{\texttt{reps}} .
+\end{equation}
+Thus each repetition adds one more nearest-neighbor CNOT layer and one more layer of fresh $R_Y$ angles. For $L$ qubits with only $R_Y$ rotations, the number of variational angles is
+\begin{equation}
+  N_\theta = L(\texttt{reps}+1).
+\end{equation}
+For the Week 7 sweep, $L=4$ and \texttt{reps}$=3$, so the optimizer controls
+\begin{equation}
+  N_\theta = 4(3+1)=16
+\end{equation}
+angles and the circuit contains three linear CNOT entangling layers.
+
+The depth scan in plot 8 is precisely a test of this choice. With \texttt{reps}$=1$, the circuit has only $8$ angles and one entangling layer; it is often too rigid, especially near the critical point $|\mu|=2t$. With \texttt{reps}$\ge 2$, the ansatz can already reach the correct low-energy state in this small $L=4$ problem. We use \texttt{reps}$=3$ in the full sweep as a conservative compromise: it gives one extra layer of expressivity beyond the minimum seen in the scan, while keeping the circuit shallow enough that the classical optimization remains cheap and the later noisy-circuit study is still meaningful.
+
 \section{Warm-Start Continuation}
 
 This section unpacks the three pieces of jargon used above: the star in $\theta_k^{*}$, the term ``warm start,'' and the phrase ``neighboring ground states seed one another.''
@@ -192,7 +235,25 @@ String error & Does $\langle O_{\mathrm{edge}}\rangle$ match the ED value? & Val
 \end{tabular}
 \end{center}
 
-Subspace fidelity (rather than overlap with a single eigenvector) is the right measure because the two lowest states are nearly degenerate in the topological phase; the prepared state only needs to live in that low-energy subspace. A point that fails any check triggers deeper ansatz repetitions, more optimizer iterations, or random-restart recovery.
+For a non-degenerate ground state, ordinary fidelity is
+\begin{equation}
+  \mathcal{F}=|\langle\psi_{\mathrm{ED}}|\psi_{\mathrm{VQE}}\rangle|^2.
+\end{equation}
+This asks whether the prepared VQE state is the same vector as the ED target, up to an irrelevant global phase. In the topological region, however, the low-energy physics is nearly degenerate: the even- and odd-parity ground states can become exponentially close in energy. Then overlap with one arbitrary eigenvector can be misleading, because ED may choose a particular basis inside a nearly degenerate space while the variational circuit may produce another equally valid vector in the same physical space.
+
+The more robust diagnostic is subspace fidelity. If $\{\ket{\phi_a}\}$ spans the accepted ED low-energy subspace, define the projector
+\begin{equation}
+  \Pi_{\mathrm{sub}}=\sum_{a\in\mathrm{sub}}\ket{\phi_a}\bra{\phi_a},
+\end{equation}
+and measure
+\begin{equation}
+  \mathcal{F}_{\mathrm{sub}}
+  =\langle\psi_{\mathrm{VQE}}|\Pi_{\mathrm{sub}}|\psi_{\mathrm{VQE}}\rangle
+  =\sum_{a\in\mathrm{sub}}|\langle\phi_a|\psi_{\mathrm{VQE}}\rangle|^2.
+\end{equation}
+This number is close to one when the VQE state lies in the correct low-energy manifold, even if it is not aligned with one particular ED eigenvector.
+
+For the Week 7 sweep we additionally pin the even-parity sector with the penalty term. Therefore the implemented validation compares against the ED even-parity ground state; in this fixed-sector setting, the accepted subspace is effectively the one-dimensional even ground space. The reason we still track and plot it as a fidelity/subspace diagnostic is that it protects us from the main failure mode near degeneracy: a low energy alone could be correct while the state has leaked into the wrong sector or into the wrong combination of low-energy states. A point that fails any check triggers deeper ansatz repetitions, more optimizer iterations, or random-restart recovery.
 
 \section{Implementation Shape}
 
@@ -212,7 +273,7 @@ for mu in mu_values:
 \end{verbatim}
 
 \begin{sloppypar}
-The implementation lives in \texttt{src/block3\_core.py} (helpers \texttt{vqe\_cost}, \texttt{evaluate\_state}, \texttt{solve\_point}, \texttt{vqe\_sweep}, \texttt{measure\_edge\_string\_shots}, \texttt{best\_state}, \texttt{depth\_scan}) and is driven by \texttt{src/block3.py --plots 7} (the sweep) and \texttt{--plots 8} (the depth diagnostic). The ansatz is the same hardware-efficient \texttt{EfficientSU2} with $R_Y$ rotations and linear CNOT entanglement used in Week 5. A practical point: the sweep must persist optimizer parameters and per-point diagnostics, not only the final observable, so that failed regions are debuggable and reusable as warm starts for later noise studies.
+The implementation lives in \texttt{src/block3\_core.py} (helpers \texttt{vqe\_ansatz}, \texttt{vqe\_cost}, \texttt{evaluate\_state}, \texttt{solve\_point}, \texttt{vqe\_sweep}, \texttt{measure\_edge\_string\_shots}, \texttt{best\_state}, \texttt{depth\_scan}) and is driven by \texttt{src/block3.py --plots 7} (the sweep) and \texttt{--plots 8} (the depth diagnostic). The default command-line setting is \texttt{--reps 3}, which creates the 16-parameter, three-entangler ansatz described above. A practical point: the sweep must persist optimizer parameters and per-point diagnostics, not only the final observable, so that failed regions are debuggable and reusable as warm starts for later noise studies.
 \end{sloppypar}
 
 \section{Reading the Week 7 Sweep Figure}
