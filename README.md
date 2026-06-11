@@ -86,10 +86,32 @@ python block2.py                      # qubit encoding plots
 python block2.py --list               # show available plots
 ```
 
+## Block 3 — Measuring Topology with Qiskit
+
+Block 3 moves from matrix-based validation to gate-based simulation. The current scripted runner is `src/block3.py`, with shared VQE and measurement helpers in `src/block3_core.py`.
+
+Key pieces:
+
+- **VQE state preparation** — an `EfficientSU2` ansatz with `RY` rotations and linear CNOT entanglement prepares small-chain ground states.
+- **Aer Estimator** — Qiskit's simulator primitive used to evaluate VQE energy expectations, e.g. `(<psi(theta)|H|psi(theta)>)`, without running on real hardware.
+- **Why "Aer"?** `qiskit-aer` is Qiskit's high-performance simulator package. The name follows Qiskit's classical-elements naming theme: Terra for the core framework, Aer for simulators, and the older Aqua package for algorithms.
+- **Shot-based measurements** — `AerSimulator` samples circuits with finite shots, then bitstrings are post-processed into observables such as the edge string `X0 Z1 Z2 X3`.
+- **Week 7 VQE sweep** — a parity-constrained VQE sweep over `mu` is validated against ED using energy error, parity, subspace fidelity, and edge-string error.
+
+### Run Block 3
+
+```bash
+cd src
+python block3.py --list
+python block3.py --plots 1      # VQE local-vs-edge-string observable test
+python block3.py --plots 7      # Week 7 VQE mu-sweep
+python block3.py --plots 8      # ansatz-depth diagnostic
+```
+
 ### Requirements
 
 ```bash
-pip install numpy matplotlib
+pip install numpy scipy matplotlib qiskit qiskit-aer qiskit-algorithms
 ```
 
 ---
@@ -108,6 +130,7 @@ Weekly presentation slides:
 | 4 | Block 2 (cont.) — Jordan-Wigner transform, qubit encoding, parity sectors | [week4.pdf](https://edhar98.github.io/majorana-modes-machine/week4.pdf) |
 | 5 | Block 3 Qubit encoding, Ground State preparation | [week5.pdf](https://edhar98.github.io/majorana-modes-machine/week5.pdf) |
 | 6 | Block 3 phase sweep — circuit-measurable string order | [week6.pdf](https://edhar98.github.io/majorana-modes-machine/week6.pdf) |
+| 7 | Block 3 VQE sweep — parity-constrained state preparation | [week7.pdf](https://edhar98.github.io/majorana-modes-machine/week7.pdf) |
 
 ## Notes
 
