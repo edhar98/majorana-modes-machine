@@ -6,8 +6,8 @@ from qiskit_aer import AerSimulator
 
 from block3_core import (
     T, DELTA,
-    vqe_ansatz, prepare_vqe_ground_state, measure_observables_shot_based,
-    vqe_convergence, measure_local_y_shots, measure_edge_string_shots,
+    vqe_ansatz, prepare_vqe_ground_state,
+    vqe_convergence, measure_local_x_shots, measure_edge_string_shots,
     sweep_observables, finite_size_sweep, noisy_value,
     vqe_sweep, depth_scan,
 )
@@ -33,34 +33,38 @@ def _mu_label_color(mu, t):
 
 
 @plot(1, "Week 5: VQE observables framework test (L=4)")
-def plot_vqe_test(t=T, delta=DELTA, L=4, **_):
+def plot_vqe_test(t=T, delta=DELTA, L=4, shots=8192, **_):
     mu_points = [0.0, 2.0 * t, 3.0 * t]
     labels = [r'Topological ($\mu=0$)', r'Critical ($\mu=2t$)', r'Trivial ($\mu=3t$)']
+    backend = AerSimulator()
 
-    x0_vals, x0_errs, sop_vals, sop_errs = [], [], [], []
+    local_vals, local_errs, edge_vals, edge_errs = [], [], [], []
     for mu in mu_points:
         print(f"\n--- Running VQE for mu={mu:.1f} ---")
         opt_params, ansatz, fid = prepare_vqe_ground_state(L, t, mu, delta, reps=4)
         if fid < 0.99:
             raise RuntimeError(f"Fidelity {fid:.4f} < 0.99. Circuit depth insufficient!")
-        (x0_val, x0_err), (sop_val, sop_err) = measure_observables_shot_based(ansatz, opt_params, L)
-        x0_vals.append(x0_val)
-        x0_errs.append(x0_err)
-        sop_vals.append(sop_val)
-        sop_errs.append(sop_err)
+        local_val = measure_local_x_shots(ansatz, opt_params, L, shots, backend, site=0)
+        edge_val = measure_edge_string_shots(ansatz, opt_params, L, shots, backend)
+        local_vals.append(local_val)
+        local_errs.append(np.sqrt((1 - local_val ** 2) / shots))
+        edge_vals.append(edge_val)
+        edge_errs.append(np.sqrt((1 - edge_val ** 2) / shots))
 
     fig, ax = plt.subplots(figsize=(8, 5))
     x = np.arange(len(mu_points))
     width = 0.35
-    ax.bar(x - width / 2, np.abs(x0_vals), width, yerr=x0_errs,
-           label=r'$|\langle X_0 \rangle|$ (Local)', capsize=5, color=COLORS['edge'], alpha=0.8)
-    ax.bar(x + width / 2, np.abs(sop_vals), width, yerr=sop_errs,
-           label=r'$|\langle Y_{L-1} Z_{L-2} \dots Z_0 \rangle|$ (SOP)', capsize=5,
+    ax.bar(x - width / 2, np.abs(local_vals), width, yerr=local_errs,
+           label=r'$|\langle X_0 \rangle|$ (local, parity odd)', capsize=5,
+           color=COLORS['edge'], alpha=0.8)
+    ax.bar(x + width / 2, np.abs(edge_vals), width, yerr=edge_errs,
+           label=r'$|\langle X_0 Z_1 Z_2 X_3 \rangle|$ (edge string)', capsize=5,
            color=COLORS['topological'], alpha=0.8)
     ax.set_ylabel('Absolute Expectation Value')
-    ax.set_title(f'Shot-Based Quantum Measurements via VQE ($L={L}$)')
+    ax.set_title(f'Shot-Based Edge-String Measurements via VQE ($L={L}$)')
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
+    ax.set_ylim(0, 1.08)
     ax.legend()
     clean_axes(ax)
     fig.tight_layout()

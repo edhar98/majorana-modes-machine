@@ -81,8 +81,8 @@ In the topological phase ($|\mu| < 2t$), this string correlation attains a non-z
 \subsection{Shot-Based Sampling Requirement}
 Analytical expectation values from statevectors must be discarded. The measurement protocol must execute shot-based sampling (e.g., \texttt{shots=8192}). 
 \begin{itemize}
-  \item \textbf{Local $\langle X_0 \rangle$:} Apply an $H$ gate on qubit 0 to rotate to the X-basis, then measure in the Z-basis.
-  \item \textbf{Non-Local SOP $\langle Y_{L-1} Z_{L-2} \dots Z_0 \rangle$:} Directly measure Z on qubits $0$ to $L-2$. On qubit $L-1$, apply an $S^\dagger$ gate followed by an $H$ gate to rotate to the Y-basis, then measure in the Z-basis.
+  \item \textbf{Local $\langle X_0 \rangle$:} Apply an $H$ gate on qubit 0 to rotate to the X-basis, then measure in the Z-basis. This local parity-odd expectation should vanish in a parity eigenstate.
+  \item \textbf{Edge string $\langle X_0Z_1\cdots Z_{L-2}X_{L-1}\rangle$:} Apply $H$ gates to qubits $0$ and $L-1$, measure every qubit in the $Z$ basis, then multiply the measured $Z$ eigenvalues in post-processing. For $L=4$ this is $\langle X_0Z_1Z_2X_3\rangle$.
 \end{itemize}
 Post-processing code will calculate the joint parity from the 0/1 counts, extract the statistical expectation values, and compute the standard error.
 
@@ -121,11 +121,11 @@ For the local Majorana observable $\langle X_0 \rangle$, an $H$ gate is applied 
   \caption{The measurement circuit for the local observable $\langle X_0 \rangle$.}
 \end{figure}
 
-For the non-local string order parameter $\langle Y_{L-1} Z_{L-2} \dots Z_0 \rangle$, the intermediate qubits ($0$ through $L-2$) are measured directly in the $Z$-basis. Qubit $L-1$ undergoes an $S^\dagger$ followed by an $H$ gate to measure in the $Y$-basis.
+For the non-local edge string $\langle X_0Z_1\cdots Z_{L-2}X_{L-1}\rangle$, the two endpoint qubits are rotated with Hadamard gates and all qubits are measured in the $Z$ basis. The product of the measured signs gives one shot sample of the full string.
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.8\linewidth]{../plots/block3_week5_meas_sop.pdf}
-  \caption{The measurement circuit for the non-local String Order Parameter (SOP).}
+  \includegraphics[width=0.8\linewidth]{../plots/block3_week5_meas_correlation.pdf}
+  \caption{The measurement circuit for the parity-preserving edge string $\langle X_0Z_1Z_2X_3\rangle$.}
 \end{figure}
 
 \subsection{Results}
@@ -136,7 +136,7 @@ Testing this framework at $L=4$ yields successful state preparation with fidelit
   \caption{Shot-based VQE expectation values at representative phase points.}
 \end{figure}
 
-As shown above, the non-local String Order Parameter remains robust in the topological phase but vanishes identically in the trivial phase, serving as a clear, detectable signature of the Kitaev chain's underlying topology on a quantum processor.
+As shown above, the non-local edge-string signal is large in the topological phase and strongly suppressed in the trivial phase, serving as a clear, detectable signature of the Kitaev chain's underlying topology on a quantum processor.
 
 \section{Week 5 Presentation Audit and Reconciliation}
 
@@ -262,15 +262,14 @@ same as the Week 5 notebook or slides.
   if they are nearly degenerate. The notebook adds the parity penalty directly
   to the VQE cost function, so parity selection is part of optimization.
 
-  \item \textbf{Measured string:} \texttt{block3.py} measures a local
-  $\langle X_0\rangle$ and a string labelled
-  $\langle Y_{L-1}Z_{L-2}\cdots Z_0\rangle$. That is not the same observable
-  emphasized in the Week 5 deck. The deck and notebook emphasize the boundary
-  correlation
+  \item \textbf{Measured string:} \texttt{block3.py} now measures the local
+  parity-odd check $\langle X_0\rangle$ together with the parity-preserving
+  boundary correlation
   \[
     \langle X_0Z_1\cdots Z_{L-2}X_{L-1}\rangle,
   \]
-  which for $L=4$ is $\langle X_0Z_1Z_2X_3\rangle$.
+  which for $L=4$ is $\langle X_0Z_1Z_2X_3\rangle$. This matches the
+  diagnostic emphasized in the Week 5 deck and in the later Week 6--7 sweeps.
 
   \item \textbf{Scope of results:} \texttt{block3.py} aims to compare
   topological, critical, and trivial points $(\mu=0,2t,3t)$. The notebook and

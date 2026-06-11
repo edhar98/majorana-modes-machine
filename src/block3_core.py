@@ -198,40 +198,17 @@ def measure_local_y_shots(ansatz, theta, L, shots, backend, site=0):
     return val / shots
 
 
-def measure_observables_shot_based(ansatz, opt_params, L, shots=8192):
-    backend = AerSimulator()
-
-    qc_local = ansatz.assign_parameters(opt_params).copy()
-    qc_local.h(0)
-    qc_local.measure_all()
-    qc_local = transpile(qc_local, backend)
-    counts_local = backend.run(qc_local, shots=shots).result().get_counts()
-
-    x0_val = 0
-    for bitstring, count in counts_local.items():
-        meas = 1 if bitstring[-1] == '0' else -1
-        x0_val += meas * count
-    x0_val /= shots
-    x0_err = np.sqrt((1 - x0_val ** 2) / shots)
-
-    qc_string = ansatz.assign_parameters(opt_params).copy()
-    qc_string.sdg(L - 1)
-    qc_string.h(L - 1)
-    qc_string.measure_all()
-    qc_string = transpile(qc_string, backend)
-    counts_string = backend.run(qc_string, shots=shots).result().get_counts()
-
-    sop_val = 0
-    for bitstring, count in counts_string.items():
-        parity_sign = 1
-        for bit in bitstring:
-            if bit == '1':
-                parity_sign *= -1
-        sop_val += parity_sign * count
-    sop_val /= shots
-    sop_err = np.sqrt((1 - sop_val ** 2) / shots)
-
-    return (x0_val, x0_err), (sop_val, sop_err)
+def measure_local_x_shots(ansatz, theta, L, shots, backend, site=0):
+    qc = ansatz.assign_parameters(theta).copy()
+    qc.h(site)
+    qc.measure_all()
+    qc = transpile(qc, backend)
+    counts = backend.run(qc, shots=shots).result().get_counts()
+    val = 0
+    for bitstring, count in counts.items():
+        bit = bitstring.replace(' ', '')[L - 1 - site]
+        val += (-1 if bit == '1' else 1) * count
+    return val / shots
 
 
 def vqe_cost(theta, ansatz, H_mat, P_mat, lam):
