@@ -308,6 +308,40 @@ The label \emph{VQE 4096 shots} uses the same optimized circuit and the same obs
 \end{equation}
 with smaller variance when the true value is already close to $\pm 1$. Thus this curve should fluctuate around the ideal VQE curve; it is not a different state-preparation method.
 
+For the Week 7 edge string,
+\begin{equation}
+  O_{\mathrm{edge}}=X_0Z_1Z_2X_3,
+\end{equation}
+the shot method is implemented as a real measurement protocol. First the optimized VQE circuit prepares
+\begin{equation}
+  \ket{\psi(\theta^*)}=U(\theta^*)\ket{0000}.
+\end{equation}
+Then the qubits appearing with $X$ in the observable are rotated into the hardware $Z$-measurement basis. Since
+\begin{equation}
+  X = HZH,
+\end{equation}
+Hadamard gates are applied to qubits $0$ and $3$ before measurement. After these basis rotations, measuring
+\begin{equation}
+  X_0Z_1Z_2X_3
+\end{equation}
+is equivalent to measuring the product
+\begin{equation}
+  Z_0Z_1Z_2Z_3
+\end{equation}
+on the rotated circuit.
+
+Each measured bitstring therefore gives one sample $o_m=\pm 1$. Write the measured bits as $b_j\in\{0,1\}$. For $L=4$,
+\begin{equation}
+  o_m=(-1)^{b_0+b_1+b_2+b_3}.
+\end{equation}
+An even number of measured $1$ bits gives $+1$, while an odd number gives $-1$. The shot-based estimator is the sample average
+\begin{equation}
+  \langle O_{\mathrm{edge}}\rangle_{\mathrm{shots}}
+  =\frac{1}{N_{\mathrm{shots}}}\sum_{m=1}^{N_{\mathrm{shots}}}o_m,
+  \qquad N_{\mathrm{shots}}=4096.
+\end{equation}
+This is the same estimator that would be used on real hardware: prepare the optimized VQE state, rotate the measurement basis, measure many times, convert bitstrings to $\pm 1$, and average.
+
 The lower panel is not another phase diagnostic. It is a validation panel. In the current plotting convention the red curve is the energy error
 \begin{equation}
   |E_{\mathrm{VQE}}-E_{\mathrm{ED}}|,
