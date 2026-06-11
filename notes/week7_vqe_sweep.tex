@@ -293,6 +293,29 @@ The expected behavior is:
 \end{itemize}
 The top panel is the measurement-side result that Block 4 will compare against; the bottom panel is the certificate that the result was obtained from genuinely correct state preparation.
 
+\subsection*{Ideal VQE, Shot-Based VQE, and the Validation Curves}
+
+The label \emph{VQE ideal} means that the optimized VQE circuit is converted to its noiseless statevector and the edge-string expectation value is evaluated directly:
+\begin{equation}
+  \langle O_{\mathrm{edge}}\rangle_{\mathrm{ideal}}
+  =\bra{\psi(\theta^*)}O_{\mathrm{edge}}\ket{\psi(\theta^*)}.
+\end{equation}
+There is no sampling error in this curve. It answers: if the variational circuit prepared exactly the state described by its final parameters, what edge-string value would it give?
+
+The label \emph{VQE 4096 shots} uses the same optimized circuit and the same observable, but estimates the expectation value from $4096$ simulated projective measurements. For an observable with eigenvalues $\pm 1$, the statistical scale is at most
+\begin{equation}
+  \sigma \sim \frac{1}{\sqrt{4096}} \simeq 0.016,
+\end{equation}
+with smaller variance when the true value is already close to $\pm 1$. Thus this curve should fluctuate around the ideal VQE curve; it is not a different state-preparation method.
+
+The lower panel is not another phase diagnostic. It is a validation panel. In the current plotting convention the red curve is the energy error
+\begin{equation}
+  |E_{\mathrm{VQE}}-E_{\mathrm{ED}}|,
+\end{equation}
+while the other curves show the state-fidelity error $1-\mathcal{F}$ and the parity deviation $|1-\langle P\rangle|$. A small red value near $\mu=0$ means that the ansatz and optimizer found the ED even-sector ground energy accurately there. This is expected because the sweet-spot/topological state is easy for the $R_Y$ plus linear-CNOT ansatz to represent.
+
+If the red validation curve is larger on the negative-$\mu$ side and decreases as the sweep proceeds toward positive $\mu$, that asymmetry should be read as an optimization-history effect, not as new physics. The physical ED Hamiltonian and the edge-string diagnostic are symmetric under the corresponding $\mu\leftrightarrow -\mu$ transformation at this sweet spot. The VQE sweep, however, is ordered: it begins at the left edge of the grid from a random initial parameter vector and then uses warm-start continuation, where each optimized point seeds the next one. Early points can therefore carry larger optimization error, while later points benefit from a better parameter path. In short, the top-panel ED physics should be symmetric, but the bottom-panel validation errors need not be exactly symmetric because they measure how the classical optimizer performed along one directed sweep.
+
 \section{Ansatz Depth: How Deep Is Enough?}
 
 \begin{figure}[h]
