@@ -86,26 +86,27 @@ python block2.py                      # qubit encoding plots
 python block2.py --list               # show available plots
 ```
 
-## Block 3 — Measuring Topology with Qiskit
+## Block 3 — Measuring Topology with Quantum Circuits
 
-Block 3 moves from matrix-based validation to gate-based simulation. The current scripted runner is `src/block3.py`, with shared VQE and measurement helpers in `src/block3_core.py`.
+Block 3 turns the qubit Hamiltonian into a circuit-measurable workflow. The central question is whether the topological phase can be detected from measurements of a prepared quantum state rather than from direct access to exact eigenvectors.
 
-Key pieces:
+Key results implemented:
 
-- **VQE state preparation** — an `EfficientSU2` ansatz with `RY` rotations and linear CNOT entanglement prepares small-chain ground states.
-- **Aer Estimator** — Qiskit's simulator primitive used to evaluate VQE energy expectations, e.g. `(<psi(theta)|H|psi(theta)>)`, without running on real hardware.
-- **Why "Aer"?** `qiskit-aer` is Qiskit's high-performance simulator package. The name follows Qiskit's classical-elements naming theme: Terra for the core framework, Aer for simulators, and the older Aqua package for algorithms.
-- **Shot-based measurements** — `AerSimulator` samples circuits with finite shots, then bitstrings are post-processed into observables such as the edge string `X0 Z1 Z2 X3`.
-- **Week 7 VQE sweep** — a parity-constrained VQE sweep over `mu` is validated against ED using energy error, parity, subspace fidelity, and edge-string error.
+- **Week 5: Gate-based preparation** — VQE prepares a small-chain ground state with a hardware-efficient ansatz, then compares local parity-odd observables against the non-local edge string.
+- **Non-local topology diagnostic** — the boundary Majorana correlator is measured as the parity-preserving Pauli string `X0 Z1 ... Z(L-2) X(L-1)`, which is large in the topological regime and suppressed in the trivial regime.
+- **Week 6: Phase sweep diagnostic** — the same edge-string observable is swept across `mu` and benchmarked against parity-gap and finite-size behavior using exact diagonalization as a trusted small-system reference.
+- **Week 7: VQE sweep** — the ED-prepared states are replaced by parity-constrained VQE states across the `mu` grid, with validation checks for energy, parity, subspace fidelity, and edge-string error.
+- **Shot-based readout** — circuit measurements are sampled with finite shots and converted from bitstrings into string-observable estimates, matching the workflow needed before adding realistic noise.
 
 ### Run Block 3
 
 ```bash
 cd src
 python block3.py --list
-python block3.py --plots 1      # VQE local-vs-edge-string observable test
-python block3.py --plots 7      # Week 7 VQE mu-sweep
-python block3.py --plots 8      # ansatz-depth diagnostic
+python block3.py --plots 1          # representative VQE local-vs-edge-string test
+python block3.py --plots 3 4 5 6    # Week 6 edge-string sweep diagnostics
+python block3.py --plots 7          # Week 7 parity-constrained VQE mu-sweep
+python block3.py --plots 8          # Week 7 ansatz-depth diagnostic
 ```
 
 ### Requirements
