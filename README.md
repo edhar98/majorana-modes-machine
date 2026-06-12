@@ -19,8 +19,8 @@ The goal is to bridge abstract theoretical physics and the quantum software stac
 |-------|-------|--------|
 | 1 | **The Physics Bridge** — Kitaev chain, BdG bulk, winding number, phase diagram | ✅ |
 | 2 | **Finite-Size Physics & Qubit Encoding** — Edge modes, Majorana splitting, Jordan-Wigner transform, parity sectors | ✅ |
-| 3 | **Measuring Topology** — Circuit-based measurements, edge & string observables | 🔜 |
-| 4 | **The NISQ Reality Check** — Noise modeling, mitigation, robustness | 🔜 |
+| 3 | **Measuring Topology** — Circuit-based measurements, edge & string observables | ✅ |
+| 4 | **The NISQ Reality Check** — Noise modeling, mitigation, robustness | 🚧 |
 
 ---
 
@@ -132,6 +132,7 @@ Weekly presentation slides:
 | 5 | Block 3 Qubit encoding, Ground State preparation | [week5.pdf](https://edhar98.github.io/majorana-modes-machine/week5.pdf) |
 | 6 | Block 3 phase sweep — circuit-measurable string order | [week6.pdf](https://edhar98.github.io/majorana-modes-machine/week6.pdf) |
 | 7 | Block 3 VQE sweep — parity-constrained state preparation | [week7.pdf](https://edhar98.github.io/majorana-modes-machine/week7.pdf) |
+| 8 | Block 4 kickoff — noise model and failure modes | [week8.pdf](https://edhar98.github.io/majorana-modes-machine/week8.pdf) |
 
 ## Notes
 

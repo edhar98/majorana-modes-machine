@@ -1,4 +1,4 @@
-WEEKS := 1 2 3 4 5 6 7
+WEEKS := 1 2 3 4 5 6 7 8
 WEEK_TARGETS := $(addprefix week,$(WEEKS))
 WEEK_PDFS := $(addprefix presentation/week,$(addsuffix /slides.pdf,$(WEEKS)))
 CLEAN_TARGETS := $(addprefix clean-week,$(WEEKS))

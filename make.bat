@@ -50,15 +50,15 @@ if /I "%TARGET:~0,5%"=="note-" (
 )
 
 echo Unknown target: %TARGET%
-echo Usage: make week6 ^| make notes ^| make note-week6_phase_sweep ^| make all ^| make clean
+echo Usage: make week8 ^| make notes ^| make note-week7_vqe_sweep ^| make all ^| make clean
 exit /b 1
 
 :compile_all_weeks
-for %%W in (1 2 3 4 5 6 7) do call :compile_week %%W || exit /b 1
+for %%W in (1 2 3 4 5 6 7 8) do call :compile_week %%W || exit /b 1
 exit /b 0
 
 :clean_all_weeks
-for %%W in (1 2 3 4 5 6 7) do call :clean_week %%W
+for %%W in (1 2 3 4 5 6 7 8) do call :clean_week %%W
 exit /b 0
 
 :compile_week

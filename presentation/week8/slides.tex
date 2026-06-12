@@ -1,0 +1,248 @@
+\documentclass[aspectratio=169,12pt]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{listings}
+
+\graphicspath{{../../plots/}}
+
+\definecolor{topological}{HTML}{1f77b4}
+\definecolor{critical}{HTML}{2ca02c}
+\definecolor{trivial}{HTML}{d62728}
+\definecolor{edgemode}{HTML}{e377c2}
+\definecolor{codebg}{HTML}{f5f5f5}
+\definecolor{codekw}{HTML}{0000cd}
+\definecolor{codecomment}{HTML}{228b22}
+\definecolor{codestring}{HTML}{8b0000}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  backgroundcolor=\color{codebg},
+  frame=single,
+  showstringspaces=false,
+  breaklines=true
+}
+
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\Oedge}{X_0Z_1\cdots Z_{L-2}X_{L-1}}
+\newcommand{\E}{\mathcal{E}}
+
+\title[Kitaev Chain -- Block 4]{Majorana Modes in the Machine}
+\subtitle{Week 8: NISQ Reality Check -- Noise Model and Failure Modes}
+\author{Dobromir Stoev\\ Edgar Harutyunyan\\ Guilherme Schewtschik\\ Jaskaran Singh\\ Zhengyi Liu\\ Zhenming Shi}
+\institute{Advanced Seminar -- AI-Augmented Theoretical Physics}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Week 8 Objective}
+  \begin{block}{Block 4 milestone}
+    Start from the validated Week 7 VQE sweep and ask whether the edge-string phase diagnostic survives realistic circuit noise.
+  \end{block}
+
+  \begin{itemize}
+    \item Freeze the noiseless VQE result as the reference curve.
+    \item Add noise to preparation and measurement circuits in controlled stages.
+    \item Separate state-preparation failure from readout/estimation failure.
+    \item Define when the inferred phase boundary becomes unreliable.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{What Week 7 Gives Us}
+  \begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{block3_week7_vqe_sweep.pdf}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \small
+      \textbf{Noiseless baseline}
+      \begin{itemize}
+        \item Prepared by parity-constrained VQE
+        \item Edge string measured ideally and with shots
+        \item ED validates energy, parity, fidelity, string value
+      \end{itemize}
+      \vspace{0.2cm}
+      This is the reference Block 4 must degrade in a physically interpretable way.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{What Noise Can Break}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{State preparation}
+      \begin{itemize}
+        \item VQE ansatz gates no longer implement exactly $U(\theta)$.
+        \item Entangling-gate errors reduce edge coherence.
+        \item Relaxation can bias the parity sector.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Measurement}
+      \begin{itemize}
+        \item Readout flips corrupt the bitstring parity product.
+        \item Shot noise broadens the string estimator.
+        \item A small true signal becomes hard to distinguish from zero.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+  \begin{alertblock}{Main risk}
+    Noise can flatten the edge-string contrast between $|\mu|<2t$ and $|\mu|>2t$, even when the noiseless circuit is correct.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Noise Channels to Add}
+  \begin{center}
+  \begin{tabular}{p{0.25\textwidth}p{0.33\textwidth}p{0.32\textwidth}}
+    \textbf{Channel} & \textbf{Physical meaning} & \textbf{Expected effect} \\
+    \hline
+    Depolarizing error & Random Pauli error after gates & Shrinks correlations and string contrast \\
+    Readout error & Classical bit flip during measurement & Biases $\pm1$ parity-product estimator \\
+    Amplitude damping & $T_1$ relaxation toward $\ket{0}$ & Can change particle number and parity balance \\
+    Phase damping & $T_2$ dephasing & Destroys coherent edge-to-edge correlations
+  \end{tabular}
+  \end{center}
+
+  \begin{block}{Week 8 scope}
+    Build the protocol and first controlled tests; do not claim hardware realism until the noise parameters are tied to an explicit backend model.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Where Noise Enters the Circuit}
+  \centering
+  \begin{tikzpicture}[
+    node distance=0.55cm and 0.48cm,
+    box/.style={draw,rounded corners=2pt,align=center,minimum height=0.9cm,minimum width=2.25cm,fill=blue!6,font=\small},
+    noise/.style={box,fill=red!8},
+    check/.style={box,fill=green!8},
+    arrow/.style={-{Latex[length=2mm]},thick}
+  ]
+    \node[box] (init) {$\ket{0\cdots0}$};
+    \node[box,right=of init] (ansatz) {VQE ansatz\\$U(\theta^*)$};
+    \node[noise,right=of ansatz] (gate) {gate noise\\1q/2q errors};
+    \node[box,right=of gate] (basis) {basis rotations\\for $\Oedge$};
+    \node[noise,below=of basis] (readout) {readout noise\\bit flips};
+    \node[check,left=of readout] (post) {post-process\\bitstring product};
+    \node[check,left=of post] (metric) {compare\\to noiseless/ED};
+    \draw[arrow] (init)--(ansatz);
+    \draw[arrow] (ansatz)--(gate);
+    \draw[arrow] (gate)--(basis);
+    \draw[arrow] (basis)--(readout);
+    \draw[arrow] (readout)--(post);
+    \draw[arrow] (post)--(metric);
+  \end{tikzpicture}
+
+  \vspace{0.35cm}
+  The same observable is kept fixed; only the channel between preparation and bitstrings is changed.
+\end{frame}
+
+\begin{frame}{First Sensitivity Sketch}
+  \begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{block3_week6_noise.pdf}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \small
+      This plot is a toy robustness check, not yet a hardware noise model.
+      \begin{itemize}
+        \item It perturbs the ideal edge-string curve directly.
+        \item It shows the kind of contrast loss we must quantify.
+        \item Week 8 replaces this with circuit-level noise channels.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Two Experiments to Keep Separate}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Frozen-parameter noise test}
+      \begin{itemize}
+        \item Use $\theta^*(\mu)$ from noiseless Week 7.
+        \item Add noise only during circuit execution.
+        \item Measures readout and circuit degradation at fixed preparation.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Noisy optimization test}
+      \begin{itemize}
+        \item Optimize the VQE cost under noisy estimates.
+        \item Tests whether the optimizer can still find good parameters.
+        \item Harder and more expensive; should come second.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+  \begin{block}{Engineering rule}
+    First isolate measurement/circuit degradation; only then study optimizer degradation.
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{Week 8 Implementation Plan}
+\begin{lstlisting}
+for mu, theta_star in noiseless_vqe_sweep:
+    qc = build_preparation_circuit(theta_star)
+    qc = append_edge_string_measurement(qc)
+
+    for noise_level in noise_grid:
+        backend = AerSimulator(noise_model=model(noise_level))
+        counts = run(qc, backend, shots=shots)
+        string = bitstring_product_average(counts)
+        save(mu, noise_level, string)
+\end{lstlisting}
+
+\begin{itemize}\small
+  \item Reuse the Week 7 optimized parameters as the baseline input.
+  \item Sweep one noise knob at a time before combining channels.
+  \item Save raw counts, not only processed expectation values.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Metrics for Block 4}
+  \begin{center}
+  \begin{tabular}{p{0.25\textwidth}p{0.34\textwidth}p{0.31\textwidth}}
+    \textbf{Metric} & \textbf{Definition} & \textbf{Question} \\
+    \hline
+    String attenuation & $|O_{\rm noisy}|/|O_{\rm ideal}|$ & How fast is the signal lost? \\
+    Phase contrast & topological mean $-$ trivial mean & Is the phase distinction still visible? \\
+    Boundary error & shift in inferred $|\mu_c|$ & Does noise move the transition estimate? \\
+    Shot uncertainty & bootstrap/error bars from counts & Is the conclusion statistically resolved? \\
+    Parity drift & $|1-\langle P\rangle|$ if measurable & Did noise leave the target sector?
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Definition of Done for Week 8}
+  \begin{itemize}
+    \item A documented circuit-level noise protocol for the Week 7 VQE sweep.
+    \item First frozen-parameter noisy edge-string curves for at least one noise channel.
+    \item Comparison against the noiseless VQE and ED baselines.
+    \item Clear separation between shot noise, readout noise, and gate noise.
+    \item A quantitative criterion for when the phase-boundary diagnostic fails.
+  \end{itemize}
+
+  \begin{alertblock}{Next milestone}
+    After the frozen-parameter tests, run noisy VQE optimization and compare raw versus mitigated readout.
+  \end{alertblock}
+\end{frame}
+
+\end{document}
