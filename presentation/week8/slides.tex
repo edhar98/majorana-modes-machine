@@ -147,7 +147,7 @@
     \end{equation}
     
     \begin{itemize}
-        \item \textbf{Gate Noise ($\mathcal{E}_{\text{gate}}$):} Modeled via local depolarizing channels after each 2-qubit gate. $\mathcal{D}_p(\rho) = (1-p)\rho + \frac{p}{4^2-1}\sum_{i \neq 0} P_i \rho P_i$.
+        \item \textbf{Gate Noise ($\mathcal{E}_{\text{gate}}$):} Local two-qubit depolarizing channels after entangling gates, $\mathcal{D}_p(\rho) = (1-p)\rho + \frac{p}{15}\sum_{i=1}^{15} P_i \rho P_i$, over the non-identity two-qubit Paulis.
         \item \textbf{Basis Rotation ($\mathcal{E}_{\text{meas-basis}}$):} Ideal unitary mapping for $X_0Z_1Z_2X_3$.
         \item \textbf{Readout Assignment ($\mathcal{E}_{\text{readout}}$):} Asymmetric bit-flip channel $p(0|1)$ and $p(1|0)$ applied to the diagonal elements of the density matrix.
     \end{itemize}
@@ -162,13 +162,15 @@
             \textbf{Expected Behavior:}
             \begin{itemize}
                 \item The ideal ED baseline peaks at $\langle O_{\text{edge}} \rangle = 1.0$ at $\mu=0$.
-                \item \textit{Readout error alone} linearly scales the entire curve by $(1-2\epsilon)^4$, preserving the functional shape.
-                \item \textit{Gate noise} broadens the variance $\text{Tr}(\rho^2) < 1$, flattening the topological contrast disproportionately near the critical point $\mu_c = \pm 2t$.
+                \item \textit{Readout error alone} scales the curve by $(1-2\epsilon)^4$ for independent symmetric readout flips on the four measured bits.
+                \item \textit{Gate noise} lowers purity, $\text{Tr}(\rho^2)<1$, and suppresses coherent edge correlations, especially near $\mu_c=\pm2t$.
             \end{itemize}
         \end{column}
         \begin{column}{0.5\textwidth}
-            % Placeholder for the actual hardware/simulator plot
             \begin{center}
+            \scriptsize Schematic expectation before simulator data
+            \vspace{0.1cm}
+
             \begin{tikzpicture}[scale=0.7]
                 % Axes
                 \draw[->] (-3.5,0) -- (3.5,0) node[right] {$\mu/t$};
@@ -201,19 +203,23 @@
     We must define mathematically when the topological transition at $|\mu| = 2t$ becomes indistinguishable from the trivial vacuum due to the combined noise channels.
     
     \vspace{0.4cm}
-    \textbf{Failure Criterion:} The diagnostic is considered to have failed when the topological signal inside the bulk ($|\mu| < 2t$) cannot be resolved from the statistical and hardware noise floor with a $3\sigma$ confidence interval.
+    \textbf{Failure Criterion:} The diagnostic fails when the measured contrast between the topological window and the trivial region cannot be resolved from the statistical and hardware noise floor with a $3\sigma$ confidence interval.
     
     \vspace{0.2cm}
-    Specifically, failure occurs if the maximum observable contrast satisfies:
+    Specifically, failure occurs if the measurable contrast satisfies:
     \begin{equation}
-        \max_{\mu} \left| \langle \hat{O}_{\text{edge}}(\mu) \rangle_{\text{meas}} \right| \leq \frac{3}{\sqrt{N_{\text{shots}}}} + \delta_{\text{SPAM}}
+        \max_{|\mu|<2t} |\langle \hat{O}_{\text{edge}}(\mu) \rangle_{\text{meas}}|
+        -
+        \max_{|\mu|>2t} |\langle \hat{O}_{\text{edge}}(\mu) \rangle_{\text{meas}}|
+        \leq
+        \frac{3}{\sqrt{N_{\text{shots}}}} + \delta_{\text{SPAM}}
     \end{equation}
     where $\delta_{\text{SPAM}}$ is the systematic bias inferred from the parity drift observable, $|1 - \langle \hat{P} \rangle_{\text{noisy}}|$. 
     
 \end{frame}
 \begin{frame}{Next Week}
   \begin{alertblock}{Next milestone}
-    After the frozen-parameter tests, run noisy VQE optimization and compare raw versus mitigated readout.
+    First produce the noisy frozen-parameter sweep against the Week 7 baseline; then run noisy VQE optimization and compare raw versus mitigated readout.
   \end{alertblock}
 \end{frame}
 

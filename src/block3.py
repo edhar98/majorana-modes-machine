@@ -247,7 +247,7 @@ def plot_vqe_sweep(L=4, t=T, delta=DELTA, points=81, shots=4096, reps=3, lam=3.0
     ax1.scatter(x[::2], s_shot[::2], color=COLORS['edge'], s=20, zorder=3,
                 label=rf'VQE ({shots} shots)')
     ax1.set_ylabel(r'$|\langle O_{\mathrm{edge}}\rangle|$')
-    ax1.set_title(rf'Week 7: VQE-prepared edge-string sweep ($L={L}$, $t=\Delta=1$)')
+    ax1.set_title(f'Week 7: VQE-prepared edge-string sweep (L={L}, t=1, Delta=1)')
     ax1.set_ylim(-0.05, 1.08)
     ax1.legend(fontsize=9, loc='upper center', ncol=2)
     clean_axes(ax1)
