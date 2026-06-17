@@ -1,0 +1,57 @@
+
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\geometry{margin=2.5cm}
+
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle#1|}
+\newcommand{\Oedge}{X_0 Z_1\cdots Z_{L-2} X_{L-1}}
+
+\title{Week 8 Notes}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Goals}
+We already validated our VQE sweep against ED. Now we need to see if the circuit could handle realistic quantum noise effects.
+
+To check this we start with using our noiseless VQE as the reference curve and then add noise in controlled stages. Then we can see effects of noise on different levels of the simulation and finally infer a boundary where our trends become unreliable.
+
+\section{Slide 4 - What noise can Break}
+
+Two major catogories. We can have errors in the state preperation on the measurement.
+
+\subsection{State Preperation}
+
+We use perfect rotation matrices in our code in physical hardware, this is a microwave pulse. If there is thermal fluctuation in the fridge, or if the pulse duration is slightly off by picoseconds, the qubit rotates by $\theta + \delta$. Your state vector $|\psi\rangle$ drifts away from the target ground state.
+
+The Majorana signal depends on the first qubit ($q_0$) and the last qubit ($q_{L-1}$) being quantum-mechanically linked across the whole chain. This link is built by a "staircase" of CNOT gates. CNOTs are 10x to 100x noisier than single-qubit gates. If one CNOT fails to entangle properly, the "edge-to-edge" communication is severed, and the non-local string value will plummet.
+
+Relaxation can bias the parity sector. This refers to $T_1$ relaxation ($|1\rangle \rightarrow |0\rangle$). In our Jordan-Wigner mapping, a $|1\rangle$ represents an occupied fermionic site. If a qubit "relaxes" to $|0\rangle$, it is physically equivalent to a particle escaping the chain. This changes the Fermion Parity from Even to Odd (or vice-versa). Since we rely on a strictly parity-constrained sector for our diagnostic, this "poisoning" ruins the reliability of the ground state.
+
+\subsection{Measurement}
+
+Our string order parameter is a product of eigenvalues: $X_0 \cdot Z_1 \cdot Z_2 \cdot X_3$. If the hardware misreads a single 0 as a 1 (a bit flip), the entire product changes sign (e.g., from $+1$ to $-1$). Because the string is a long product, the probability of the whole string being wrong increases with the system size $L$.
+
+Shot noise broadens the string estimator:
+This is statistical variance. Because we only take a finite number of shots ($N=4096$), our calculated average has an error bar $\sigma \approx 1/\sqrt{N}$. In a noisy environment, this "statistical jitter" makes the smooth curve of the phase diagram look like jagged noise.
+
+A small true signal becomes hard to distinguish from zero:
+Near the phase boundaries ($|\mu| \approx 2t$), the Majorana edge modes are barely separated, and the "string" signal is naturally weak (maybe $0.1$ or $0.2$). If the noise floor of your hardware is $0.15$, you can no longer tell if you are seeing a real topological signal or just hardware noise.
+
+The "Main Risk": Contrast Flattening. This is the "big picture" failure. The goal of our project is to see a sharp distinction:Topological: String Value $\approx 1.0$ and Trivial: String Value $\approx 0.0$Noise acts like a "contrast slider" in a photo editor. It pulls the $1.0$ down and the $0.0$ up. If the noise is high enough, both phases will look like $0.4$, and your diagnostic tool becomes useless. You "lose the phase boundary," which means your quantum computer can no longer distinguish between a topological superconductor and a regular piece of metal.
+
+\section{Two Experiments to keep seperate}
+
+f we introduce noise and run the whole VQE loop, and our final edge-string signal is garbage, we face a "chicken or egg" problem:Possibility A: The physical quantum gates and measurements ruined the state.Possibility B: The noise simply confused the classical optimizer so badly that it chose the wrong $\theta$ parameters.By doing a frozen-parameter noise test , we use the perfect $\theta^*(\mu)$ parameters from the noiseless Week 7 sweep  and tell the classical optimizer to stay out of it.  
+
+\section{Explicit forms of the noise matrices}
+
+Here are the explicit mathematical forms for the three completely positive trace-preserving (CPTP) maps defined in the presentation. Because the total system is $4$ qubits, the full density matrix $\rho$ is a $16 \times 16$ matrix, but these noise channels act on specific subspaces.  1. Gate Noise ($\mathcal{E}_{gate}$): The 2-Qubit Depolarizing ChannelThe presentation specifies that this noise is applied locally after each 2-qubit entangling gate. Therefore, this map acts on a $4 \times 4$ density matrix representing the 2-qubit subspace involved in the gate.  A quantum channel is explicitly represented by a set of Kraus matrices $\{K_i\}$ such that $\mathcal{E}(\rho) = \sum K_i \rho K_i^\dagger$, subject to the trace-preserving condition $\sum K_i^\dagger K_i = I$.Using the presentation's parameterization (swapping their $\rho$ for $p$ to denote probability), the channel is constructed from $16$ explicit Kraus matrices:The "No-Error" Matrix ($1$ matrix):$$K_0 = \sqrt{1-p} \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix} = \sqrt{1-p} (I \otimes I)$$The "Error" Matrices ($15$ matrices):For every non-identity 2-qubit Pauli operator $P_i \in \{IX, IY, IZ, XI, XX, \dots, ZZ\}$, the corresponding Kraus matrix is:$$K_i = \sqrt{\frac{p}{15}} P_i$$When these $16$ matrices are applied to the 2-qubit state, they perfectly recreate the channel:$$\mathcal{E}_{gate}(\rho) = (1-p)\rho + \frac{p}{15} \sum_{i=1}^{15} P_i \rho P_i$$2. Basis Rotation ($\mathcal{E}_{meas-basis}$): The Unitary MappingThe slide defines this as an "ideal unitary mapping" to measure the edge string $X_0 Z_1 Z_2 X_3$. Quantum hardware typically only measures in the computational $Z$-basis. To measure $X$ on qubits $0$ and $3$, the circuit must apply a basis-changing unitary matrix $U$ to rotate the $X$ observable into the $Z$ observable ($H X H = Z$).  The required unitary matrix $U$ applies a Hadamard gate ($H$) to qubits $0$ and $3$, and the Identity ($I$) to qubits $1$ and $2$.$$U = H \otimes I \otimes I \otimes H$$Since $H = \frac{1}{\sqrt{2}}\begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}$ and $I = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}$, $U$ is explicitly a $16 \times 16$ symmetric unitary matrix. The quantum channel is the standard unitary conjugation acting on the full state:$$\mathcal{E}_{meas-basis}(\rho) = U \rho U^\dagger$$3. Readout Assignment ($\mathcal{E}_{readout}$): The Stochastic MatrixThe presentation models readout error as an asymmetric classical bit-flip channel applied to the diagonal elements of the density matrix. Because measurement collapses the state, the diagonal of the $16 \times 16$ density matrix represents the $16$ classical probabilities of measuring each bitstring (from $0000$ to $1111$).  This channel is represented by a $16 \times 16$ classical transition matrix $A_{full}$ acting on the probability vector $\vec{P} = \text{diag}(\rho)$.First, we define the $2 \times 2$ assignment matrix for a single qubit. Let $p(0|1)$ be the probability of falsely reading a $0$ when the true state is $1$, and $p(1|0)$ be the probability of reading a $1$ when the true state is $0$. The single-qubit stochastic matrix $A$ is:  $$A = \begin{pmatrix} 1 - p(1|0) & p(0|1) \\ p(1|0) & 1 - p(0|1) \end{pmatrix}$$Assuming readout errors are independent across the $4$ qubits, the explicit $16 \times 16$ matrix acting on the system is the tensor product of the individual qubit matrices:$$A_{full} = A_0 \otimes A_1 \otimes A_2 \otimes A_3$$The final map replaces the diagonal of $\rho$ with the vector resulting from $A_{full} \cdot \text{diag}(\rho)$. If the readout error is symmetric (where $p(1|0) = p(0|1) = \epsilon$ ), this is the exact mathematical mechanism that causes the edge string observable to shrink by a factor of $(1-2\epsilon)^4$.
+
