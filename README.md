@@ -132,7 +132,7 @@ Weekly presentation slides:
 | 5 | Block 3 Qubit encoding, Ground State preparation | [week5.pdf](https://edhar98.github.io/majorana-modes-machine/week5.pdf) |
 | 6 | Block 3 phase sweep — circuit-measurable string order | [week6.pdf](https://edhar98.github.io/majorana-modes-machine/week6.pdf) |
 | 7 | Block 3 VQE sweep — parity-constrained state preparation | [week7.pdf](https://edhar98.github.io/majorana-modes-machine/week7.pdf) |
-| 8 | Block 4 kickoff — noise model and failure modes | [week8.pdf](https://edhar98.github.io/majorana-modes-machine/week8.pdf) |
+| 8 | Block 4 kickoff — noise model and failure modes | [week8.pdf](https://edhar98.github.io/majorana-modes-machine/week8.pdf?v=7581a17) |
 
 ## Notes
 

@@ -28,6 +28,7 @@ jobs:
           set -euo pipefail
           mkdir -p web_output/notes
           touch web_output/.nojekyll
+          version="${GITHUB_SHA:-local}"
 
           find presentation -path "*/slides.pdf" | sort | while read -r file; do
             folder=$(basename "$(dirname "$file")")
@@ -67,7 +68,8 @@ jobs:
           find web_output -maxdepth 1 -name 'week*.pdf' | sort -V | while read -r file; do
             name=$(basename "$file" .pdf)
             label="Week ${name#week}"
-            printf '              <li><a href="%s">%s slides</a></li>\n' "$(basename "$file")" "$label" >> web_output/index.html
+            base=$(basename "$file")
+            printf '              <li><a href="%s?v=%s">%s slides</a></li>\n' "$base" "$version" "$label" >> web_output/index.html
           done
 
           cat >> web_output/index.html <<'HTML'
@@ -79,7 +81,7 @@ jobs:
           find web_output/notes -maxdepth 1 -name '*.pdf' | sort | while read -r file; do
             base=$(basename "$file")
             title=$(basename "$file" .pdf | tr '_' ' ')
-            printf '              <li><a href="notes/%s">%s</a></li>\n' "$base" "$title" >> web_output/index.html
+            printf '              <li><a href="notes/%s?v=%s">%s</a></li>\n' "$base" "$version" "$title" >> web_output/index.html
           done
 
           cat >> web_output/index.html <<'HTML'
