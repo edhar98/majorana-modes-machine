@@ -7,6 +7,7 @@
 
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
+\usepackage{subcaption} % FIX 2: Added subcaption package
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
@@ -57,6 +58,7 @@
   \begin{columns}[T]
     \begin{column}{0.62\textwidth}
       \centering
+      % Assuming block3_week7_vqe_sweep.pdf is also in the plots folder
       \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{block3_week7_vqe_sweep.pdf}
     \end{column}
     \begin{column}{0.34\textwidth}
@@ -199,6 +201,38 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}{Visualising the Noise}
+\begin{figure}[htbp]
+    \centering
+    % First subfigure
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        % FIX 3: Removed redundant pathing
+        \includegraphics[width=\textwidth]{Noise-epsilon0gate0.png}
+        \caption{ReadoutError:0.0 ,  GateError:0.0}
+        \label{fig:graph1}
+    \end{subfigure}
+    \hfill
+    % Second subfigure
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        % FIX 3: Removed redundant pathing
+        \includegraphics[width=\textwidth]{Noise-epsilon0.11gate0.07.png}
+        \caption{ReadoutError:0.11,   GateError:0.7}
+        \label{fig:graph2}
+    \end{subfigure}
+    \hfill
+    % Third subfigure
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        % FIX 3: Removed redundant pathing
+        \includegraphics[width=\textwidth]{Noise-epsilon0.25gate0.15.png}
+        \caption{ReadoutError:0.25,   GateError:0.15}
+        \label{fig:graph3}
+    \end{subfigure}
+\end{figure} % FIX 1: Closed the figure environment
+\end{frame}
+
 \begin{frame}{Phase-Boundary Failure Criterion}
     We must define mathematically when the topological transition at $|\mu| = 2t$ becomes indistinguishable from the trivial vacuum due to the combined noise channels.
     
@@ -217,6 +251,7 @@
     where $\delta_{\text{SPAM}}$ is the systematic bias inferred from the parity drift observable, $|1 - \langle \hat{P} \rangle_{\text{noisy}}|$. 
     
 \end{frame}
+
 \begin{frame}{Next Week}
   \begin{alertblock}{Next milestone}
     First produce the noisy frozen-parameter sweep against the Week 7 baseline; then run noisy VQE optimization and compare raw versus mitigated readout.
