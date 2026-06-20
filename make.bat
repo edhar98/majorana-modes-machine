@@ -54,11 +54,11 @@ echo Usage: make week8 ^| make notes ^| make note-week7_vqe_sweep ^| make all ^|
 exit /b 1
 
 :compile_all_weeks
-for %%W in (1 2 3 4 5 6 7 8) do call :compile_week %%W || exit /b 1
+for %%W in (1 2 3 4 5 6 7 8 9) do call :compile_week %%W || exit /b 1
 exit /b 0
 
 :clean_all_weeks
-for %%W in (1 2 3 4 5 6 7 8) do call :clean_week %%W
+for %%W in (1 2 3 4 5 6 7 8 9) do call :clean_week %%W
 exit /b 0
 
 :compile_week

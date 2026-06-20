@@ -1,5 +1,6 @@
 # LaTeX build artifacts
 notes/*.pdf
+presentation/*/slides.pdf
 *.aux
 *.log
 *.nav
@@ -7,6 +8,7 @@ notes/*.pdf
 *.snm
 *.synctex.gz
 *.toc
+*.vrb
 
 # LibreOffice lock files
 .~lock.*
