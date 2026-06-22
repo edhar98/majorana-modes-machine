@@ -269,6 +269,8 @@ $r$ & CNOTs & $|\langle O\rangle|_{\mathrm{ideal}}$ & $|\langle O\rangle|_{\math
 
 Both models start from the same well-prepared state (fidelity $\approx0.999$, ideal $|\langle O_{\mathrm{edge}}\rangle|\approx1$). The Week 8 estimate is essentially \emph{flat} at $\approx0.85$ across all depths, because it always applies the same $L-1=3$ channels. The circuit-level estimate decays \emph{monotonically} from $0.75$ to $0.51$ as the circuit deepens from $6$ to $15$ CNOTs, and the trace distance between the two noisy density matrices grows from $0.11$ to $0.32$. At depth $r=5$ the Week 8 model reports a surviving signal of $0.86$ while the real circuit produces $0.51$: an over-estimate of roughly $70\%$.
 
+The circuit-level decimals correspond to one VQE optimum. Because the depolarizing channel acts on the realized rotation angles, and \texttt{EfficientSU2} can represent the same fidelity-$1$ state with different angles, a different optimizer run or library version shifts the exact circuit values (the Week 8 column, which acts on the prepared state once, and all qualitative trends are unaffected). The numbers above are the values produced by the committed \texttt{block4.py} on the reference environment and match the figure.
+
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.95\linewidth]{../plots/block4_week9_gate_noise.pdf}

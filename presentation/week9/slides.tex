@@ -104,20 +104,22 @@
 \end{frame}
 
 \begin{frame}{Two Conventions, One Channel}
-  \textbf{Week 8 (random non-identity Pauli), per two-qubit pair:}
+  Let $d=2^n$ be the Hilbert dimension of the $n$-qubit gate ($d=4$ for a two-qubit gate); there are $d^2-1$ non-identity Paulis.
+
+  \textbf{Week 8 (random non-identity Pauli):}
   \begin{equation}
-    \mathcal{D}_{q}(\rho)=(1-q)\,\rho+\frac{q}{15}\sum_{P\neq II} P\rho P.
+    \mathcal{D}_{q}(\rho)=(1-q)\,\rho+\frac{q}{d^2-1}\sum_{P\neq I} P\rho P.
   \end{equation}
-  \textbf{Qiskit \texttt{depolarizing\_error(p,2)} (replace with maximally mixed):}
+  \textbf{Qiskit \texttt{depolarizing\_error(p,n)} (replace with maximally mixed):}
   \begin{equation}
-    \E^{\mathrm{Qiskit}}_{p}(\rho)=(1-p)\,\rho+p\,\frac{\mathrm{Tr}\,\rho}{2^n}\,I
-    =\Bigl(1-\tfrac{15p}{16}\Bigr)\rho+\frac{p}{16}\sum_{P\neq II}P\rho P.
+    \E^{\mathrm{Qiskit}}_{p}(\rho)=(1-p)\,\rho+p\,\frac{\mathrm{Tr}\,\rho}{d}\,I
+    =\Bigl(1-\tfrac{d^2-1}{d^2}\,p\Bigr)\rho+\frac{p}{d^2}\sum_{P\neq I}P\rho P.
   \end{equation}
-  Matching the non-identity weight $\frac{p}{16}=\frac{q}{15}$ gives a single map:
+  Matching the non-identity weight $\frac{p}{d^2}=\frac{q}{d^2-1}$ gives a single map:
   \begin{block}{}
     \centering
-    $\displaystyle p_{\mathrm{cx}}=\frac{2^{2n}}{2^{2n}-1}\,q
-    \;\Rightarrow\; \tfrac{16}{15}\,q \text{ (two-qubit)}, \quad \tfrac{4}{3}\,q \text{ (one-qubit)}.$
+    $\displaystyle p_{\mathrm{cx}}=\frac{d^2}{d^2-1}\,q
+    \;\Rightarrow\; \tfrac{16}{15}\,q\ (d=4), \quad \tfrac{4}{3}\,q\ (d=2).$
   \end{block}
 \end{frame}
 
@@ -189,18 +191,22 @@ nm.add_all_qubit_quantum_error(err, ['cx'])
       \end{center}
       \normalsize
       Week 8 stays \emph{flat}; the real circuit \emph{decays}. At depth 5 it over-estimates the signal by $\sim 70\%$.
+
+      {\scriptsize Decimals are from one VQE optimum (gate noise acts on the realized angles); the trend is robust.}
     \end{column}
   \end{columns}
 \end{frame}
 
 \begin{frame}{Verification Across the Sweep + Topological Protection}
   \centering
-  \includegraphics[width=0.98\textwidth,height=0.66\textheight,keepaspectratio]{block4_week9_topology_protection.pdf}
+  \includegraphics[width=0.98\textwidth,height=0.62\textheight,keepaspectratio]{block4_week9_topology_protection.pdf}
 
-  \vspace{0.1cm}
+  \vspace{0.05cm}
   \footnotesize
-  \textbf{Left:} analytic channel (line) vs Qiskit gate error (markers) agree to $3\times10^{-16}$ over all $\mu$.\quad
-  \textbf{Right:} verified noise at three strengths; the topological plateau ($|\mu|<2t$) is suppressed but stays distinguishable from the trivial floor, most robustly at the $\mu=0$ sweet spot.
+  \textbf{Left:} analytic channel (line) and Qiskit \texttt{depolarizing\_error} (markers) agree to $3\times10^{-16}$ over all $\mu$.\quad
+  \textbf{Right:} the \emph{frozen-state} verified channel (one round per pair) at three strengths; the topological plateau ($|\mu|<2t$) is suppressed but stays distinguishable from the trivial floor.
+
+  {\scriptsize Frozen even-parity state with the Qiskit-equivalent channel, \emph{not} a noisy-VQE sweep; circuit depth would lower it further.}
 \end{frame}
 
 \begin{frame}{What ``Topology Protects'' Means Here}
