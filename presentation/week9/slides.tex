@@ -42,9 +42,10 @@
 \newcommand{\Oedge}{X_0Z_1\cdots Z_{L-2}X_{L-1}}
 \newcommand{\E}{\mathcal{E}}
 \newcommand{\U}{\mathcal{U}}
+\newcommand{\Tr}{\operatorname{Tr}}
 
 \title[Kitaev Chain -- Block 4]{Majorana Modes in the Machine}
-\subtitle{Week 9: Gate Errors via Qiskit -- Verification and Topological Protection}
+\subtitle{Week 9: Circuit-Level Gate Noise on the VQE -- Depth Scaling and Verification}
 \author{Dobromir Stoev\\ Edgar Harutyunyan\\ Guilherme Schewtschik\\ Jaskaran Singh\\ Zhengyi Liu\\ Zhenming Shi}
 \institute{Advanced Seminar -- AI-Augmented Theoretical Physics}
 \date{\today}
@@ -55,32 +56,31 @@
  \titlepage
 \end{frame}
 
-\begin{frame}{From Week 8 to Week 9}
+\begin{frame}{From Week 7 to Week 9}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \small
-      \textbf{Week 8 (frozen-state test)}
+      \textbf{Week 7 gave us}
       \begin{itemize}
-        \item Took the validated even-parity ground state $\rho_0(\mu)$.
-        \item Applied a \emph{hand-rolled} two-qubit depolarizing channel once per neighbor pair.
-        \item Added symmetric readout and shots.
+        \item A validated parity-constrained VQE: optimal $\theta^*(\mu)$ across the phase diagram.
+        \item A depth diagnostic: \emph{noiselessly}, subspace infidelity \emph{falls} as the ansatz repetitions $r$ grow.
+        \item Conclusion then: deeper ansatz $=$ better state.
       \end{itemize}
     \end{column}
     \begin{column}{0.5\textwidth}
       \small
-      \textbf{Week 9 goals}
+      \textbf{Week 9 asks}
       \begin{itemize}
-        \item Integrate gate errors at the \emph{circuit} level via Qiskit's \texttt{NoiseModel}.
-        \item \textbf{Verify} the implementation is correct.
-        \item Ask whether the frozen-state model is faithful to hardware.
-        \item Show \textbf{where topology helps}.
+        \item Put \emph{real gate noise} into that preparation circuit.
+        \item Each repetition adds an entangling layer; every CNOT carries an error channel.
+        \item How does the edge-string diagnostic survive as the circuit deepens?
       \end{itemize}
     \end{column}
   \end{columns}
 
   \vspace{0.2cm}
   {\centering\small
-  \textbf{Same physics throughout:} same Hamiltonian and edge string $O_{\mathrm{edge}}=\Oedge$ as Block 3; only the noise treatment changes.\par}
+  Same Hamiltonian and edge string $O_{\mathrm{edge}}=\Oedge$ as Block 3; the new ingredient is \textbf{noise that enters through the gates}.\par}
 \end{frame}
 
 \begin{frame}{Gate Errors as Quantum Channels}
@@ -99,138 +99,94 @@
   \end{equation}
 
   \begin{alertblock}{Key consequence}
-    Noise enters \emph{through the gates}: the number of error channels grows with the gate count and circuit depth. This is exactly what a single channel on a frozen state cannot capture.
+    Noise enters \emph{through the gates}: the number of error channels grows with the gate count, hence with the circuit depth. A density-matrix simulation with a gate-level \texttt{NoiseModel} captures this exactly.
   \end{alertblock}
 \end{frame}
 
-\begin{frame}{Two Conventions, One Channel}
-  Let $d=2^n$ be the Hilbert dimension of the $n$-qubit gate ($d=4$ for a two-qubit gate); there are $d^2-1$ non-identity Paulis.
-
-  \textbf{Week 8 (random non-identity Pauli):}
+\begin{frame}{Noise Integrated Through the Gates, by reps}
+  The linear \texttt{EfficientSU2} ansatz at depth $r$ has
+  \[
+    \#\,\text{CNOTs}=r\,(L-1),
+  \]
+  and each one applies a depolarizing channel. The \emph{measured} signal is a product of two opposing factors:
   \begin{equation}
-    \mathcal{D}_{q}(\rho)=(1-q)\,\rho+\frac{q}{d^2-1}\sum_{P\neq I} P\rho P.
+    |\langle O_{\mathrm{edge}}\rangle|_{\mathrm{meas}}(r)
+    \;\approx\;
+    \underbrace{|\langle O_{\mathrm{edge}}\rangle|_{\mathrm{ideal}}(r)}_{\text{expressibility }\uparrow\text{ (Week 7)}}
+    \;\times\;
+    \underbrace{(1-p_{\mathrm{cx}})^{\,r(L-1)}}_{\text{gate noise }\downarrow}.
   \end{equation}
-  \textbf{Qiskit \texttt{depolarizing\_error(p,n)} (replace with maximally mixed):}
-  \begin{equation}
-    \E^{\mathrm{Qiskit}}_{p}(\rho)=(1-p)\,\rho+p\,\frac{\mathrm{Tr}\,\rho}{d}\,I
-    =\Bigl(1-\tfrac{d^2-1}{d^2}\,p\Bigr)\rho+\frac{p}{d^2}\sum_{P\neq I}P\rho P.
-  \end{equation}
-  Matching the non-identity weight $\frac{p}{d^2}=\frac{q}{d^2-1}$ gives a single map:
-  \begin{block}{}
-    \centering
-    $\displaystyle p_{\mathrm{cx}}=\frac{d^2}{d^2-1}\,q
-    \;\Rightarrow\; \tfrac{16}{15}\,q\ (d=4), \quad \tfrac{4}{3}\,q\ (d=2).$
+  \begin{itemize}
+    \item Week 7: the first factor \emph{rises} toward $1$ with depth.
+    \item Week 9: the second factor \emph{falls} exponentially in depth.
+  \end{itemize}
+  \begin{block}{The depth trade-off}
+    Deeper circuits prepare a better state but accumulate more gate noise. There is an \textbf{optimal ansatz depth} on a noisy device.
   \end{block}
 \end{frame}
 
-\begin{frame}[fragile]{Integrating and Verifying in Qiskit}
+\begin{frame}[fragile]{Integrating Gate Noise in Qiskit}
   \begin{lstlisting}
+from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, depolarizing_error
 
 nm = NoiseModel()
-# Week 8 channel == Qiskit error under the 16/15 map
-err = depolarizing_error(16/15 * p2q, 2)
-nm.add_all_qubit_quantum_error(err, ['cx'])
+nm.add_all_qubit_quantum_error(depolarizing_error(p_cx, 2), ['cx'])
+
+sim = AerSimulator(method='density_matrix', noise_model=nm)
+qc = ansatz.assign_parameters(theta)   # the Week 7 VQE state prep
+qc.save_density_matrix()
+rho = sim.run(transpile(qc, sim)).result().data()['density_matrix']
+edge = rho.expectation_value(O_edge).real
   \end{lstlisting}
-
-  \textbf{Verification} (\texttt{block4.py --plots 2}, on a random two-qubit $\rho$):
   \begin{itemize}
-    \item mapped parameter $\tfrac{16}{15}q$: $\;\max|\Delta\rho| = 1.4\times10^{-16}$ \quad(machine precision)
-    \item naive guess $p=q$: $\;\max|\Delta\rho| = 7.9\times10^{-4}$ \quad(\textcolor{trivial}{wrong})
+    \item \texttt{add\_all\_qubit\_quantum\_error} fires the channel after \emph{every} \texttt{cx} in the transpiled circuit.
+    \item Reading $\Tr[O_{\mathrm{edge}}\rho]$ from the density matrix avoids shot noise while we study the gate layer.
   \end{itemize}
-  \begin{alertblock}{The $\tfrac{16}{15}$ factor is physically required}
-    Any quantitative comparison between the Week 8 plot and a Qiskit \texttt{NoiseModel} must apply it.
-  \end{alertblock}
 \end{frame}
 
-\begin{frame}{Is the Frozen-State Model the Real One?}
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \textbf{1. It is depth-blind.}
-      \begin{itemize}
-        \item A linear \texttt{EfficientSU2} ansatz with $r$ reps has $r(L-1)$ CNOTs.
-        \item Real noise insertions grow with depth.
-        \item Week 8 applies only $L-1$ channels, \emph{once}, regardless of the circuit.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \textbf{2. Wrong state, wrong order.}
-      \begin{itemize}
-        \item Real errors occur \emph{between} gates and are scrambled by later unitaries.
-        \item Week 8 applies them once, at the end, to the perfect state.
-        \item $\E\circ\U \neq \U\circ\E$ -- ordering matters.
-      \end{itemize}
-    \end{column}
-  \end{columns}
-
-  \begin{alertblock}{Claim}
-    The Week 8 frozen-state result is an \emph{optimistic bound}, not a faithful model of hardware gate noise.
-  \end{alertblock}
-\end{frame}
-
-\begin{frame}{Demonstration: Noise Grows with Depth}
-  \begin{columns}[T]
-    \begin{column}{0.6\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{block4_week9_gate_noise.pdf}
-    \end{column}
-    \begin{column}{0.38\textwidth}
-      \scriptsize
-      Same $\theta$, matched per-channel strength ($\mu=0$):
-      \begin{center}
-      \begin{tabular}{cccc}
-        \toprule
-        CNOTs & circ. & W8 & $D$ \\
-        \midrule
-        6  & 0.75 & 0.85 & 0.11 \\
-        9  & 0.66 & 0.85 & 0.19 \\
-        12 & 0.58 & 0.85 & 0.27 \\
-        15 & 0.51 & 0.86 & 0.32 \\
-        \bottomrule
-      \end{tabular}
-      \end{center}
-      \normalsize
-      Week 8 stays \emph{flat}; the real circuit \emph{decays}. At depth 5 it over-estimates the signal by $\sim 70\%$.
-
-      {\scriptsize Decimals are from one VQE optimum (gate noise acts on the realized angles); the trend is robust.}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Verification Across the Sweep + Topological Protection}
+\begin{frame}{Precise Verification + a Physical $T_1/T_2$ Model}
   \centering
-  \includegraphics[width=0.98\textwidth,height=0.62\textheight,keepaspectratio]{block4_week9_topology_protection.pdf}
+  \includegraphics[width=0.98\textwidth,height=0.66\textheight,keepaspectratio]{block4_week9_verification.pdf}
 
-  \vspace{0.05cm}
+  \vspace{0.1cm}
   \footnotesize
-  \textbf{Left:} analytic channel (line) and Qiskit \texttt{depolarizing\_error} (markers) agree to $3\times10^{-16}$ over all $\mu$.\quad
-  \textbf{Right:} the \emph{frozen-state} verified channel (one round per pair) at three strengths; the topological plateau ($|\mu|<2t$) is suppressed but stays distinguishable from the trivial floor.
-
-  {\scriptsize Frozen even-parity state with the Qiskit-equivalent channel, \emph{not} a noisy-VQE sweep; circuit depth would lower it further.}
+  \textbf{Left:} the Aer \texttt{NoiseModel} edge string vs.\ an \emph{independent} exact gate-by-gate density-matrix evolution (same circuit, depolarizing \texttt{SuperOp} after each \texttt{cx}) agree to $\sim10^{-15}$ across all $\mu$ -- the gate noise is correctly integrated through the whole circuit.\quad
+  \textbf{Right:} swapping depolarizing for \texttt{thermal\_relaxation\_error}$(T_1,T_2,\tau)$ gives the realistic channel; $T_1$ additionally poisons the parity sector, $T_2$ kills the endpoint coherence the edge string needs.
 \end{frame}
 
-\begin{frame}{What ``Topology Protects'' Means Here}
+\begin{frame}{Gate Noise vs.\ Depth Across the Phase Diagram}
+  \begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.80\textheight,keepaspectratio]{block4_week9_depth_sweep.pdf}
+    \end{column}
+    \begin{column}{0.36\textwidth}
+      \small
+      Same per-\texttt{cx} strength at every depth; only the CNOT count $r(L-1)$ changes.
+      \begin{itemize}
+        \item The noiseless curve (dashed) marks the topological plateau $|\mu|<2t$.
+        \item As $r$ grows, the measured edge-string sweep is pushed \emph{down}: the diagnostic contrast flattens.
+        \item The phase distinction is most robust at the $\mu=0$ sweet spot and shallow depth.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Summary and What This Enables Next}
   \begin{itemize}
-    \item The edge string measures the Majorana edge mode, which exists only for $|\mu|<2t$ and is protected there by the bulk gap.
-    \item Under noise the topological signature is reduced in amplitude but not in \emph{location}: the phase distinction survives.
-    \item The transitions $|\mu|=2t$ (gap closing) are the fragile points.
+    \item Gate noise is now integrated at the \emph{circuit} level via a Qiskit \texttt{NoiseModel}, and verified to machine precision against an exact gate-by-gate reference.
+    \item The edge-string diagnostic degrades with ansatz depth: the cost of expressibility is accumulated CNOT noise, giving an optimal working depth.
+    \item A physical $T_1/T_2$ relaxation model is in place as the realistic upgrade to depolarizing.
   \end{itemize}
-
-  \begin{alertblock}{Careful statement}
-    Decoherence is \emph{not} suppressed by topology -- without error correction, gate noise always lowers contrast. What the gap protects is the \emph{existence and localization} of the edge mode, so its signature remains measurable, most robustly deep in the topological phase.
-  \end{alertblock}
-\end{frame}
-
-\begin{frame}{What This Enables Next}
-  \begin{block}{Now that gate errors are integrated and verified}
+  \begin{block}{Next}
     \begin{itemize}
       \item \textbf{Noisy VQE optimization}: optimize with a \texttt{NoiseModel}-backed estimator, so every cost evaluation is corrupted.
-      \item \textbf{Backend-calibrated noise}: \texttt{NoiseModel.from\_backend(...)} for real device $T_1$/$T_2$ and gate errors.
-      \item \textbf{Readout/SPAM layer}: fold the asymmetric assignment matrix into the same circuit-level model.
+      \item \textbf{Then} return to the professor's questions: does topology protect the parity, and how does chain length interact with all of this.
     \end{itemize}
   \end{block}
   \centering
-  \footnotesize Full derivations and code: \texttt{notes/week9\_note.tex}, \texttt{src/block4.py} (plots 2--3).
+  \footnotesize Code: \texttt{src/block4.py} (plots 2--3). Notes: \texttt{notes/week9\_note.tex}.
 \end{frame}
 
 \end{document}
