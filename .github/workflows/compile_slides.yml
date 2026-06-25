@@ -136,6 +136,18 @@ jobs:
                   <a href="notes/measuring_topology_qiskit.pdf?v=${version}">note</a></div>
               </figure>
               <figure class="card">
+                <a href="img/show_h9_majorana_under_noise.png?v=${version}">
+                  <img src="img/show_h9_majorana_under_noise.png?v=${version}"
+                       alt="The Majorana correlation severed by gate noise"></a>
+                <figcaption><strong>Noise severs the link.</strong> In the qubit/VQE
+                  encoding there are no local lobes to blur (parity forbids local order);
+                  noise instead cuts the non-local string between the two ends — the
+                  end-to-end correlation collapses with Majorana separation and with
+                  circuit depth.</figcaption>
+                <div class="links"><a href="week9.pdf?v=${version}">Week 9 slides</a> ·
+                  <a href="notes/block4_noise_diagnostic.pdf?v=${version}">note</a></div>
+              </figure>
+              <figure class="card">
                 <a href="img/show_h5_parity_vs_topology.png?v=${version}">
                   <img src="img/show_h5_parity_vs_topology.png?v=${version}"
                        alt="Parity vs edge string under noise"></a>

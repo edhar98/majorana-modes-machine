@@ -97,6 +97,92 @@ def fig_majorana_wavefunction(L=40, t=T, delta=DELTA, **_):
     return save_showcase(fig, 'h1_majorana_wavefunction')
 
 
+# ── H9 — H1 under noise: the Majorana correlation severed by gate noise ───────
+
+@hero('H9', 'How noise affects the H1 picture: the non-local Majorana link severed')
+def fig_majorana_under_noise(t=T, delta=DELTA, L_list=(2, 3, 4, 5, 6, 7, 8, 9, 10),
+                             p_list=(0.0, 0.03, 0.08, 0.15), vqe_L=4, vqe_reps=3,
+                             vqe_p=(0.0, 0.03, 0.08, 0.15), **_):
+    """The qubit/VQE analog of H1 under noise.
+
+    In the qubit encoding the parity-symmetric ground state has NO local order
+    (<X_j> = 0 everywhere): there are no lobes to blur. The Majorana information
+    is carried *non-locally* by the end-to-end string O_edge = X_0 Z..Z X_{L-1},
+    which connects the two Majoranas. Noise does not smear two lobes -- it cuts
+    that string. We show the end-to-end correlation collapsing as the Majoranas
+    are separated (left, exact ground state) and confirm it on a true VQE state
+    under circuit-level CNOT noise (right).
+    """
+    from block4 import (pauli_matrix, expval_from_density, ideal_even_density,
+                         single_qubit_channel, circuit_level_edge,
+                         depolarizing_noise_model)
+    from block3_core import vqe_ansatz, best_state, edge_string
+    from qiskit_aer.noise import depolarizing_error
+
+    def full_edge(rho, L):
+        return abs(expval_from_density(rho, edge_string(L).to_matrix()))
+
+    # ── Left: exact end-to-end correlation vs Majorana separation L ──
+    Ls = np.array(L_list, dtype=int)
+    curves = {}
+    for p in p_list:
+        vals = []
+        for L in Ls:
+            rho0 = ideal_even_density(0.0, L, t, delta)
+            rho = rho0 if p == 0 else single_qubit_channel(rho0, depolarizing_error(p, 1), L)
+            vals.append(full_edge(rho, L))
+        curves[p] = np.array(vals)
+
+    # ── Right: true VQE + circuit-level CNOT noise at fixed length ──
+    rng = np.random.default_rng(7)
+    ansatz = vqe_ansatz(vqe_L, vqe_reps)
+    rec = best_state(0.0, vqe_L, t, delta, ansatz, 0.1, rng, 1500, 8)
+    vqe_vals, vqe_ncx = [], None
+    for p in vqe_p:
+        edge, _, ncx = circuit_level_edge(ansatz, rec['theta'], vqe_L,
+                                          depolarizing_noise_model(p))
+        vqe_vals.append(abs(edge))
+        vqe_ncx = ncx
+    print(f"  VQE L={vqe_L} fid={rec['fidelity']:.3f}  noiseless |O_edge|={vqe_vals[0]:.3f}")
+
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(11.4, 4.9),
+                                   gridspec_kw={'width_ratios': [1.5, 1]})
+
+    reds = plt.cm.RdPu(np.linspace(0.35, 0.95, len(p_list)))
+    for (p, col) in zip(p_list, reds):
+        style = dict(lw=2.6, marker='o', ms=5)
+        if p == 0:
+            axL.plot(Ls, curves[p], color='black', lw=2.0, ls='--', marker='s', ms=5,
+                     label=r'noiseless (ideal)')
+        else:
+            axL.plot(Ls, curves[p], color=col, label=rf'$p={p:.2f}$', **style)
+    axL.set_xlabel(r'Majorana separation = chain length $L$')
+    axL.set_ylabel(r'$|\langle O_{\mathrm{edge}}\rangle|$ (end-to-end link)')
+    axL.set_xticks(Ls)
+    axL.set_ylim(-0.04, 1.08)
+    axL.set_title('The non-local link weakens with separation')
+    axL.legend(fontsize=9, frameon=False, ncol=2, loc='lower left')
+    takeaway(axL, 'No local lobes to blur: noise cuts the string between the two ends.',
+             loc='upper center')
+
+    xs = np.arange(len(vqe_p))
+    bar_cols = plt.cm.RdPu(np.linspace(0.35, 0.95, len(vqe_p)))
+    axR.bar(xs, vqe_vals, color=bar_cols, edgecolor='#888', width=0.7)
+    for x, v in zip(xs, vqe_vals):
+        axR.text(x, v + 0.02, f'{v:.2f}', ha='center', va='bottom', fontsize=9)
+    axR.set_xticks(xs)
+    axR.set_xticklabels([rf'$p={p:.2f}$' for p in vqe_p], fontsize=9)
+    axR.set_ylabel(r'$|\langle O_{\mathrm{edge}}\rangle|$')
+    axR.set_ylim(0, 1.12)
+    axR.set_title(f'True VQE state, circuit CNOT noise\n'
+                  rf'($L={vqe_L}$, {vqe_ncx} CNOTs)')
+
+    fig.suptitle(r'H1 under noise: in the qubit/VQE encoding the Majorana signal is '
+                 r'non-local, so noise severs it', fontsize=12.5, y=1.0)
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    return save_showcase(fig, 'h9_majorana_under_noise')
+
+
 # ── H2 — The depth optimum (restyle of Block 4 plot 6) ────────────────────────
 
 @hero('H2', 'Depth optimum: expressibility ceiling vs accumulated gate noise')
