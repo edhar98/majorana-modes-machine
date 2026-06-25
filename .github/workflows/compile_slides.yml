@@ -118,6 +118,24 @@ jobs:
                 <div class="links"><a href="week1.pdf?v=${version}">Week 1 slides</a></div>
               </figure>
               <figure class="card">
+                <a href="img/show_h3_transition_views.png?v=${version}">
+                  <img src="img/show_h3_transition_views.png?v=${version}"
+                       alt="The phase transition in three synchronized views"></a>
+                <figcaption><strong>Crossing the transition.</strong> As \$\\mu\$ sweeps, the
+                  gap closes, the d-vector loop slips off the origin, and the edge mode
+                  lifts off zero — all at once.</figcaption>
+                <div class="links"><a href="week1.pdf?v=${version}">Week 1 slides</a></div>
+              </figure>
+              <figure class="card">
+                <a href="img/show_h4_edge_string.png?v=${version}">
+                  <img src="img/show_h4_edge_string.png?v=${version}"
+                       alt="The non-local edge string vs a local probe"></a>
+                <figcaption><strong>A non-local probe.</strong> The edge string pierces the
+                  whole chain and tracks the phase; no single-site measurement can see it.</figcaption>
+                <div class="links"><a href="week6.pdf?v=${version}">Week 6 slides</a> ·
+                  <a href="notes/measuring_topology_qiskit.pdf?v=${version}">note</a></div>
+              </figure>
+              <figure class="card">
                 <a href="img/show_h5_parity_vs_topology.png?v=${version}">
                   <img src="img/show_h5_parity_vs_topology.png?v=${version}"
                        alt="Parity vs edge string under noise"></a>
@@ -125,6 +143,25 @@ jobs:
                   conserved under dephasing, yet the non-local edge string still decays.</figcaption>
                 <div class="links"><a href="week9.pdf?v=${version}">Week 9 slides</a> ·
                   <a href="notes/parity_topology_protection.pdf?v=${version}">note</a></div>
+              </figure>
+              <figure class="card">
+                <a href="img/show_h6_coherent_vs_incoherent.png?v=${version}">
+                  <img src="img/show_h6_coherent_vs_incoherent.png?v=${version}"
+                       alt="Coherent rotation vs incoherent mixing"></a>
+                <figcaption><strong>Rotation vs mixing.</strong> Coherent miscalibration keeps
+                  the state pure (purity \$\\approx1\$); incoherent gate noise mixes it
+                  (purity falls).</figcaption>
+                <div class="links"><a href="week9.pdf?v=${version}">Week 9 slides</a></div>
+              </figure>
+              <figure class="card">
+                <a href="img/show_h8_length_tradeoff.png?v=${version}">
+                  <img src="img/show_h8_length_tradeoff.png?v=${version}"
+                       alt="Chain-length tradeoff under noise"></a>
+                <figcaption><strong>The length tradeoff.</strong> Longer chains protect the
+                  qubit intrinsically but expose more sites and gates to noise — the two
+                  effects pull opposite ways.</figcaption>
+                <div class="links"><a href="notes/finite_size_majorana_splitting.pdf?v=${version}">note</a> ·
+                  <a href="notes/majorana_splitting_vs_L.pdf?v=${version}">note</a></div>
               </figure>
             </div>
           HTML

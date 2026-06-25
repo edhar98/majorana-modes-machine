@@ -22,8 +22,9 @@ import matplotlib.patches as mpatches
 from utils import (setup_showcase_style, save_showcase, topo_window, takeaway,
                    COLORS)
 from kitaev_chain import KitaevChain
-from bdg_bulk import bulk_gap, critical_mu
+from bdg_bulk import bulk_gap, bulk_energy, bdg_vector, critical_mu
 from winding import winding_scan
+from block3_core import sweep_observables
 
 T = 1.0
 DELTA = 1.0
@@ -219,6 +220,194 @@ def fig_phase_banner(t=T, delta=DELTA, **_):
                  fontsize=12.5, y=1.02)
     fig.tight_layout()
     return save_showcase(fig, 'h7_phase_banner')
+
+
+# ── H3 — The transition in three synchronized views (static small-multiples) ──
+
+@hero('H3', 'The phase transition: dispersion, d-vector winding, finite-size mode')
+def fig_transition_views(t=T, delta=DELTA, L=30, **_):
+    """One row per phase (topological / critical / trivial); three columns showing
+    the gap closing, the d-vector loop slipping off the origin, and the edge mode
+    lifting off zero. The static, JS-free version of the would-be animation."""
+    cases = [(0.0, 'topological', r'Topological  $\mu=0$'),
+             (2.0 * t, 'critical', r'Critical  $\mu=2t$'),
+             (3.0 * t, 'trivial', r'Trivial  $\mu=3t$')]
+    k = np.linspace(-np.pi, np.pi, 400)
+    mu_c1, mu_c2 = critical_mu(t)
+    mu_scan = np.linspace(-4.5 * t, 4.5 * t, 220)
+    e0_scan = np.array([KitaevChain(L=L, t=t, mu=m, delta=delta).positive_spectrum()[0]
+                        for m in mu_scan])
+
+    fig, axes = plt.subplots(3, 3, figsize=(11.5, 9.0))
+    for row, (mu, phase, label) in enumerate(cases):
+        col = COLORS[phase]
+        # Col 1: dispersion E(k).
+        ax = axes[row, 0]
+        E = bulk_energy(k, mu, t, delta)
+        ax.plot(k / np.pi, E, color=col, lw=2)
+        ax.plot(k / np.pi, -E, color=col, lw=2, alpha=0.4)
+        ax.axhline(0, color='k', lw=0.7, ls=':')
+        ax.set_ylabel(label, fontsize=11, color=col)
+        if row == 0:
+            ax.set_title(r'dispersion $E(k)$', fontsize=11)
+        if row == 2:
+            ax.set_xlabel(r'$k/\pi$')
+
+        # Col 2: d-vector loop (n_z, n_y) with the origin starred.
+        ax = axes[row, 1]
+        nz, ny = bdg_vector(k, mu, t, delta)
+        ax.plot(nz, ny, color=col, lw=2)
+        ax.scatter([0], [0], marker='*', s=170, color=COLORS['trivial'], zorder=5)
+        ax.axhline(0, color='gray', lw=0.6, ls=':')
+        ax.axvline(0, color='gray', lw=0.6, ls=':')
+        ax.set_aspect('equal', 'box')
+        if row == 0:
+            ax.set_title(r'd-vector loop $(n_z,n_y)$', fontsize=11)
+        if row == 2:
+            ax.set_xlabel(r'$n_z$')
+
+        # Col 3: finite-size near-zero mode as a moving dot on E_0(mu).
+        ax = axes[row, 2]
+        topo_window(ax, mu_c1, mu_c2, t)
+        ax.plot(mu_scan / t, e0_scan, color=COLORS['bulk'], lw=1.6)
+        e_here = KitaevChain(L=L, t=t, mu=mu, delta=delta).positive_spectrum()[0]
+        ax.scatter([mu / t], [e_here], s=70, color=col, zorder=5, edgecolor='k', lw=0.5)
+        ax.set_ylim(bottom=0)
+        if row == 0:
+            ax.set_title(rf'edge mode $E_0(\mu)$, $L={L}$', fontsize=11)
+        if row == 2:
+            ax.set_xlabel(r'$\mu/t$')
+
+    fig.suptitle(r'Crossing the transition: the gap closes, the loop slips off the '
+                 r'origin, the edge mode lifts off zero', fontsize=13, y=0.995)
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
+    return save_showcase(fig, 'h3_transition_views')
+
+
+# ── H4 — Why the edge string is non-local: operator pictogram + decay ─────────
+
+@hero('H4', 'The non-local edge string vs a blind local probe')
+def fig_edge_string(L=8, t=T, delta=DELTA, **_):
+    data = sweep_observables(L=L, t=t, delta=delta)
+    mu = data['mu']
+    mu_c1, mu_c2 = critical_mu(t)
+
+    fig, (ax_top, ax_bot) = plt.subplots(2, 1, figsize=(8.6, 6.6),
+                                         gridspec_kw={'height_ratios': [1, 1.5], 'hspace': 0.32})
+
+    # Top: operator pictogram. One non-local string vs one local Z.
+    sites = np.arange(L)
+    ax_top.axhspan(0.78, 1.22, xmin=0.02, xmax=0.98, color=COLORS['edge'], alpha=0.18)
+    for j in sites:
+        op = 'X' if j in (0, L - 1) else 'Z'
+        c = COLORS['edge'] if op == 'X' else COLORS['bulk']
+        ax_top.scatter(j, 1.0, s=520, color='white', edgecolor=c, lw=2.2, zorder=3)
+        ax_top.text(j, 1.0, op, ha='center', va='center', fontsize=12, color=c,
+                    fontweight='bold', zorder=4)
+    # local probe row
+    ax_top.scatter(0, 0.0, s=520, color='white', edgecolor=COLORS['bulk'], lw=2.2, zorder=3)
+    ax_top.text(0, 0.0, 'Z', ha='center', va='center', fontsize=12,
+                color=COLORS['bulk'], fontweight='bold', zorder=4)
+    for j in range(1, L):
+        ax_top.scatter(j, 0.0, s=520, color='#f5f5f5', edgecolor='#ddd', lw=1.0, zorder=2)
+    ax_top.text(L - 0.4, 1.0, r'$O_{\mathrm{edge}}=X_0\,Z\cdots Z\,X_{L-1}$ (non-local)',
+                va='center', ha='left', fontsize=10, color='#8a2f72')
+    ax_top.text(L - 0.4, 0.0, r'$|\langle Z_0\rangle|$ (local, blind)',
+                va='center', ha='left', fontsize=10, color='#666')
+    ax_top.set_xlim(-0.7, L + 3.2)
+    ax_top.set_ylim(-0.6, 1.7)
+    ax_top.axis('off')
+    ax_top.set_title('One operator that pierces the whole chain', fontsize=12)
+
+    # Bottom: the diagnostic vs the local probe across the transition.
+    topo_window(ax_bot, mu_c1, mu_c2, t, label=r'topological $|\mu|<2t$')
+    ax_bot.plot(mu / t, np.abs(data['string_exact']), color=COLORS['edge'], lw=2.6,
+                label=r'$|\langle O_{\mathrm{edge}}\rangle|$ (non-local)')
+    ax_bot.plot(mu / t, np.abs(data['local_exact']), color=COLORS['bulk'], lw=2.0, ls='--',
+                label=r'$|\langle Z_0\rangle|$ (local probe)')
+    ax_bot.set_xlabel(r'$\mu/t$')
+    ax_bot.set_ylabel('magnitude')
+    ax_bot.set_ylim(-0.04, 1.12)
+    ax_bot.legend(fontsize=9.5, loc='lower right', frameon=False)
+    takeaway(ax_bot, 'Only the non-local string tracks the phase; no single site sees it.',
+             loc='upper center')
+
+    fig.suptitle(r'Why the edge string is non-local  ($L=%d$)' % L, fontsize=13, y=0.98)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    return save_showcase(fig, 'h4_edge_string')
+
+
+# ── H6 — Coherent rotation vs incoherent mixing (purity) ──────────────────────
+
+@hero('H6', 'Coherent control error rotates a pure state; incoherent noise mixes it')
+def fig_coherent_vs_incoherent(L=4, t=T, delta=DELTA, mu=0.0, reps=3, **_):
+    from block4 import coherent_vs_incoherent_sweep
+    data = coherent_vs_incoherent_sweep(L=L, t=t, delta=delta, mu=mu, reps=reps)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.8), sharey=True)
+    ax1.axhline(1.0, color='gray', ls=':', lw=1.2)
+    ax1.plot(data['sigma'], data['coh_edge'], color=COLORS['topological'], lw=2.4,
+             marker='o', ms=4, label=r'$|\langle O_{\mathrm{edge}}\rangle|$')
+    ax1.plot(data['sigma'], data['coh_pur'], color=COLORS['trivial'], lw=2.4, ls='--',
+             marker='s', ms=4, label=r'purity $\mathrm{Tr}\,\rho^2$')
+    ax1.set_xlabel(r'control-error spread $\sigma_\theta$ (rad)')
+    ax1.set_ylabel('value')
+    ax1.set_title(r'Coherent: $\theta^\ast+\delta\theta$, ideal gates')
+    ax1.set_ylim(-0.04, 1.12)
+    ax1.legend(fontsize=9, frameon=False, loc='lower left')
+    takeaway(ax1, 'state stays pure, only rotated', loc='lower right')
+
+    ax2.axhline(1.0, color='gray', ls=':', lw=1.2)
+    ax2.plot(data['p'], data['inc_edge'], color=COLORS['topological'], lw=2.4,
+             marker='o', ms=4, label=r'$|\langle O_{\mathrm{edge}}\rangle|$')
+    ax2.plot(data['p'], data['inc_pur'], color=COLORS['trivial'], lw=2.4, ls='--',
+             marker='s', ms=4, label=r'purity $\mathrm{Tr}\,\rho^2$')
+    ax2.set_xlabel(r'per-cx depolarizing strength $p_{cx}$')
+    ax2.set_title(r'Incoherent: gate noise, exact $\theta^\ast$')
+    ax2.legend(fontsize=9, frameon=False, loc='lower left')
+    takeaway(ax2, 'purity falls -> the state mixes', loc='lower right')
+
+    fig.suptitle(rf'Two failure modes: rotation vs mixing '
+                 rf'($L={L}$, $r={reps}$, $\mu=0$)', fontsize=12.5)
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    return save_showcase(fig, 'h6_coherent_vs_incoherent')
+
+
+# ── H8 — The chain-length tradeoff: protection up, vulnerability up ───────────
+
+@hero('H8', 'Chain length: intrinsic protection improves but noisy vulnerability worsens')
+def fig_length_tradeoff(t=T, delta=DELTA, L_list=(2, 3, 4, 5, 6, 7, 8), gamma=0.1, **_):
+    from block4 import parity_length_sweep
+    data = parity_length_sweep(L_list, t, mu_topo=t, mu_triv=3 * t, delta=delta, gamma=gamma)
+    L = data['L']
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.8))
+    ax1.semilogy(L, data['gap_topo'] + 1e-18, color=COLORS['topological'], lw=2.4,
+                 marker='o', label=r'topological $\mu=t$')
+    ax1.semilogy(L, data['gap_triv'] + 1e-18, color=COLORS['trivial'], lw=2.4,
+                 marker='s', ls='--', label=r'trivial $\mu=3t$')
+    ax1.set_xlabel('chain length $L$')
+    ax1.set_ylabel(r'parity gap $\Delta_P(L)$')
+    ax1.set_title('Intrinsic protection improves with $L$')
+    ax1.set_xticks(L)
+    ax1.legend(fontsize=9, frameon=False)
+    takeaway(ax1, 'longer chain -> exponentially better isolation', loc='lower left')
+
+    ax2.plot(L, data['leak'], color=COLORS['trivial'], lw=2.4, marker='o',
+             label=r'odd-sector leakage, $T_1$ ($\gamma=%.2f$)' % gamma)
+    ax2.plot(L, data['edge_loss'], color=COLORS['bulk'], lw=2.4, marker='s', ls='--',
+             label=r'edge-string loss, depol ($p=%.2f$)' % gamma)
+    ax2.set_xlabel('chain length $L$')
+    ax2.set_ylabel('noise-induced failure fraction')
+    ax2.set_title('Noisy vulnerability worsens with $L$')
+    ax2.set_xticks(L)
+    ax2.legend(fontsize=9, frameon=False, loc='upper left')
+    takeaway(ax2, 'more sites & gates -> more exposure', loc='lower right')
+
+    fig.suptitle('The chain-length tradeoff: protection and vulnerability pull opposite ways',
+                 fontsize=12.5)
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    return save_showcase(fig, 'h8_length_tradeoff')
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
