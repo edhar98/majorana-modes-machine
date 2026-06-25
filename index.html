@@ -6,43 +6,92 @@
   <title>Majorana Modes in the Machine</title>
   <style>
     :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem auto; max-width: 900px; padding: 0 1rem; line-height: 1.5; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem auto; max-width: 1000px; padding: 0 1rem; line-height: 1.5; }
     h1 { margin-bottom: 0.25rem; }
-    h2 { margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
+    h2 { margin-top: 2.4rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
     ul { padding-left: 1.25rem; }
     li { margin: 0.35rem 0; }
     a { text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .muted { color: #666; }
+    .muted { color: #888; }
+    .thesis { font-size: 1.1rem; }
+    /* White cards so figures render identically in light & dark themes. */
+    .hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; margin: 1.5rem 0; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+    figure.card { margin: 0; background: #fff; border-radius: 10px; padding: 0.7rem; box-shadow: 0 1px 6px rgba(0,0,0,0.18); }
+    figure.card img { width: 100%; height: auto; border-radius: 6px; display: block; }
+    figure.card figcaption { font-size: 0.92rem; color: #333; margin-top: 0.55rem; }
+    figure.card .links { font-size: 0.85rem; margin-top: 0.4rem; color: #555; }
   </style>
 </head>
 <body>
   <h1>Majorana Modes in the Machine</h1>
-  <p class="muted">Seminar slides and notes generated from the repository.</p>
+  <p class="muted">Advanced Seminar — AI-Augmented Theoretical Physics</p>
+  <p class="thesis">Can a noisy (NISQ) quantum device still resolve the
+    topological phase of a Kitaev chain? A nine-week study from the bulk
+    physics of Majorana zero modes to circuit-level gate noise on a VQE.</p>
+  <div class="hero">
+    <figure class="card">
+      <a href="img/show_h1_majorana_wavefunction.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">
+        <img src="img/show_h1_majorana_wavefunction.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2"
+             alt="Real-space Majorana zero-mode wavefunction"></a>
+      <figcaption><strong>Where the Majorana lives.</strong> One fermion split
+        into two halves pinned to opposite ends of the wire — the topological
+        phase made visible.</figcaption>
+    </figure>
+    <figure class="card">
+      <a href="img/show_h2_depth_optimum.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">
+        <img src="img/show_h2_depth_optimum.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2"
+             alt="Optimal circuit depth under gate noise"></a>
+      <figcaption><strong>The depth optimum.</strong> Deeper circuits express the
+        state better but accumulate gate noise; the measured signal peaks at a
+        finite, shallow depth.</figcaption>
+    </figure>
+  </div>
+  <h2>The story in figures</h2>
+  <div class="gallery">
+    <figure class="card">
+      <a href="img/show_h7_phase_banner.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">
+        <img src="img/show_h7_phase_banner.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2"
+             alt="Kitaev chain phase diagram"></a>
+      <figcaption><strong>The map.</strong> The bulk gap closes and the winding
+        number flips at $\mu=\pm2t$: the topological window in the middle.</figcaption>
+      <div class="links"><a href="week1.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 1 slides</a></div>
+    </figure>
+    <figure class="card">
+      <a href="img/show_h5_parity_vs_topology.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">
+        <img src="img/show_h5_parity_vs_topology.png?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2"
+             alt="Parity vs edge string under noise"></a>
+      <figcaption><strong>Symmetry is not topology.</strong> Parity is exactly
+        conserved under dephasing, yet the non-local edge string still decays.</figcaption>
+      <div class="links"><a href="week9.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 9 slides</a> ·
+        <a href="notes/parity_topology_protection.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">note</a></div>
+    </figure>
+  </div>
   <h2>Presentations</h2>
   <ul>
-              <li><a href="week1.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 1 slides</a></li>
-              <li><a href="week2.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 2 slides</a></li>
-              <li><a href="week3.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 3 slides</a></li>
-              <li><a href="week4.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 4 slides</a></li>
-              <li><a href="week5.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 5 slides</a></li>
-              <li><a href="week6.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 6 slides</a></li>
-              <li><a href="week7.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 7 slides</a></li>
-              <li><a href="week8.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 8 slides</a></li>
-              <li><a href="week9.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">Week 9 slides</a></li>
+              <li><a href="week1.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 1 slides</a></li>
+              <li><a href="week2.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 2 slides</a></li>
+              <li><a href="week3.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 3 slides</a></li>
+              <li><a href="week4.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 4 slides</a></li>
+              <li><a href="week5.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 5 slides</a></li>
+              <li><a href="week6.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 6 slides</a></li>
+              <li><a href="week7.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 7 slides</a></li>
+              <li><a href="week8.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 8 slides</a></li>
+              <li><a href="week9.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">Week 9 slides</a></li>
   </ul>
   <h2>Notes</h2>
   <ul>
-              <li><a href="notes/block4_noise_diagnostic.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">block4 noise diagnostic</a></li>
-              <li><a href="notes/finite_size_majorana_splitting.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">finite size majorana splitting</a></li>
-              <li><a href="notes/ising_comparison.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">ising comparison</a></li>
-              <li><a href="notes/majorana_splitting_vs_L.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">majorana splitting vs L</a></li>
-              <li><a href="notes/measuring_topology_qiskit.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">measuring topology qiskit</a></li>
-              <li><a href="notes/parity_topology_protection.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">parity topology protection</a></li>
-              <li><a href="notes/qubit_encoding_derivations.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">qubit encoding derivations</a></li>
-              <li><a href="notes/week6_phase_sweep.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">week6 phase sweep</a></li>
-              <li><a href="notes/week7_vqe_sweep.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">week7 vqe sweep</a></li>
-              <li><a href="notes/week9_note.pdf?v=30940b98aa38cba05e4a2a8084b7a28de0eeb776">week9 note</a></li>
+              <li><a href="notes/block4_noise_diagnostic.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">block4 noise diagnostic</a></li>
+              <li><a href="notes/finite_size_majorana_splitting.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">finite size majorana splitting</a></li>
+              <li><a href="notes/ising_comparison.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">ising comparison</a></li>
+              <li><a href="notes/majorana_splitting_vs_L.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">majorana splitting vs L</a></li>
+              <li><a href="notes/measuring_topology_qiskit.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">measuring topology qiskit</a></li>
+              <li><a href="notes/parity_topology_protection.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">parity topology protection</a></li>
+              <li><a href="notes/qubit_encoding_derivations.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">qubit encoding derivations</a></li>
+              <li><a href="notes/week6_phase_sweep.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">week6 phase sweep</a></li>
+              <li><a href="notes/week7_vqe_sweep.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">week7 vqe sweep</a></li>
+              <li><a href="notes/week9_note.pdf?v=1dd915d6c7032b7262ec1e08b48b8ea0e08fd2d2">week9 note</a></li>
   </ul>
 </body>
 </html>
