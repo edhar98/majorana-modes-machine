@@ -60,3 +60,70 @@ def save_fig(fig, filename):
     fig.savefig(path, bbox_inches='tight')
     print(f"  [saved] {path}")
     plt.close(fig)
+
+
+# ── Showcase / landing-page design system ─────────────────────────────────────
+# Lightweight additions used only by the web-gallery generator (src/showcase.py).
+# They reuse the COLORS physics roles above so the gallery reads as one body of
+# work. None of this changes the existing deck figures, which keep calling
+# setup_style()/clean_axes()/save_fig() exactly as before.
+
+# Standard physics-role -> meaning used across every showcase figure.
+PHASE_COLORS = {
+    'topological': COLORS['topological'],   # topological phase / signal present / "good"
+    'critical':    COLORS['critical'],      # mu = +-2t boundary, gap-closing
+    'trivial':     COLORS['trivial'],       # trivial phase / decay / failure
+    'edge':        COLORS['edge'],          # Majorana / in-gap / zero modes (the star)
+    'bulk':        COLORS['bulk'],          # bulk bands / neutral reference
+}
+
+
+def setup_showcase_style():
+    """Apply the showcase look: same clean base as setup_style() but tuned for
+    landing-page thumbnails (forced white background so cards render identically
+    in light and dark page themes)."""
+    setup_style()
+    mpl.rcParams.update({
+        'axes.grid':         False,
+        'axes.facecolor':    'white',
+        'figure.facecolor':  'white',
+        'savefig.facecolor': 'white',
+        'savefig.dpi':       300,
+        'font.size':         12.5,
+        'axes.titlesize':    14,
+    })
+
+
+def topo_window(ax, mu_c1, mu_c2, t=1.0, label=None):
+    """Shade the topological window and draw the +-2t phase boundaries.
+    Single convention reused by every showcase mu-axis figure."""
+    ax.axvspan(mu_c1 / t, mu_c2 / t, alpha=0.10, color=COLORS['topological'], label=label)
+    ax.axvline(mu_c1 / t, color='gray', ls=':', lw=1)
+    ax.axvline(mu_c2 / t, color='gray', ls=':', lw=1)
+
+
+def takeaway(ax, text, loc='lower center'):
+    """Stamp a one-line plain-language takeaway on a showcase figure so it is
+    self-explanatory on the landing page."""
+    xy = {'lower center': (0.5, 0.02, 'center', 'bottom'),
+          'upper center': (0.5, 0.97, 'center', 'top'),
+          'lower left':   (0.03, 0.04, 'left', 'bottom'),
+          'lower right':  (0.97, 0.04, 'right', 'bottom')}[loc]
+    ax.text(xy[0], xy[1], text, transform=ax.transAxes, ha=xy[2], va=xy[3],
+            fontsize=10.5, style='italic', color='#333',
+            bbox=dict(boxstyle='round,pad=0.4', fc='white', ec='#bbb', alpha=0.85))
+
+
+def save_showcase(fig, name):
+    """Save a showcase figure as a full PNG plus a downscaled thumbnail, both
+    onto a white background. Writes NEW 'show_*' filenames so no deck figure is
+    ever overwritten. Returns (full_path, thumb_path)."""
+    os.makedirs(PLOTS_DIR, exist_ok=True)
+    full = os.path.join(PLOTS_DIR, f'show_{name}.png')
+    thumb = os.path.join(PLOTS_DIR, f'show_{name}_thumb.png')
+    fig.savefig(full, bbox_inches='tight', dpi=300, facecolor='white')
+    fig.savefig(thumb, bbox_inches='tight', dpi=90, facecolor='white')
+    print(f"  [saved] {full}")
+    print(f"  [saved] {thumb}")
+    plt.close(fig)
+    return full, thumb
