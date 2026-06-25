@@ -12,8 +12,8 @@
 \newcommand{\Oedge}{X_0 Z_1\cdots Z_{L-2} X_{L-1}}
 \newcommand{\Tr}{\operatorname{Tr}}
 
-\title{Week 9 Notes: Circuit-Level Gate Noise on the VQE\\
-\large Integration, Verification, and Depth Scaling}
+\title{Circuit-Level Gate Noise on the VQE\\
+\large Integration, Verification, and the Depth Optimum}
 \author{}
 \date{\today}
 
@@ -22,9 +22,9 @@
 
 \section{Purpose and Context}
 
-Week 7 produced a \emph{validated} parity-constrained VQE: across the chemical-potential sweep it returns optimal parameters $\theta^*(\mu)$ that reproduce the even-parity ground state, benchmarked against exact diagonalization for energy, parity, subspace fidelity, and the edge string $O_{\mathrm{edge}}=\Oedge$. Week 7 also ran a \emph{depth diagnostic}: \emph{noiselessly}, the subspace infidelity falls as the number of ansatz repetitions $r$ grows, so a deeper ansatz prepares a better state.
+We start from a \emph{validated} parity-constrained VQE: across the chemical-potential sweep it returns optimal parameters $\theta^*(\mu)$ that reproduce the even-parity ground state, benchmarked against exact diagonalization for energy, parity, subspace fidelity, and the edge string $O_{\mathrm{edge}}=\Oedge$. The same VQE also gives a \emph{depth diagnostic}: \emph{noiselessly}, the subspace infidelity falls as the number of ansatz repetitions $r$ grows, so a deeper ansatz prepares a better state.
 
-That conclusion is only half the story on real hardware. A NISQ device builds the state with a \emph{circuit}, and error enters \emph{through the gates}: every entangling operation injects a fresh error channel, so the total corruption grows with the gate count and the circuit depth. Week 9 integrates this correctly with Qiskit's noise stack and asks the quantitative question Week 7 could only hint at: as the ansatz deepens, the prepared state improves but the accumulated gate noise worsens --- so how does the edge-string diagnostic actually behave?
+That conclusion is only half the story on real hardware. A NISQ device builds the state with a \emph{circuit}, and error enters \emph{through the gates}: every entangling operation injects a fresh error channel, so the total corruption grows with the gate count and the circuit depth. This note integrates that correctly with Qiskit's noise stack and asks the quantitative question the noiseless diagnostic could only hint at: as the ansatz deepens, the prepared state improves but the accumulated gate noise worsens --- so how does the edge-string diagnostic actually behave?
 
 This note has three goals:
 \begin{enumerate}
@@ -108,7 +108,7 @@ nm = NoiseModel()
 nm.add_all_qubit_quantum_error(depolarizing_error(p_cx, 2), ['cx'])
 
 sim = AerSimulator(method='density_matrix', noise_model=nm)
-qc = ansatz.assign_parameters(theta).copy()     # the Week 7 VQE state prep
+qc = ansatz.assign_parameters(theta).copy()     # the validated VQE state prep
 qc.save_density_matrix()
 rho = sim.run(transpile(qc, sim)).result().data()['density_matrix']
 
@@ -147,20 +147,29 @@ and each carries a depolarizing channel. The measured edge string is therefore a
 \begin{equation}
   |\langle O_{\mathrm{edge}}\rangle|_{\mathrm{meas}}(r)
   \;\approx\;
-  \underbrace{|\langle O_{\mathrm{edge}}\rangle|_{\mathrm{ideal}}(r)}_{\text{expressibility, rises with }r}
+  \underbrace{|\langle O_{\mathrm{edge}}\rangle|_{\mathrm{ideal}}(r)}_{\text{expressibility (threshold)}}
   \;\times\;
   \underbrace{(1-p_{\mathrm{cx}})^{\,r(L-1)}}_{\text{gate noise, falls with }r}.
   \label{eq:tradeoff}
 \end{equation}
-Week 7 established that the first factor rises toward $1$ with depth (lower infidelity); Eq.~\eqref{eq:tradeoff} shows the second factor falls exponentially in depth. Their product is non-monotonic, so there is an \textbf{optimal ansatz depth} on a noisy device --- the precise statement of the expressibility-versus-noise trade-off.
+The two factors behave very differently, and the data make the mechanism precise. The expressibility factor is not a smooth rise but a \emph{threshold}: at the $\mu=0$ sweet spot the noiseless $|\langle O_{\mathrm{edge}}\rangle|_{\mathrm{ideal}}$ jumps from $\approx0.004$ at $r=1$ (the linear ansatz simply cannot represent the $L=4$ ground state) to $\approx1$ at $r=2$, and stays saturated for all $r\ge2$. The noise factor, by contrast, falls exponentially in the CNOT count $r(L-1)$ for \emph{every} $r$. Their product is therefore non-monotonic --- it has an \textbf{optimal ansatz depth} --- but the optimum is not an interior balance point: it is the \emph{shallowest adequately-expressive depth}, $r^\ast=2$ here, the first depth that can prepare the state. Below it the diagnostic is dead; above it, every added layer is pure accumulated noise.
 
-Plot~2 of \texttt{block4.py} makes this concrete (Fig.~\ref{fig:depth}). For each depth $r$ it prepares the VQE state across $\mu$ at fixed per-\texttt{cx} strength $p_{\mathrm{cx}}$, so the only thing changing between curves is the CNOT count $r(L-1)$. As $r$ grows, the measured edge-string sweep is pushed down and the topological/trivial contrast flattens: the same circuit depth that buys a better noiseless state costs measurable signal once the gates are noisy. An independent pure-numpy gate-by-gate evolution reproduces the same monotonic decay of purity and edge-string magnitude with CNOT count, confirming the mechanism is the accumulated channel and not a simulator artifact.
+Plot~2 of \texttt{block4.py} shows this across the phase diagram (Fig.~\ref{fig:depth}). For each depth $r$ it prepares the VQE state across $\mu$ at fixed per-\texttt{cx} strength $p_{\mathrm{cx}}$, so the only thing changing between curves is the CNOT count $r(L-1)$. The $r=1$ curve is flat at zero (under-expressive); from $r=2$ on, the measured sweep is pushed steadily down and the topological/trivial contrast flattens, so the same circuit depth that buys a better noiseless state costs measurable signal once the gates are noisy.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.9\linewidth]{../plots/block4_week9_depth_sweep.pdf}
-  \caption{Edge-string sweep at increasing ansatz depth $r$ under a fixed per-\texttt{cx} depolarizing strength. The noiseless curve (dashed) marks the topological plateau $|\mu|<2t$; as the circuit deepens, $r(L-1)$ noisy CNOTs push the measured diagnostic down and flatten the phase contrast.}
+  \caption{Edge-string sweep at increasing ansatz depth $r$ under a fixed per-\texttt{cx} depolarizing strength. The noiseless curve (dashed) marks the topological plateau $|\mu|<2t$; $r=1$ is under-expressive (flat at zero), and from $r=2$ the $r(L-1)$ noisy CNOTs push the measured diagnostic down and flatten the phase contrast.}
   \label{fig:depth}
+\end{figure}
+
+Plot~6 of \texttt{block4.py} isolates the optimum at the sweet spot (Fig.~\ref{fig:optimum}): the noiseless $|\langle O\rangle|_{\mathrm{ideal}}(r)$ (the expressibility step), the pure-noise envelope $(1-p_{\mathrm{cx}})^{r(L-1)}$, and the measured product on one axis. The measured curve collapses with the step at $r=1$, peaks at $r^\ast=2$, and then tracks the noise envelope down --- a direct, single-$\mu$ picture of Eq.~\eqref{eq:tradeoff}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.72\linewidth]{../plots/block4_week9_depth_optimum.pdf}
+  \caption{Depth optimum at the $\mu=0$ sweet spot. The noiseless edge string (dashed) is a threshold --- zero at $r=1$, saturated for $r\ge2$; the pure-noise envelope (dotted) decays smoothly; their product, the measured signal (solid), peaks at the shallowest adequately-expressive depth $r^\ast=2$.}
+  \label{fig:optimum}
 \end{figure}
 
 \section{Verification and the Thermal Model}
@@ -173,6 +182,24 @@ Plot~3 of \texttt{block4.py} combines the precise verification with the realisti
   \caption{Left: the Aer \texttt{NoiseModel} edge string and the independent exact gate-by-gate reference agree to $\sim10^{-15}$ across the whole $\mu$ sweep, verifying the gate-error integration. Right: depolarizing versus a physical $T_1/T_2$ thermal-relaxation channel at matched gate placement; the thermal model is the realistic upgrade.}
   \label{fig:verify}
 \end{figure}
+
+\section{Coherent Control Errors: $\theta^*\!\to\theta^*+\delta\theta$}
+
+Every channel above is \emph{incoherent}: the ideal unitary $U(\theta^*)$ is applied exactly and a stochastic CPTP map then mixes the state, lowering its purity $\Tr\rho^2<1$. A real device also makes a second, qualitatively different error --- the rotation angles themselves are miscalibrated, $\theta^*\to\theta^*+\delta\theta$, so the gates are slightly \emph{wrong} rather than noisy. This is a \emph{coherent} error: the prepared state stays \emph{pure}, it is just rotated away from the target. The two add independently,
+\[
+  \rho_{\mathrm{out}}
+  = \mathcal{E}_{\mathrm{gate}}\bigl(\,U(\theta^*+\delta\theta)\,\rho_{\mathrm{in}}\,U^\dagger(\theta^*+\delta\theta)\bigr),
+\]
+and they scale differently with depth: incoherent error accumulates roughly linearly in the gate count, while coherent miscalibration can add \emph{or partially cancel} across layers and typically grows quadratically in the small-angle regime before it averages out. The function \texttt{perturb\_theta} in \texttt{block4.py} implements both a Gaussian miscalibration $\delta\theta\sim\mathcal{N}(0,\sigma_\theta^2)$ and a systematic over-rotation (a fixed bias), and Plot~7 contrasts the two error types on the same prepared state (Fig.~\ref{fig:coherent}).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.9\linewidth]{../plots/block4_week9_parameter_noise.pdf}
+  \caption{Left: coherent control error $\theta^*+\delta\theta$ run through ideal gates --- the edge string falls as the state is rotated off target, but the purity $\Tr\rho^2$ stays pinned at $1$. Right: incoherent per-\texttt{cx} depolarizing on the exact $\theta^*$ --- the edge string falls \emph{and} the purity drops. Same prepared state, $L=4$, $r=3$, $\mu=0$.}
+  \label{fig:coherent}
+\end{figure}
+
+The distinction matters for the diagnostic: a coherent miscalibration that lowers $|\langle O_{\mathrm{edge}}\rangle|$ leaves a pure state that could in principle be corrected by recalibration or absorbed back into the VQE optimization, whereas the incoherent purity loss is genuine decoherence. The noisy-VQE optimization below is precisely the setting where the optimizer can compensate the coherent part while remaining at the mercy of the incoherent part.
 
 \section{Connection to the Majorana Edge-String Diagnostic}
 

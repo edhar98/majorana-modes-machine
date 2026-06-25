@@ -209,7 +209,7 @@ def plot_frozen_noise_sweep(L=4, t=T, delta=DELTA, points=81, shots=4096, seed=1
 
 # ── Plot 2: noise integrated through the gates, by reps (the headline) ─────────
 
-def depth_mu_sweep(L=4, t=T, delta=DELTA, mu_values=None, reps_list=(2, 3, 4, 5),
+def depth_mu_sweep(L=4, t=T, delta=DELTA, mu_values=None, reps_list=(1, 2, 3, 4, 5),
                    p_cx=0.05, lam=0.1, seed=7, maxiter=1500, n_starts=6):
     """For each ansatz depth, prepare the VQE state across mu and measure ideal vs noisy edge string.
 
@@ -235,8 +235,8 @@ def depth_mu_sweep(L=4, t=T, delta=DELTA, mu_values=None, reps_list=(2, 3, 4, 5)
     return results
 
 
-@plot(2, 'Week 9: edge-string phase sweep at increasing ansatz depth (reps) under per-cx noise')
-def plot_depth_sweep(L=4, t=T, delta=DELTA, points=41, p_cx=0.05, reps_list=(2, 3, 4, 5),
+@plot(2, 'Edge-string phase sweep at increasing ansatz depth (reps) under per-cx noise')
+def plot_depth_sweep(L=4, t=T, delta=DELTA, points=41, p_cx=0.05, reps_list=(1, 2, 3, 4, 5),
                      lam=0.1, seed=7, maxiter=1500, n_starts=6, span=3.5, **_):
     """Show the edge-string diagnostic flattening as the noisy circuit deepens."""
     mu_values = np.linspace(-span * t, span * t, points)
@@ -273,6 +273,172 @@ def plot_depth_sweep(L=4, t=T, delta=DELTA, points=41, p_cx=0.05, reps_list=(2, 
     save_fig(fig, 'block4_week9_depth_sweep.pdf')
 
 
+# ── Plot 6: the depth optimum at the sweet spot (factorization made explicit) ──
+
+def depth_optimum_sweep(L=4, t=T, delta=DELTA, mu=0.0, reps_list=(1, 2, 3, 4, 5, 6),
+                        p_cx=0.05, lam=0.1, seed=7, maxiter=1500, n_starts=6):
+    """At a single mu, measure ideal and noisy edge string for each ansatz depth.
+
+    Isolates the two competing factors at the sweet spot: the noiseless |O|(r)
+    (expressibility) and the measured |O|(r) (expressibility x accumulated gate
+    noise). Their interplay is the optimal-depth statement.
+    """
+    rng = np.random.default_rng(seed)
+    nm = depolarizing_noise_model(p_cx)
+    reps_arr, ideal, noisy, n_cnots = [], [], [], []
+    for reps in reps_list:
+        ansatz = vqe_ansatz(L, reps)
+        rec = best_state(mu, L, t, delta, ansatz, lam, rng, maxiter, n_starts)
+        edge, _, n_cnot = circuit_level_edge(ansatz, rec['theta'], L, nm)
+        reps_arr.append(reps)
+        ideal.append(abs(float(rec['string'])))
+        noisy.append(abs(edge))
+        n_cnots.append(n_cnot)
+        print(f"  r={reps:>2}  n_cnot={n_cnot:>2}  |O|ideal={ideal[-1]:.3f}  |O|noisy={noisy[-1]:.3f}")
+    return {'reps': np.array(reps_arr), 'ideal': np.array(ideal),
+            'noisy': np.array(noisy), 'n_cnot': np.array(n_cnots),
+            'mu': mu, 'p_cx': p_cx}
+
+
+@plot(6, 'Depth optimum at the sweet spot: expressibility threshold vs accumulated gate noise')
+def plot_depth_optimum(L=4, t=T, delta=DELTA, mu_opt=0.0, p_cx=0.05,
+                       reps_list=(1, 2, 3, 4, 5, 6), lam=0.1, seed=7,
+                       maxiter=1500, n_starts=6, **_):
+    """Single-mu view of the optimal depth: |O|ideal(r), |O|noisy(r), and the
+    pure-noise envelope (1-p_cx)^{r(L-1)} that drives the post-threshold decay."""
+    data = depth_optimum_sweep(L=L, t=t, delta=delta, mu=mu_opt, reps_list=tuple(reps_list),
+                               p_cx=p_cx, lam=lam, seed=seed, maxiter=maxiter, n_starts=n_starts)
+    r = data['reps']
+    n_cnot = data['n_cnot']
+    ideal = data['ideal']
+    noisy = data['noisy']
+
+    # Pure-gate-noise envelope: saturated expressibility times per-cx attenuation.
+    sat = ideal.max() if ideal.size else 1.0
+    envelope = sat * (1.0 - p_cx) ** n_cnot
+    opt = int(r[int(np.argmax(noisy))])
+
+    fig, ax = plt.subplots(figsize=(8.0, 5.2))
+    ax.plot(r, ideal, color='black', lw=2.0, ls='--', marker='s', ms=5,
+            label=r'noiseless $|\langle O\rangle|_{\mathrm{ideal}}(r)$ (expressibility)')
+    ax.plot(r, envelope, color=COLORS['bulk'], lw=1.8, ls=':', marker='^', ms=5,
+            label=r'pure-noise envelope $(1-p_{cx})^{r(L-1)}$')
+    ax.plot(r, noisy, color=COLORS['trivial'], lw=2.4, marker='o', ms=6,
+            label=r'measured $|\langle O\rangle|_{\mathrm{meas}}(r)$')
+    ax.axvline(opt, color='gray', ls='-', lw=1.0, alpha=0.6)
+    ax.annotate(rf'optimal depth $r^\ast={opt}$', xy=(opt, noisy.max()),
+                xytext=(opt + 0.3, noisy.max() + 0.04), fontsize=10, color=COLORS['trivial'])
+    ax.set_xlabel(r'ansatz repetitions $r$')
+    ax.set_ylabel(r'$|\langle O_{\mathrm{edge}}\rangle|$')
+    ax.set_xticks(r)
+    ax.set_ylim(-0.04, 1.12)
+    ax.set_title(rf'Optimal depth at the sweet spot '
+                 rf'($L={L}$, $\mu={mu_opt/t:.0f}$, $p_{{cx}}={p_cx:.2f}$)')
+    ax.legend(fontsize=9, frameon=False, loc='center right')
+    clean_axes(ax)
+    fig.tight_layout()
+    save_fig(fig, 'block4_week9_depth_optimum.pdf')
+
+
+# ── Plot 7: coherent control error (theta + dtheta) vs incoherent gate noise ──
+
+def _purity(rho):
+    """Tr(rho^2) of a density matrix given as an array."""
+    return float(np.real(np.trace(rho @ rho)))
+
+
+def perturb_theta(theta, rng, sigma=0.0, bias=0.0):
+    """Coherent control error on the VQE angles: Gaussian miscalibration (sigma)
+    and/or a systematic over-rotation (bias). Returns theta* + dtheta."""
+    theta = np.asarray(theta, dtype=float)
+    out = theta + bias
+    if sigma > 0:
+        out = out + rng.normal(0.0, sigma, size=theta.shape)
+    return out
+
+
+def coherent_vs_incoherent_sweep(L=4, t=T, delta=DELTA, mu=0.0, reps=3,
+                                 sigma_max=0.30, p_max=0.10, points=21, n_draws=16,
+                                 lam=0.1, seed=7, maxiter=1500, n_starts=6):
+    """At fixed mu/depth, contrast the two error types on the same prepared state.
+
+    Coherent: the ideal (noiseless) circuit run with theta* + N(0, sigma) miscalibration,
+    averaged over draws -- the state stays pure, only rotated off target. Incoherent:
+    the exact theta* with per-cx depolarizing of strength p -- the state loses purity.
+    A single VQE solve; everything else is a cheap density-matrix evaluation.
+    """
+    rng = np.random.default_rng(seed)
+    ansatz = vqe_ansatz(L, reps)
+    rec = best_state(mu, L, t, delta, ansatz, lam, rng, maxiter, n_starts)
+    theta_star = rec['theta']
+    clean_nm = NoiseModel()
+
+    sigmas = np.linspace(0.0, sigma_max, points)
+    coh_edge, coh_pur = [], []
+    for s in sigmas:
+        draws = 1 if s == 0 else n_draws
+        e_acc, pur_acc = [], []
+        for _ in range(draws):
+            th = perturb_theta(theta_star, rng, sigma=s)
+            e, rho, _ = circuit_level_edge(ansatz, th, L, clean_nm)
+            e_acc.append(abs(e))
+            pur_acc.append(_purity(rho))
+        coh_edge.append(float(np.mean(e_acc)))
+        coh_pur.append(float(np.mean(pur_acc)))
+
+    ps = np.linspace(0.0, p_max, points)
+    inc_edge, inc_pur = [], []
+    for p in ps:
+        e, rho, _ = circuit_level_edge(ansatz, theta_star, L, depolarizing_noise_model(p))
+        inc_edge.append(abs(e))
+        inc_pur.append(_purity(rho))
+
+    print(f"  coherent (sigma=0..{sigma_max}): |O| {coh_edge[0]:.3f}->{coh_edge[-1]:.3f}, "
+          f"purity {coh_pur[0]:.3f}->{coh_pur[-1]:.3f}")
+    print(f"  incoherent (p=0..{p_max}):      |O| {inc_edge[0]:.3f}->{inc_edge[-1]:.3f}, "
+          f"purity {inc_pur[0]:.3f}->{inc_pur[-1]:.3f}")
+    return {'sigma': sigmas, 'p': ps,
+            'coh_edge': np.array(coh_edge), 'coh_pur': np.array(coh_pur),
+            'inc_edge': np.array(inc_edge), 'inc_pur': np.array(inc_pur),
+            'mu': mu, 'reps': reps}
+
+
+@plot(7, 'Coherent control error (theta+dtheta) vs incoherent gate noise: edge string and purity')
+def plot_parameter_noise(L=4, t=T, delta=DELTA, mu_opt=0.0, sigma_theta=0.30, p_check=0.10,
+                         reps=3, points=21, lam=0.1, seed=7, maxiter=1500, n_starts=6, **_):
+    """Two panels: coherent theta-noise (purity preserved) vs incoherent cx-noise (purity lost)."""
+    data = coherent_vs_incoherent_sweep(L=L, t=t, delta=delta, mu=mu_opt, reps=reps,
+                                        sigma_max=sigma_theta, p_max=p_check, points=points,
+                                        lam=lam, seed=seed, maxiter=maxiter, n_starts=n_starts)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.4))
+    ax1.plot(data['sigma'], data['coh_edge'], color=COLORS['topological'], lw=2.2,
+             marker='o', ms=4, label=r'$|\langle O_{\mathrm{edge}}\rangle|$')
+    ax1.plot(data['sigma'], data['coh_pur'], color=COLORS['trivial'], lw=2.2, ls='--',
+             marker='s', ms=4, label=r'purity $\mathrm{Tr}\,\rho^2$')
+    ax1.set_xlabel(r'control-error spread $\sigma_\theta$ (rad)')
+    ax1.set_ylabel('value')
+    ax1.set_title(r'Coherent: $\theta^\ast + \delta\theta$, ideal gates')
+    ax1.set_ylim(-0.04, 1.08)
+    ax1.legend(fontsize=9, frameon=False, loc='lower left')
+    clean_axes(ax1)
+
+    ax2.plot(data['p'], data['inc_edge'], color=COLORS['topological'], lw=2.2,
+             marker='o', ms=4, label=r'$|\langle O_{\mathrm{edge}}\rangle|$')
+    ax2.plot(data['p'], data['inc_pur'], color=COLORS['trivial'], lw=2.2, ls='--',
+             marker='s', ms=4, label=r'purity $\mathrm{Tr}\,\rho^2$')
+    ax2.set_xlabel(r'per-cx depolarizing strength $p_{cx}$')
+    ax2.set_title(r'Incoherent: gate noise, exact $\theta^\ast$')
+    ax2.set_ylim(-0.04, 1.08)
+    ax2.legend(fontsize=9, frameon=False, loc='lower left')
+    clean_axes(ax2)
+
+    fig.suptitle(rf'Coherent control error rotates a pure state; incoherent noise mixes it '
+                 rf'($L={L}$, $r={data["reps"]}$, $\mu=0$)', fontsize=12)
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    save_fig(fig, 'block4_week9_parameter_noise.pdf')
+
+
 # ── Plot 3: precise verification + thermal-relaxation variant ──────────────────
 
 def verification_sweep(L=4, t=T, delta=DELTA, points=41, reps=3, p_cx=0.10,
@@ -304,7 +470,7 @@ def verification_sweep(L=4, t=T, delta=DELTA, points=41, reps=3, p_cx=0.10,
             'max_diff': float(np.max(diff))}
 
 
-@plot(3, 'Week 9: exact gate-by-gate verification + thermal-relaxation (T1/T2) variant')
+@plot(3, 'Exact gate-by-gate verification + thermal-relaxation (T1/T2) variant')
 def plot_verification(L=4, t=T, delta=DELTA, points=41, reps=3, p_check=0.10,
                       t1=T1_NS, t2=T2_NS, gate_time=GATE_TIME_2Q_NS,
                       lam=0.1, seed=7, maxiter=1500, n_starts=6, **_):
@@ -493,7 +659,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--shots', type=int, default=4096)
     p.add_argument('--seed', type=int, default=7)
     p.add_argument('--p-cnot', type=float, default=0.05)
-    p.add_argument('--reps', nargs='+', type=int, default=[2, 3, 4, 5])
+    p.add_argument('--reps', nargs='+', type=int, default=[1, 2, 3, 4, 5])
+    p.add_argument('--mu-opt', type=float, default=0.0)
+    p.add_argument('--sigma-theta', type=float, default=0.30,
+                   help='max Gaussian control-error spread (rad) for the coherent-noise plot')
     p.add_argument('--verify-reps', type=int, default=3)
     p.add_argument('--p-check', type=float, default=0.10)
     p.add_argument('--t1', type=float, default=T1_NS)
@@ -532,8 +701,8 @@ def main() -> None:
                   reps_list=tuple(args.reps), reps=args.verify_reps, p_check=args.p_check,
                   t1=args.t1, t2=args.t2, gate_time=args.gate_time,
                   maxiter=args.maxiter, n_starts=args.starts, lam=args.lam,
-                  par_L=args.par_L, mu=args.mu, p_max=args.p_max, gamma=args.gamma,
-                  L_list=tuple(args.L_list))
+                  par_L=args.par_L, mu=args.mu, mu_opt=args.mu_opt, p_max=args.p_max,
+                  gamma=args.gamma, L_list=tuple(args.L_list), sigma_theta=args.sigma_theta)
 
     print(f'Generating plots: {targets}\n')
     for n in targets:
