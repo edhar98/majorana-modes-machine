@@ -106,7 +106,7 @@
 
 \begin{frame}{The Channels, and Which Ones Respect Parity}
   Integrating the Lindblad dynamics over a gate duration $\tau$ turns physical decoherence into CPTP channels. What matters for the Majorana diagnostic is how each acts on parity $\Pop=\prod_j Z_j$.
-  \begin{center}\footnotesize
+  \begin{center}\scriptsize
   \begin{tabular}{@{}l l p{5.4cm}@{}}
     \toprule
     Channel & Physical origin & Effect on the diagnostic\\
@@ -127,11 +127,12 @@
 \end{frame}
 
 \begin{frame}{Noise Integrated Through the Gates, by Depth}
+  \small
   The linear \texttt{EfficientSU2} ansatz at depth $r$ has
   \[
     \#\,\text{CNOTs}=r\,(L-1),
   \]
-  and each \texttt{cx} carries a \textbf{depolarizing} channel (circuit-level) -- as throughout the depth study (slides 5/8/9) -- so the measured signal factorizes as a product of two opposing factors:
+  and each \texttt{cx} carries a \textbf{depolarizing} channel (circuit-level), so the measured signal factorizes into two opposing factors:
   \begin{equation}
     |\langle O_{\mathrm{edge}}\rangle|_{\mathrm{meas}}(r)
     \;\approx\;
@@ -241,7 +242,7 @@ edge = rho.expectation_value(O_edge).real
       \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{block4_parity_vs_noise.pdf}
     \end{column}
     \begin{column}{0.38\textwidth}
-      \footnotesize
+      \scriptsize
       Topological state ($L=6$, $\mu=t$). Channels applied as \textbf{single-qubit} maps on the exact even-parity state (\emph{frozen-state}, not circuit-level): \textbf{phase damping}, \textbf{depolarizing}, \textbf{amplitude damping ($T_1$)}.
       \begin{itemize}
         \item \textbf{Left:} $\langle\Pop\rangle$ stays \emph{exactly} $1$ under phase damping -- but that is the $\mathbb{Z}_2$ \emph{symmetry} (true in every phase), \textbf{not} topology. It collapses under depolarizing, leaks under $T_1$.
@@ -259,7 +260,7 @@ edge = rho.expectation_value(O_edge).real
       \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{block4_length_under_noise.pdf}
     \end{column}
     \begin{column}{0.38\textwidth}
-      \footnotesize
+      \scriptsize
       Length acts in \emph{opposite} directions. Right panel uses \textbf{single-qubit amplitude damping ($T_1$)} and \textbf{single-qubit depolarizing} on the \textbf{frozen} ground state at fixed strength $\gamma$.
       \begin{itemize}
         \item \textbf{Left:} the intrinsic parity gap is protected exponentially, $\Delta_P(L)\sim e^{-L/\xi}$ -- longer chains are intrinsically \emph{better}.
@@ -271,6 +272,7 @@ edge = rho.expectation_value(O_edge).real
 \end{frame}
 
 \begin{frame}{Summary and What This Enables Next}
+  \small
   \begin{itemize}
     \item Gate noise is integrated at the \emph{circuit} level via a Qiskit \texttt{NoiseModel}, verified to machine precision against an exact gate-by-gate reference.
     \item The diagnostic is bounded by an expressibility threshold, then eroded by accumulated CNOT noise: the optimum is the \textbf{shallowest adequately-expressive depth}.
