@@ -149,16 +149,25 @@
   \end{block}
 \end{frame}
 
-\begin{frame}{From State-Vector VQE to a Noisy Density Matrix}
-  \small
-  Earlier blocks read $\langle O_{\mathrm{edge}}\rangle$ from an exact \emph{state vector}; why use Aer's \emph{density-matrix} simulator now?
-  \begin{itemize}\setlength{\itemsep}{0pt}
-    \item \textbf{Same VQE, same circuit.} The noisy run uses the identical validated ansatz and optimal angles $\theta^\ast(\mu)$ from Block 3 -- \emph{the VQE is not replaced}; only how we evolve and read the state changes.
-    \item \textbf{What changes.} A gate-level \texttt{NoiseModel} is attached, and $\langle O_{\mathrm{edge}}\rangle$ is read as $\Tr[O_{\mathrm{edge}}\,\rho]$ from a density matrix instead of from an ideal state vector.
-    \item \textbf{Why a density matrix is required.} Noise turns the pure state \emph{mixed}; a state vector cannot represent mixedness, so the density-matrix formalism is mandatory once gates are noisy. Aer evolves $\rho$ through the circuit under the \texttt{NoiseModel}.
-    \item \textbf{Why keep $\theta^\ast$ fixed} (no re-optimization under noise): to \emph{isolate the variable} -- the state is already good, so any signal loss is due to noise alone. (Noisy VQE is deferred; see ``Next''.)
+\begin{frame}[fragile]{Integrating Gate Noise in Qiskit}
+  \begin{lstlisting}
+from qiskit_aer import AerSimulator
+from qiskit_aer.noise import NoiseModel, depolarizing_error
+
+nm = NoiseModel()
+nm.add_all_qubit_quantum_error(depolarizing_error(p_cx, 2), ['cx'])
+
+sim = AerSimulator(method='density_matrix', noise_model=nm)
+qc = ansatz.assign_parameters(theta)   # the validated VQE state prep
+qc.save_density_matrix()
+rho = sim.run(transpile(qc, sim)).result().data()['density_matrix']
+edge = rho.expectation_value(O_edge).real
+  \end{lstlisting}
+  \begin{itemize}
+    \item \texttt{add\_all\_qubit\_quantum\_error} fires the channel after \emph{every} \texttt{cx} in the transpiled circuit.
+    \item We transpile to a fixed basis \texttt{['rz','sx','cx']} so the \texttt{cx} the error attaches to is exactly the \texttt{cx} the circuit runs.
+    \item Reading $\Tr[O_{\mathrm{edge}}\rho]$ from the density matrix avoids shot noise while we study the gate layer.
   \end{itemize}
-  {\footnotesize Also: the channel fires after \emph{every} \texttt{cx} (it accumulates with depth); reading $\Tr[O_{\mathrm{edge}}\rho]$ avoids shot noise.}
 \end{frame}
 
 \begin{frame}{Precise Verification + a Physical $T_1/T_2$ Model}
@@ -208,6 +217,8 @@
   \end{columns}
 \end{frame}
 
+% --- Slide commented out per request: "Two Families of Error: Coherent vs. Incoherent" ---
+\iffalse
 \begin{frame}{Two Families of Error: Coherent vs.\ Incoherent}
   \begin{columns}[T]
     \begin{column}{0.6\textwidth}
@@ -225,8 +236,9 @@
     \end{column}
   \end{columns}
 \end{frame}
+\fi
 
-\begin{frame}{Professor's Q1: Is the Parity Protected by Topology?}
+\begin{frame}{Is the Parity Protected by Topology?}
   \begin{columns}[T]
     \begin{column}{0.6\textwidth}
       \centering
@@ -244,7 +256,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Professor's Q2: How Does the Chain Length Matter?}
+\begin{frame}{How Does the Chain Length Matter?}
   \begin{columns}[T]
     \begin{column}{0.6\textwidth}
       \centering

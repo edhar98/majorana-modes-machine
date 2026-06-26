@@ -350,7 +350,7 @@ def plot_depth_optimum(L=4, t=T, delta=DELTA, mu_opt=0.0, p_cx=0.05,
     ax.set_ylim(-0.04, 1.12)
     ax.set_title(rf'Optimal depth at the sweet spot '
                  rf'($L={L}$, $\mu={mu_opt/t:.0f}$, $p_{{cx}}={p_cx:.2f}$)')
-    ax.legend(fontsize=9, frameon=False, loc='center right')
+    ax.legend(fontsize=9, frameon=False, loc='lower center')
     clean_axes(ax)
     fig.tight_layout()
     save_fig(fig, 'block4_week9_depth_optimum.pdf')
