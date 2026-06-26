@@ -28,6 +28,14 @@ T1_NS = 80e3
 T2_NS = 60e3
 GATE_TIME_2Q_NS = 300.0
 
+# Noise application modes used in this module:
+#   circuit-level   (channel after every cx of the transpiled ansatz; accumulates with depth):
+#       plots 2, 3, 6, 7(incoherent)
+#   frozen-state    (single-qubit channel on the exact ground-state rho; circuit-independent):
+#       plots 1, 4, 5
+#   parameter-level (Gaussian angle perturbation on theta, ideal/noiseless gates):
+#       plot 7 (coherent)
+
 PLOT_REGISTRY: dict[int, tuple] = {}
 
 
@@ -186,6 +194,10 @@ def draw_noise_panel(ax, data, t):
     return ideal_line, readout_line, gate_line, combined_line
 
 
+# NOISE: two-qubit depolarizing (per nearest-neighbor pair) + symmetric readout.
+# APPLIED: frozen-state (channels on the exact ground-state density matrix; readout
+#          as a (1-2*eps)^L scale factor). Week 8 isolation sweep, not the
+#          circuit-level Week 9 method.
 @plot(1, 'Frozen-state isolation sweep: readout and depolarizing on the diagnostic')
 def plot_frozen_noise_sweep(L=4, t=T, delta=DELTA, points=81, shots=4096, seed=11, **_):
     """Three-panel frozen even-parity state sweep (measurement-layer isolation only)."""
@@ -235,6 +247,8 @@ def depth_mu_sweep(L=4, t=T, delta=DELTA, mu_values=None, reps_list=(1, 2, 3, 4,
     return results
 
 
+# NOISE: depolarizing channel, per-cx.
+# APPLIED: circuit-level (after every cx gate of the transpiled ansatz; accumulates with depth).
 @plot(2, 'Edge-string phase sweep at increasing ansatz depth (reps) under per-cx noise')
 def plot_depth_sweep(L=4, t=T, delta=DELTA, points=41, p_cx=0.05, reps_list=(1, 2, 3, 4, 5),
                      lam=0.1, seed=7, maxiter=1500, n_starts=6, span=3.5, **_):
@@ -300,6 +314,8 @@ def depth_optimum_sweep(L=4, t=T, delta=DELTA, mu=0.0, reps_list=(1, 2, 3, 4, 5,
             'mu': mu, 'p_cx': p_cx}
 
 
+# NOISE: depolarizing channel, per-cx.
+# APPLIED: circuit-level (after every cx gate of the transpiled ansatz; accumulates with depth).
 @plot(6, 'Depth optimum at the sweet spot: expressibility threshold vs accumulated gate noise')
 def plot_depth_optimum(L=4, t=T, delta=DELTA, mu_opt=0.0, p_cx=0.05,
                        reps_list=(1, 2, 3, 4, 5, 6), lam=0.1, seed=7,
@@ -403,6 +419,11 @@ def coherent_vs_incoherent_sweep(L=4, t=T, delta=DELTA, mu=0.0, reps=3,
             'mu': mu, 'reps': reps}
 
 
+# NOISE: two modes contrasted on the same prepared state --
+#   incoherent = depolarizing channel, per-cx (genuine decoherence);
+#   coherent   = Gaussian angle perturbation on theta with IDEAL (noiseless) gates.
+# APPLIED: incoherent = circuit-level (channel after every cx);
+#          coherent   = parameter-level (perturb theta; no channel attached to gates).
 @plot(7, 'Coherent control error (theta+dtheta) vs incoherent gate noise: edge string and purity')
 def plot_parameter_noise(L=4, t=T, delta=DELTA, mu_opt=0.0, sigma_theta=0.30, p_check=0.10,
                          reps=3, points=21, lam=0.1, seed=7, maxiter=1500, n_starts=6, **_):
@@ -470,6 +491,9 @@ def verification_sweep(L=4, t=T, delta=DELTA, points=41, reps=3, p_cx=0.10,
             'max_diff': float(np.max(diff))}
 
 
+# NOISE: LEFT comparison = depolarizing per-cx (Aer vs exact gate-by-gate reference);
+#        RIGHT = thermal relaxation (T1/T2) per-cx.
+# APPLIED: circuit-level (channel after every cx of the transpiled ansatz).
 @plot(3, 'Exact gate-by-gate verification + thermal-relaxation (T1/T2) variant')
 def plot_verification(L=4, t=T, delta=DELTA, points=41, reps=3, p_check=0.10,
                       t1=T1_NS, t2=T2_NS, gate_time=GATE_TIME_2Q_NS,
@@ -553,6 +577,9 @@ def parity_noise_sweep(L, t, mu, delta, p_max, points):
     return out
 
 
+# NOISE: three SINGLE-QUBIT channels -- phase damping, depolarizing, amplitude damping (T1).
+# APPLIED: frozen-state (single-qubit channel on each qubit of the exact even-parity
+#          ground-state density matrix; NOT through the ansatz circuit).
 @plot(4, "Prof Q1: parity vs edge string under three noise channels (topological state)")
 def plot_parity_protection(par_L=6, t=T, delta=DELTA, mu=T, p_max=0.3, points=31, **_):
     """Show parity is symmetry-protected (phase damping) while the edge string is not noise-immune."""
@@ -613,6 +640,9 @@ def parity_length_sweep(L_list, t, mu_topo, mu_triv, delta, gamma):
             'leak': np.array(leak), 'edge_loss': np.array(edge_loss), 'gamma': gamma}
 
 
+# NOISE: single-qubit amplitude damping (T1) + single-qubit depolarizing.
+# APPLIED: frozen-state (single-qubit channel on each qubit of the exact
+#          ground-state density matrix; NOT through the ansatz circuit).
 @plot(5, "Prof Q2: intrinsic protection vs noisy vulnerability across chain length L")
 def plot_length_influence(t=T, delta=DELTA, L_list=(2, 3, 4, 5, 6, 7, 8), gamma=0.1, **_):
     """Intrinsic gap improves with L while noise vulnerability worsens with L."""

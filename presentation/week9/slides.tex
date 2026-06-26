@@ -121,6 +121,9 @@
   \end{center}
   \vspace{0.1cm}
   {\small Two effects are qualitatively distinct: $T_2$ erodes the \emph{contrast} of the non-local string, while $T_1$ \emph{poisons the parity sector} the diagnostic lives in.}
+
+  \vspace{0.05cm}
+  {\scriptsize Which figure uses which: depth study (slides 5/8/9) uses \textbf{depolarizing}; verification (slide 7) compares \textbf{depolarizing vs.\ thermal}; parity study (slides 11/12) uses single-qubit \textbf{phase/amplitude/depolarizing} on the frozen state.}
 \end{frame}
 
 \begin{frame}{Noise Integrated Through the Gates, by Depth}
@@ -128,7 +131,7 @@
   \[
     \#\,\text{CNOTs}=r\,(L-1),
   \]
-  and each one applies a depolarizing channel. The \emph{measured} signal is a product of two opposing factors:
+  and each \texttt{cx} carries a \textbf{depolarizing} channel (circuit-level) -- as throughout the depth study (slides 5/8/9) -- so the measured signal factorizes as a product of two opposing factors:
   \begin{equation}
     |\langle O_{\mathrm{edge}}\rangle|_{\mathrm{meas}}(r)
     \;\approx\;
@@ -184,7 +187,7 @@ edge = rho.expectation_value(O_edge).real
     \end{column}
     \begin{column}{0.36\textwidth}
       \small
-      Same per-\texttt{cx} strength at every depth; only the CNOT count $r(L-1)$ changes.
+      Per-\texttt{cx} \textbf{depolarizing} channel at fixed strength $p_{\mathrm{cx}}$ (circuit-level); only the CNOT count $r(L-1)$ changes between curves.
       \begin{itemize}
         \item $r=1$ is \emph{under-expressive}: the diagnostic is dead everywhere (flat at zero).
         \item $r=2$ first reaches the state, then deeper circuits are pushed \emph{down} by accumulated CNOT noise.
@@ -202,7 +205,7 @@ edge = rho.expectation_value(O_edge).real
     \end{column}
     \begin{column}{0.38\textwidth}
       \footnotesize
-      At the $\mu=0$ sweet spot, the two factors separate:
+      Channel: per-\texttt{cx} \textbf{depolarizing} (circuit-level); the envelope $(1-p_{\mathrm{cx}})^{r(L-1)}$ is the depolarizing attenuation. At the $\mu=0$ sweet spot, the two factors separate:
       \begin{itemize}
         \item \textbf{Expressibility} (dashed): a step -- zero at $r=1$, saturated for $r\ge2$.
         \item \textbf{Pure-noise envelope} (dotted): smooth $(1-p_{\mathrm{cx}})^{r(L-1)}$ decay.
@@ -223,8 +226,8 @@ edge = rho.expectation_value(O_edge).real
       \footnotesize
       Same prepared state, two error types:
       \begin{itemize}
-        \item \textbf{Coherent} ($\theta^\ast\!+\!\delta\theta$): miscalibrated angles, ideal gates. The state stays \emph{pure} ($\Tr\rho^2\!=\!1$) -- only rotated off target.
-        \item \textbf{Incoherent} (per-\texttt{cx} depolarizing): genuine decoherence -- signal \emph{and} purity fall.
+        \item \textbf{Coherent} ($\theta^\ast\!+\!\delta\theta$): miscalibrated angles, \textbf{ideal (noiseless) gates} (no channel). The state stays \emph{pure} ($\Tr\rho^2\!=\!1$) -- only rotated off target.
+        \item \textbf{Incoherent} (per-\texttt{cx} \textbf{depolarizing} channel, circuit-level): genuine decoherence -- signal \emph{and} purity fall.
       \end{itemize}
       A coherent error can be re-absorbed by recalibration or the VQE; incoherent loss cannot.
     \end{column}
@@ -239,7 +242,7 @@ edge = rho.expectation_value(O_edge).real
     \end{column}
     \begin{column}{0.38\textwidth}
       \footnotesize
-      Topological state ($L=6$, $\mu=t$).
+      Topological state ($L=6$, $\mu=t$). Channels applied as \textbf{single-qubit} maps on the exact even-parity state (\emph{frozen-state}, not circuit-level): \textbf{phase damping}, \textbf{depolarizing}, \textbf{amplitude damping ($T_1$)}.
       \begin{itemize}
         \item \textbf{Left:} $\langle\Pop\rangle$ stays \emph{exactly} $1$ under phase damping -- but that is the $\mathbb{Z}_2$ \emph{symmetry} (true in every phase), \textbf{not} topology. It collapses under depolarizing, leaks under $T_1$.
         \item \textbf{Right:} the topological edge string decays under \emph{every} channel -- even the parity-preserving one.
@@ -257,7 +260,7 @@ edge = rho.expectation_value(O_edge).real
     \end{column}
     \begin{column}{0.38\textwidth}
       \footnotesize
-      Length acts in \emph{opposite} directions:
+      Length acts in \emph{opposite} directions. Right panel uses \textbf{single-qubit amplitude damping ($T_1$)} and \textbf{single-qubit depolarizing} on the \textbf{frozen} ground state at fixed strength $\gamma$.
       \begin{itemize}
         \item \textbf{Left:} the intrinsic parity gap is protected exponentially, $\Delta_P(L)\sim e^{-L/\xi}$ -- longer chains are intrinsically \emph{better}.
         \item \textbf{Right:} at fixed noise, $T_1$ odd-sector leakage and depolarizing edge-string loss both \emph{grow} with $L$ -- longer chains are \emph{noisier} to operate.
