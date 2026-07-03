@@ -1,0 +1,248 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\geometry{margin=2.5cm}
+\graphicspath{{../plots/}}
+\emergencystretch=2em
+
+\newcommand{\Pop}{\hat{P}}
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle#1|}
+\newcommand{\Oedge}{X_0 Z_1\cdots Z_{L-2} X_{L-1}}
+\newcommand{\expv}[1]{\langle #1\rangle}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\cx}{\texttt{cx}}
+\newcommand{\chimax}{\chi_{\max}}
+
+\title{Scaling the Kitaev/VQE Simulation to Large $L$\\
+\large Exact diagonalization, density matrices, matrix product states, and free fermions}
+\author{Seminar notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Can the Block-4 noise study be pushed from $L=4$ toward $L=16$ (and beyond) on
+HPC? This note works through the question honestly. The pipeline hides
+\emph{two} exponential objects with very different escape routes. The
+\textbf{exact-diagonalization reference} is fully removable: the Kitaev
+Hamiltonian is a free-fermion model, so its ground state and observables follow
+from a $2L\times 2L$ Bogoliubov--de~Gennes (BdG) matrix in $O(L^3)$ time, exact
+to $L\sim$ hundreds. The \textbf{noisy VQE-prepared state} is the hard one:
+the \texttt{EfficientSU2} ansatz is a non-Gaussian, essentially universal
+circuit, so no classical method escapes exponential cost unconditionally.
+Matrix product states (MPS) help \emph{when entanglement is low}, and a direct
+probe of the real ansatz shows the bond dimension $\chi$ is bounded
+\emph{independent of $L$} at fixed depth ($\chi=8$ for reps${}=3$, all $L$).
+But the same probe exposes a fundamental wall: $\chi\approx 2^{\text{reps}}$
+exactly, while the fixed-depth ansatz \emph{loses fidelity} with $L$
+($0.99\to0.02$ over $L=4\to12$). Keeping the VQE faithful forces
+reps${}\sim L$, which sends $\chi$ back to $2^{O(L)}$. MPS is cheap precisely
+where the ansatz fails and expensive precisely where it works --- there is no
+free lunch, and that \emph{is} the NISQ statement.
+\end{abstract}
+
+\section{Two exponential objects}
+The current Block-4 evaluation ($\texttt{src/block4.py}$, plots 8--9) contains
+two objects that scale exponentially in the number of qubits $L$:
+\begin{enumerate}
+\item the \textbf{ED reference} --- \texttt{np.linalg.eigh} on the
+      $2^L\times 2^L$ Hamiltonian, used for the ideal $\expv{\Oedge}$ curve, the
+      parity gap, and the fidelity post-selection;
+\item the \textbf{noisy state} --- an exact density matrix $\rho$ of dimension
+      $2^L\times 2^L$ (i.e.\ $4^L$ complex entries), produced by
+      \texttt{save\_density\_matrix} on the Aer \texttt{density\_matrix} method.
+\end{enumerate}
+The observables themselves are \emph{not} the problem: \texttt{qubit\_hamiltonian},
+\texttt{edge\_string}, and \texttt{parity} are already \texttt{SparsePauliOp}
+objects with $O(L)$ Pauli terms. The blow-up comes entirely from calling
+\texttt{.to\_matrix()} on them and from \texttt{eigh}. The two objects are
+addressed separately below.
+
+\section{The dense wall}
+Object 2 sets the practical ceiling. A dense $2^L\times 2^L$ complex\,128 matrix
+costs $16\cdot 4^L$ bytes, and the pipeline holds several copies ($\rho$, $H$,
+$\Pop$, ED eigenvectors, Aer's internal state):
+\begin{center}
+\begin{tabular}{rrrl}
+\toprule
+$L$ & density matrix & $+$ copies & ED \texttt{eigh} cost \\
+\midrule
+12 & 0.27\,GB & ${\sim}1$\,GB & seconds \\
+14 & 4.3\,GB & ${\sim}20$\,GB & minutes \\
+15 & 17\,GB & ${\sim}70$\,GB & ${\sim}10$\,min \\
+16 & 69\,GB & ${\sim}300$\,GB & hours \\
+\bottomrule
+\end{tabular}
+\end{center}
+Worse, \emph{every} VQE cost evaluation is a full $4^L$ density-matrix
+simulation, run $\text{maxiter}\times\text{n\_starts}$ times per $L$. Beyond
+$L\approx 14$ a single $L$-point becomes hours to days. Even on a large-memory
+HPC node the dense path does not reach $L=16$ in feasible wall-clock time; this
+is the ``dense wall'' at $L\approx 15$.
+
+\section{Escaping object 1: free fermions}
+The Kitaev Hamiltonian is quadratic in fermions. After a Jordan--Wigner map the
+qubit form is
+\[
+H=-\tfrac{\mu}{2}\sum_j Z_j
+  +\tfrac{t-\Delta}{2}\sum_j X_jX_{j+1}
+  +\tfrac{t+\Delta}{2}\sum_j Y_jY_{j+1},
+\]
+which is a free-fermion (BdG) model. Its ground state, spectrum, correlation
+matrix, and the parity gap $\Delta_P(L)\sim e^{-L/\xi}$ all follow from
+diagonalizing a $2L\times 2L$ BdG matrix in $O(L^3)$ time --- \emph{no}
+exponential object. The edge operator $\Oedge$ is a product of Majorana
+operators, so its ground-state expectation is a Pfaffian of a submatrix of the
+covariance matrix (Wick's theorem). This is exactly how Majorana splitting is
+computed for $L\sim 1000$ in the literature. \textbf{Conclusion: the ED
+reference is removable outright}, exact and cheap to $L\sim$ hundreds. This is
+the content of \texttt{src/free\_fermion.py}.
+
+\section{Escaping object 2: trajectories and MPS}
+\subsection{Quantum-trajectory statevector sampling}
+Noise (a mixed state) does not require the full density matrix. In the
+quantum-trajectory picture each shot is a \emph{pure} statevector ($2^L$, not
+$4^L$) in which the Kraus operators are sampled stochastically; averaging an
+observable over $N_{\text{traj}}$ trajectories reconstructs
+$\Tr(O\rho)$ up to a statistical error $\propto 1/\sqrt{N_{\text{traj}}}$.
+Memory drops from $4^L$ to $2^L$ ($\sim$1\,MB at $L=16$), at the honest cost of
+\emph{error bars} on the noisy curves.
+
+\subsection{Matrix product states}
+A general $L$-qubit state is a tensor with $2^L$ amplitudes. An MPS factorizes
+it into a chain of small tensors, one per site, linked by bond indices of
+dimension $\chi$:
+\[
+\ket{\psi}=\sum_{\{s\}}A^{s_0}A^{s_1}\cdots A^{s_{L-1}}\ket{s_0\ldots s_{L-1}},
+\qquad \text{memory}=O(L\,\chi^2).
+\]
+Across any cut, $\chi$ equals the number of nonzero Schmidt coefficients --- a
+direct measure of \emph{entanglement} across that cut. A gapped 1D ground state
+obeys an area law, so its entanglement is bounded independent of $L$; then
+$\chi$ is constant and MPS is \emph{linear} in $L$. A critical or volume-law
+state needs $\chi\sim 2^{L/2}$ and MPS is exponential again. Aer provides
+\texttt{method='matrix\_product\_state'} and supports noise through trajectory
+sampling; the empirical test confirms it runs and exposes the per-bond $\chi$.
+
+\subsection{Truncation error, and why the risk is controllable}
+A two-qubit gate can double $\chi$ across its bond. To stay cheap one performs
+an SVD there and keeps only the largest $\chimax$ Schmidt values. The discarded
+weight --- the sum of squared discarded Schmidt coefficients --- \emph{is} the
+truncation error: the fraction of the state's norm thrown away. If nothing is
+discarded the MPS is \emph{exact}. If $\chimax$ is set below what the state
+needs, the simulated state becomes a nearby but different state and
+$\expv{\Oedge}$ acquires a systematic bias. Crucially this is a knob with a
+readout: Aer reports the discarded weight, and the convergence check ``run at
+$\chimax$ and $2\chimax$; if the observable does not move, the result is
+effectively exact'' makes the error visible and quantitative rather than
+hidden. A truncated number never silently corrupts a result as long as the
+discarded weight is logged.
+
+\section{The $\chi$-probe: what the real ansatz actually does}
+We measured the \emph{exact} (uncapped) max bond dimension of the real
+\texttt{EfficientSU2}(\texttt{ry}, linear, reps) state directly.
+
+\paragraph{$\chi$ is flat in $L$ at fixed depth.}
+Worst-of-random-$\theta$ max $\chi$ (reps${}=3$):
+\begin{center}
+\begin{tabular}{rrrrrr}
+\toprule
+$L$ & 6 & 10 & 14 & 18 & 22 \\
+$\chi$ & 8 & 8 & 8 & 8 & 8 \\
+$2^{\lfloor L/2\rfloor}$ (vol.\ law) & 8 & 32 & 128 & 512 & 2048 \\
+\bottomrule
+\end{tabular}
+\end{center}
+A reps${}=r$ linear ansatz has a light cone of width ${\sim}r$, so entanglement
+across any cut is bounded \emph{independent of $L$}. At reps${}=3$, $\chi$ pins
+at $8$ for all $L$, far below the volume-law ceiling, and noise does not inflate
+it. \textbf{The truncation risk essentially does not exist for a shallow
+ansatz}: cap $\chimax=16$ and the simulation is exact to $L=100$.
+
+\paragraph{$\chi$ grows exponentially in depth.}
+At fixed $L=14$:
+\begin{center}
+\begin{tabular}{rrrrrrrr}
+\toprule
+reps & 1 & 2 & 3 & 4 & 5 & 6 & 8 \\
+$\chi$ & 2 & 4 & 8 & 16 & 32 & 64 & 128 \\
+\bottomrule
+\end{tabular}
+\end{center}
+i.e.\ $\chi\approx 2^{\text{reps}}$ (until it saturates the $2^{L/2}$ ceiling).
+
+\paragraph{The fixed-depth ansatz loses the state.}
+VQE fidelity to the true ground state at reps${}=3$:
+\begin{center}
+\begin{tabular}{rrrrrr}
+\toprule
+$L$ & 4 & 6 & 8 & 10 & 12 \\
+fidelity & 0.99 & 0.50 & 0.25 & 0.10 & 0.02 \\
+\bottomrule
+\end{tabular}
+\end{center}
+A fixed-depth hardware-efficient ansatz simply cannot represent the topological
+ground state as $L$ grows; keeping the fidelity up requires reps${}\sim L$.
+
+\section{The wall is fundamental, not a coding artifact}
+Combining the three tables: the regime where MPS is cheap (small reps, constant
+$\chi$) is exactly the regime where the VQE \emph{fails} (fidelity $\to 0$); and
+the regime where the VQE \emph{works} (reps${}\sim L$) is exactly where
+$\chi\sim 2^{\text{reps}}\sim 2^{O(L)}$ blows MPS back up. A state that genuinely
+needs a deep circuit to prepare is genuinely expensive to simulate classically
+--- MPS buys a smaller exponential base ($2^{\text{reps}}$ vs $4^L$), a few
+extra qubits, not unbounded $L$. This is the honest simulation-cost face of
+``NISQ does not inherit topological protection.''
+
+\paragraph{The one unconditionally polynomial regime.}
+The true Kitaev ground state is Gaussian and area-law: it \emph{has} a small-$\chi$
+MPS. The \texttt{ry} ansatz is merely an inefficient, non-Gaussian
+parametrization of it. A \textbf{matchgate/Gaussian ansatz} (only
+$R_z$-type single-qubit gates $+$ nearest-neighbor matchgate entanglers)
+prepares the same state at $O(L)$ depth with bounded $\chi$, and under
+\emph{fermion-Gaussian} noise (amplitude damping/loss is Gaussian for fermions;
+depolarizing is not) the entire simulation reduces to covariance-matrix algebra,
+$O(L^3)$, exact, $L\to$ thousands. The catch: this answers a cleaner but
+\emph{different} question --- it is no longer the generic hardware-efficient
+NISQ story.
+
+\section{Recommended architecture}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+piece & scalable replacement & exact? \\
+\midrule
+ideal $\expv{\Oedge}$, gap & free-fermion BdG ($L^3$) & exact, $L\to$ hundreds \\
+noisy VQE $\expv{\Oedge}$ & MPS $+$ noise trajectories ($L\chi^2$) & exact if $\chi$ bounded \\
+unbounded $L$ & matchgate ansatz $+$ Gaussian noise ($L^3$) & exact, different model \\
+\bottomrule
+\end{tabular}
+\end{center}
+The concrete plan: build \texttt{src/free\_fermion.py} (an unconditional win)
+and pair it with a \emph{fixed-reps} MPS sweep that makes the ansatz's
+expressibility collapse visible against the exact ideal curve. That is honest,
+cheap, reaches large $L$, and turns the wall itself into the scientific point.
+Validation anchor: at $L\le 12$, where the exact density-matrix path still runs,
+cross-check the MPS-trajectory and free-fermion values against the exact
+numbers before extrapolating.
+
+\paragraph{Backends for the noisy curve.} A device-calibrated sweep needs a
+snapshot whose coupling map embeds a length-$L$ line so the linear-entanglement
+\cx{} pairs sit on real edges with no SWAP inflation. Named 5-qubit snapshots
+(\texttt{fake\_manila}, etc.) cap at $L=5$; \texttt{FakeGuadalupeV2} is 16 qubits
+but its heavy-hex graph only contains a 13-node line. The clean choices are the
+27-qubit heavy-hex snapshots (\texttt{FakeCairoV2}/\texttt{FakeKolkataV2}/%
+\texttt{FakeHanoiV2}, 21-node line) or a 20-qubit device (18-node line).
+
+\paragraph{Reproduce.} $\chi$-probe:
+\texttt{python scratch/chi\_probe.py} (measures $\chi$ vs $L$ and vs reps against
+the volume-law ceiling). Free-fermion reference: \texttt{src/free\_fermion.py}
+(BdG ground state, edge string, parity gap; validated against \texttt{eigh} at
+$L\le 12$).
+
+\end{document}

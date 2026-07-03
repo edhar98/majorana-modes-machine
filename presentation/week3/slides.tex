@@ -251,7 +251,7 @@ def build_hamiltonian(self):
   \begin{lstlisting}
 def positive_spectrum(self):
     evals = np.linalg.eigvalsh(self.build_hamiltonian())
-    return np.sort(np.abs(evals))[:self.L]  # see Appendix D for why np.abs
+    return np.sort(np.abs(evals))[::2]  # |E| plus one copy per +/-E pair
   \end{lstlisting}
 
   \medskip
@@ -346,9 +346,9 @@ E0_arr = np.array([
     = L\,\lambda^{L-1}
   \]
 
-  Absorbing normalisation and subleading factors into a prefactor fixed by the exact sweet-spot calculation:
+  The exact transfer-matrix calculation ($t=\Delta$) keeps the $(1-\lambda^2)$ prefactor (with $\lambda=|\mu|/2t$):
   \[
-    \boxed{E_0(L) \approx 2t\left(\frac{|\mu|}{2t}\right)^L}
+    \boxed{E_0(L) \approx 2t\left(1-\lambda^2\right)\left(\frac{|\mu|}{2t}\right)^L}
   \]
 \end{frame}
 
@@ -448,7 +448,7 @@ E0_arr = np.array([
   Diagonalizing this yields the bulk dispersion $E_k = \pm\sqrt{n_z(k)^2 + n_y(k)^2}$.
 \end{frame}
 
-\begin{frame}{Appendix D: Why \texttt{np.abs} — the sign-filter artefact}
+\begin{frame}{Appendix D: BdG extraction — sign filter and double counting}
   \begin{alertblock}{The problem with \texttt{evals[evals $\geq$ 0]}}
     Particle-hole symmetry guarantees $\pm E$ pairs \emph{analytically}.
     Numerically, near-zero Majorana modes at large $L$ can round to tiny
@@ -460,8 +460,12 @@ E0_arr = np.array([
     \includegraphics[width=0.9\linewidth]{block1_09_npabs_comparison.pdf}
   \end{center}
 
-  Taking $|E|$ and keeping the $L$ smallest values is numerically exact and
-  never misses a near-zero mode.
+  Taking $|E|$ fixes the near-zero sign ambiguity. For the \emph{full} positive
+  spectrum, the sorted $|E|$ list still contains each physical quasiparticle
+  energy twice, so the code keeps one from each adjacent pair:
+  \[
+    E_n=\texttt{np.sort(np.abs(evals))[::2]} .
+  \]
 \end{frame}
 
 \end{document}

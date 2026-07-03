@@ -69,10 +69,12 @@ class KitaevChain:
         Uses |E| rather than filtering evals >= 0: near-zero Majorana modes
         can round to tiny negative values at double precision, which a sign
         filter would silently drop, producing spurious spikes in finite-size
-        spectra at large L.
+        spectra at large L. The abs values still contain each physical
+        quasiparticle energy twice because BdG eigenvalues come in ±E pairs, so
+        keep one entry from each adjacent pair after sorting.
         """
         evals = np.linalg.eigvalsh(self.build_hamiltonian())
-        return np.sort(np.abs(evals))[:self.L]
+        return np.sort(np.abs(evals))[::2]
 
     def eigh(self):
         """Return (eigenvalues, eigenvectors) sorted by ascending eigenvalue."""

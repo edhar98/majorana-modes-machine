@@ -147,16 +147,16 @@ Combining and absorbing the normalisation into the prefactor:
   = L\,(1-\lambda^2)\,\lambda^{L-1}.
 \end{equation}
 For large $L$ the factor $L\lambda^{L-1} \to 0$ because the exponential decay
-wins over the linear growth.  Absorbing the subleading $L$ dependence and
-the $(1-\lambda^2)$ prefactor into an overall constant $C$ of order unity:
+wins over the linear growth.  The exact transfer-matrix calculation at
+$t=\Delta$ keeps the $(1-\lambda^2)$ prefactor (it is \emph{not} subleading in
+$L$; it only tends to $1$ as $\mu\to 0$), giving
 \begin{equation}
-  \delta E \approx C \cdot \lambda^L = C\left(\frac{|\mu|}{2t}\right)^L.
+  \boxed{E_0(L) \approx 2t\,(1-\lambda^2)\left(\frac{|\mu|}{2t}\right)^L,
+  \qquad \lambda=\frac{|\mu|}{2t}.}
 \end{equation}
-An exact calculation at the sweet spot $\mu \to 0$, $t = \Delta$ fixes the
-prefactor to $C = 2t$, giving the standard result
-\begin{equation}
-  \boxed{E_0(L) \approx 2t\left(\frac{|\mu|}{2t}\right)^L.}
-\end{equation}
+Numerically (BdG, \texttt{src/block1.py}) the ratio $E_0/\lambda^L$ tends to
+$2t(1-\lambda^2)$ exactly: $1.875,\,1.5,\,0.875$ at $\mu=0.5,\,1,\,1.5$
+($t=1$), matching this form and \emph{not} the bare $2t\,\lambda^L$.
 
 \section{Consequences}
 

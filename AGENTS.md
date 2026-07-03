@@ -38,22 +38,40 @@ python block3.py --plots 8    # Week 7 ansatz-depth diagnostic
 python block3.py --plots 7 --points 41   # coarser, faster VQE sweep
 ```
 
-`block4.py` is the scripted Block 4 runner for Week 8 and later NISQ noise checks. It continues from the Block 3 Hamiltonian and edge-string definitions in `block3_core.py`; do not use notebook-local Hamiltonians for slide figures:
+`block4.py` is the scripted Block 4 runner for Week 8 and the Week 9 circuit-level NISQ noise study. It continues from the Block 3 Hamiltonian and edge-string definitions in `block3_core.py`; do not use notebook-local Hamiltonians for slide figures:
 ```bash
 cd src
 python block4.py --list
-python block4.py --plots 1    # Week 8 frozen-state readout/gate-noise sweep
+python block4.py --plots 1    # Week 8 frozen-state readout/gate-noise sweep (superseded story)
+python block4.py --plots 2    # Week 9 edge-string phase sweep vs ansatz depth under per-cx noise
+python block4.py --plots 3    # Week 9 exact gate-by-gate verification + thermal T1/T2 variant
+python block4.py --plots 4    # parity vs edge string under phase/depolarizing/amplitude channels
+python block4.py --plots 5    # intrinsic protection vs noisy vulnerability across chain length L
+python block4.py --plots 6    # depth optimum (expressibility threshold vs accumulated gate noise)
+python block4.py --plots 7    # coherent (theta+dtheta) vs incoherent gate noise: edge string + purity
+python block4.py --plots 8    # noisy VQE optimization: best-case vs noise-aware under unital/non-unital channels
+python block4.py --plots 9    # toy uniform noise vs backend-calibrated noise
+python block4.py --plots 6 --reps 1 2 3 4 5 6   # depth optimum needs r=1..6 to match the slide figure
+```
+
+`showcase.py` generates the intuition-first figure gallery (`plots/show_h{1..9}_*.png` plus `_thumb` variants) published to the GitHub Pages index. It reuses `block3_core.py`/`block4.py` physics; regenerate only when the underlying results change:
+```bash
+cd src
+python showcase.py --list
+python showcase.py            # all H1-H9 showcase figures
+python showcase.py h2 h5      # specific figures by id
 ```
 
 Compile slides and notes from the repo root. Make only rebuilds PDFs whose `.tex` sources are newer than the generated PDF:
 ```bash
-make slides      # all outdated presentation PDFs
-make week6       # only week 6 if outdated
-make week7       # only week 7 if outdated
+make slides      # all outdated presentation PDFs (weeks 1-10)
 make week8       # only week 8 if outdated
-make notes       # all outdated notes PDFs
+make week9       # only week 9 if outdated
+make notes       # all outdated notes PDFs (notes/*.tex are wildcard-discovered)
 make clean       # remove LaTeX auxiliary files
 ```
+
+`Makefile` `WEEKS` currently lists `1..10`, including the final-synthesis deck in `presentation/week10/`. `showcase.py` has no make target — run it manually as above.
 
 Manual slide compile still works from a week folder:
 ```bash
@@ -65,7 +83,7 @@ CI compiles outdated presentation slides and notes on push, then deploys generat
 
 Block 3 notebook dependencies include `qiskit`, `qiskit-aer`, `qiskit-algorithms`, `numpy`, `scipy`, and `matplotlib`.
 
-## Current Status (2026-06-11)
+## Current Status (2026-07-01)
 
 - Block 1 is implemented: BdG bulk/real-space physics, winding number, phase diagram, finite-size spectra, Majorana splitting, and comparison plots.
 - Block 2 is implemented: Jordan-Wigner qubit Hamiltonian, parity-sector spectra, and parity-gap checks against BdG splitting.
@@ -73,6 +91,19 @@ Block 3 notebook dependencies include `qiskit`, `qiskit-aer`, `qiskit-algorithms
 - Week 5 slides use `presentation/week5/slides.tex`. Week 6 slides use `presentation/week6/slides.tex`. Week 7 slides use `presentation/week7/slides.tex`. Week 8 slides use `presentation/week8/slides.tex`. Ignore `presentation/week5/slides_my.tex` unless explicitly asked.
 - Block 3 Week 5 plots are now runner-generated PDFs with the `block3_week5_*` signature (matching `block3_week6_*`/`block3_week7_*`), produced by `block3.py --plots 2`. The old ad-hoc PNGs (`block3_VQE_Ansatz.png`, `block3_VQE_Converage.png`, `block3_Measurement.png`, `block3_correlation.png`) and the unused `block3_02/03/04_*.pdf` diagrams were removed; the `Converage` typo and the uppercase `block3_Correlation.png` case bug in the slides are fixed.
 - Block 4 starts with Week 8. `src/block4.py` is the scripted continuation after Block 3 validation. Plot 1 generates `block4_week8_noise_sweep.pdf` from the same Kitaev/Jordan-Wigner Hamiltonian and edge-string operator as `block3_core.py`, applying symmetric readout scaling, local two-qubit depolarizing channels, and shot noise. Notebook-local Hamiltonians such as `notebooks/Kitaev_Chain_Noise_Simulation.ipynb` are exploratory only and should not be used as slide-figure sources.
+- Block 4 Week 9 is implemented in `src/block4.py` (plots 2-9): circuit-level gate noise via a Qiskit density-matrix `NoiseModel`, verified to ~1e-15 against an independent gate-by-gate reference (`exact_reference_edge`), the depth-optimum study, coherent-vs-incoherent error, the parity-vs-topology and length questions, noisy-VQE re-optimization, and backend-calibrated noise. Week 8's frozen-state noise (plot 1) is treated as a theoretical intro and is superseded by the circuit-level Week 9 method; the Week 9 slides carry no explicit "Week N" wording.
+- `presentation/week10/slides.tex` is the final-synthesis capstone deck (16 frames, Blocks 1-4 end-to-end) built mainly on the `showcase.py` H1-H9 gallery. `src/showcase.py` + `utils.py` (`setup_showcase_style`, `save_showcase`, `topo_window`, `takeaway`) produce the intuition-first `plots/show_h*.png` figures published to GitHub Pages by CI.
+
+### Verified conventions and caveats (project review, 2026-07-01)
+
+A full-project correctness review found no results-invalidating error, but pinned down these load-bearing facts. Do not reintroduce the fixed mistakes:
+
+- **Jordan-Wigner convention.** Code uses `c_j^\dagger = (\prod_{k<j} Z_k)\,\sigma_j^+` with `\sigma^\pm=(X\pm iY)/2`, so `c_j^\dagger c_j = \sigma^+\sigma^- = (I+Z_j)/2` — the *occupied* single-site state is `|0>` (`Z=+1`). This reproduces `H = -mu/2 * sum Z + (t-delta)/2 * sum XX + (t+delta)/2 * sum YY` in `jordan_wigner.py` exactly. Do **not** write `c^\dagger c = (I-Z)/2` (it flips the `mu` sign). Fixed in `notes/qubit_encoding_derivations.tex` and `presentation/week4/slides.tex`.
+- **Even `L` assumed.** Parity `P = prod Z_j` equals `(-1)^N` only for even `L` (they differ by `(-1)^L`). All parity/even-sector claims assume even `L`.
+- **Edge string is a Majorana bilinear.** `O_edge = X_0 Z_1 ... Z_{L-2} X_{L-1} = i b_0 a_{L-1}` exactly. It is a finite-size edge/string diagnostic, **not** a standalone bulk topological invariant.
+- **Majorana splitting prefactor.** `E_0(L) ≈ 2t(1-lambda^2)(|mu|/2t)^L` with `lambda=|mu|/2t`; keep the `(1-lambda^2)` factor (bare `2t*lambda^L` is wrong by `1/(1-lambda^2)`). Fixed in `src/block1.py` (plot 6 theory line), `notes/majorana_splitting_vs_L.tex`, `notes/qubit_encoding_derivations.tex`, `presentation/week3/slides.tex`.
+- **VQE restart selection is ED-assisted.** `best_state` in `block3_core.py` picks the best restart by fidelity to the ED ground state — fine for benchmarking, but it is ED-assisted post-selection (no device-only objective) and should be disclosed as such.
+- **Depth optimum is genuine expressibility.** `r=1` under-expressibility (`|O|≈0`) is real, not an optimizer artifact (survives more restarts / differential evolution). Optimum = shallowest adequately-expressive depth; noise then decays as `(1-p_cx)^{r(L-1)}`.
 
 Current local-only/untracked worktree items observed on 2026-06-11 include `.cursorindexingignore`, `.notes.txt.swp`, `.specstory/`, `diff.tex`, `diff.txt`, `notes.txt`, `tools/`, course-description/main LaTeX auxiliary outputs, a Qiskit crash-course notebook checkpoint, generated presentation PDFs/VRB files, and `presentation/week5/slides_my.tex` / `presentation/week5/slides_my.pdf`. Do not delete or revert these unless explicitly asked.
 
@@ -94,7 +125,7 @@ kitaev_chain.py
 utils.py
 ```
 
-- **`kitaev_chain.py`** — `KitaevChain` class. Builds the (2L×2L) real-space BdG matrix and exposes `.spectrum()`, `.positive_spectrum()`, `.eigh()`, `.gap()`. Use `.positive_spectrum()` (not `.spectrum()[L:]`) to avoid spurious spikes from sign-filtering near-zero Majorana modes at large L.
+- **`kitaev_chain.py`** — `KitaevChain` class. Builds the (2L×2L) real-space BdG matrix and exposes `.spectrum()`, `.positive_spectrum()`, `.eigh()`, `.gap()`. Use `.positive_spectrum()` for quasiparticle energies: it takes `np.abs(evals)` to avoid near-zero sign-filter spikes and then deduplicates the resulting ±E pairs with `[::2]`. Do not use `.spectrum()[L:]` or `np.sort(np.abs(evals))[:L]` for the full positive spectrum.
 - **`bdg_bulk.py`** — momentum-space BdG: `bulk_energy()`, `bulk_gap()`, `bdg_vector()`, `critical_mu()`. Critical points are at `μ = ±2t`.
 - **`winding.py`** — `winding_number(mu)` integrates the BdG d-vector angle around the BZ via `np.unwrap`. Returns 0 (trivial) or 1 (topological).
 - **`jordan_wigner.py`** — qubit encoding via Jordan-Wigner. `kitaev_qubit_hamiltonian()` returns the (2^L × 2^L) qubit Hamiltonian; `spectrum_by_parity()` splits eigenvalues into even/odd fermion-parity sectors; `parity_gap()` returns `|E₀⁺ − E₀⁻|`. Limited to L ≤ ~14 due to exponential Hilbert-space growth.
@@ -102,7 +133,9 @@ utils.py
 - **`block3_week5.ipynb`** — original interactive Block 3 Week 5 notebook (pure YY/topological sweet-spot VQE with `EfficientSU2` `RY`/linear-CNOT, `AerEstimator`, L-BFGS-B, parity penalty `lambda=0.1`, subspace-fidelity validation, shot-based measurements). Its logic is now fully reproduced by `block3.py --plots 2` (the `block3_week5_*.pdf` figures), which is what the Week 5 slides use; the notebook is retained only as a historical/interactive artifact.
 - **`block3_core.py`** — shared Block 3 logic imported by `block3.py`. Qiskit operators (`qubit_hamiltonian` little-endian `SparsePauliOp`, `edge_string`, `local_z`, `parity`), `vqe_ansatz` (`EfficientSU2` `RY`/linear CNOT), ED helpers (`ed_sectors`, `ed_even_ground_state`, `expval`, `state_vector`), Week 6 data generators (`sweep_observables`, `finite_size_sweep`, `shot_estimate`, `noisy_value`), Week 5 VQE prototype (`prepare_vqe_ground_state`, `measure_local_x_shots`, `measure_local_y_shots`, `measure_edge_string_shots`), and the Week 7 VQE machinery (`vqe_cost`, `evaluate_state`, `measure_edge_string_shots`, `solve_point`, `vqe_sweep`, `best_state`, `depth_scan`). All ED uses the same little-endian Qiskit convention via `.to_matrix()`.
 - **`block3.py`** — single scripted Block 3 runner (Weeks 5-7) using the `PLOT_REGISTRY`/`@plot` pattern and a unified CLI. Imports everything physics-related from `block3_core.py` and only holds the plotting/registry/CLI layer. Plots: 1 `block3_01_vqe_observables_test.pdf` (representative VQE local-vs-edge-string observable test, used by Week 7 slides), 2 the `block3_week5_*.pdf` sweet-spot figures (ansatz, convergence, correlation bar, and the meas_local/meas_sop/meas_correlation circuits), 3 `block3_week6_phase_sweep.pdf`, 4 `block3_week6_finite_size.pdf`, 5 `block3_week6_local_vs_nonlocal.pdf`, 6 `block3_week6_noise.pdf`, 7 `block3_week7_vqe_sweep.pdf`, 8 `block3_week7_depth_fidelity.pdf`.
-- **`block4.py`** — scripted Block 4 runner for NISQ noise checks. Reuses `block3_core.py` operators and ED helpers, applies density-matrix two-qubit depolarizing noise on adjacent pairs, symmetric readout attenuation for the measured edge string, and shot sampling. Plot 1 emits `block4_week8_noise_sweep.pdf`, which Week 8 slides use instead of notebook-generated PNGs.
+- **`block4.py`** — scripted Block 4 runner for NISQ noise checks. Reuses `block3_core.py` operators and ED helpers. Plot 1 (Week 8, frozen-state) emits `block4_week8_noise_sweep.pdf`. Plots 2-9 (Week 9, circuit-level) attach a Qiskit `NoiseModel` and read `Tr[O_edge rho]` from a density matrix: `circuit_level_edge` (Aer density_matrix run), `exact_reference_edge` (independent gate-by-gate `DensityMatrix.evolve` + depolarizing `SuperOp`, the verification reference), `perturb_theta`/`_purity` (coherent-error study), `noisy_optimize` (noise inside the VQE cost), and `backend_noise_model` (`NoiseModel.from_backend`). CLI adds `--mu-opt`, `--sigma-theta`, `--reps` (use `--reps 1 2 3 4 5 6` for the plot-6 depth optimum), `--noisy-*`, and `--backend-seed`. Notebook-local Hamiltonians are exploratory only.
+- **`free_fermion.py`** — exact free-fermion/BdG reference helper for larger-$L$ scaling analysis. Builds the Majorana matrix, computes the ground-state energy/covariance/parity gap in `O(L^3)`, evaluates the edge string from the covariance matrix, and self-tests against exact qubit diagonalization for small even `L`.
+- **`showcase.py`** — intuition-first figure gallery (H1-H9) for the GitHub Pages index and the Week 10 capstone deck. Uses the same physics as `block3_core.py`/`block4.py`; each figure returns `save_showcase(fig, 'hN_...')`, writing `plots/show_hN_*.png` + `_thumb`. Showcase styling helpers (`setup_showcase_style`, `save_showcase`, `topo_window`, `takeaway`) live in `utils.py`.
 
 ### Runner scripts (`block1.py`, `block2.py`, `block3.py`)
 
@@ -143,6 +176,19 @@ Week 7 Block 3 outputs:
 
 The Week 5/7 VQE framework test (`block3.py --plots 1`) emits `block3_01_vqe_observables_test.pdf`, showing local `|<X_0>|` near zero versus edge-string `|<X_0 Z_1 Z_2 X_3>|`; it is used as the "existing VQE baseline" figure in the Week 7 slides.
 
+Block 4 outputs (`block4.py`):
+- `block4_week8_noise_sweep.pdf` (plot 1) — Week 8 frozen-state readout/depolarizing sweep.
+- `block4_week9_depth_sweep.pdf` (plot 2) — edge-string phase sweep at increasing ansatz depth under per-cx noise.
+- `block4_week9_verification.pdf` (plot 3) — Aer vs exact gate-by-gate agreement (~1e-15) and the thermal T1/T2 variant.
+- `block4_parity_vs_noise.pdf` (plot 4) — parity vs edge string under phase/depolarizing/amplitude channels (topological state).
+- `block4_length_under_noise.pdf` (plot 5) — intrinsic parity gap vs noisy vulnerability across chain length L.
+- `block4_week9_depth_optimum.pdf` (plot 6) — expressibility threshold vs accumulated gate noise; optimum = shallowest adequately-expressive depth (needs `--reps 1 2 3 4 5 6`).
+- `block4_week9_parameter_noise.pdf` (plot 7) — coherent (theta+dtheta, purity preserved) vs incoherent (depolarizing, purity lost).
+- `block4_week9_noisy_vqe.pdf` (plot 8) — best-case fixed ideal parameters vs noisy-cost re-optimization under unital and non-unital channels.
+- `block4_week9_backend_noise.pdf` (plot 9) — uniform toy depolarizing noise vs backend-calibrated `NoiseModel.from_backend` device noise.
+
+Showcase gallery (`showcase.py`, `plots/show_h*.png` + `_thumb`): H1 Majorana wavefunction, H2 depth optimum, H3 transition views, H4 edge string, H5 parity vs topology, H6 coherent vs incoherent, H7 phase banner, H8 length tradeoff, H9 Majorana under noise. Consumed by the Week 10 capstone deck and the GitHub Pages index.
+
 ### Presentations (`presentation/weekN/slides.tex`)
 
 Beamer (Madrid/seahorse theme), 16:9. Custom macros: `\cdag`, `\winding`, `\ket{}`, `\bra{}`. Color names `trivial`/`critical`/`topological`/`edgemode` match `COLORS` in `utils.py`. Code listings use `lstlisting` with the `codebg/codekw/codecomment/codestring` color set defined in the preamble.
@@ -151,7 +197,8 @@ Beamer (Madrid/seahorse theme), 16:9. Custom macros: `\cdag`, `\winding`, `\ket{
 - Block 1 (weeks 1–2, week3 partial): Physics Bridge — Kitaev H, BdG bulk, winding number, phase diagram
 - Block 2 (week3 partial + week4): Finite-Size Physics + Qubit Encoding — edge modes, Majorana splitting, JW transform, parity gap
 - Block 3 (weeks 5-7): Measuring Topology — transition from exact matrix math to gate-based simulation, VQE ground-state preparation, non-local string order, Majorana observable measurement gates, and numerical evidence
-- Block 4 (week 8 active): NISQ Reality Check — noise modeling plan, failure metrics, and robustness tests after the VQE sweep is validated
+- Block 4 (weeks 8-9): NISQ Reality Check — week 8 frozen-state noise plan/failure metrics; week 9 circuit-level gate noise (density-matrix `NoiseModel`, machine-precision verification, depth optimum, coherent vs incoherent, parity vs topology, length)
+- Final synthesis (week 10): capstone deck tracing Blocks 1-4 end-to-end via the H1-H9 showcase gallery, building to the thesis (parity is symmetry-protected not topological; the topological signal is not noise-immune at fixed L; the optimum is the shallowest adequately-expressive depth)
 
 Week 5 `slides.tex` content:
 - Objective: move from exact matrix math to gate-based simulation.
@@ -179,6 +226,14 @@ Week 8 `slides.tex` content:
 - Separates frozen-parameter noise tests from noisy VQE optimization.
 - Uses `block3_week7_vqe_sweep.pdf` as the baseline and `block4_week8_noise_sweep.pdf` as the first scripted readout/gate-noise visualization.
 
+Week 9 `slides.tex` content:
+- Circuit-level gate noise on the validated VQE: channel taxonomy, the state-vector -> density-matrix transition, and the machine-precision verification.
+- The depth optimum framed as an expressibility *threshold* (r=1 fails, r>=2 saturates) times accumulated CNOT noise `(1-p_cx)^{r(L-1)}`.
+- The professor's questions (parity vs topology; chain length) as their own frames. No explicit "Week N" wording. The coherent-vs-incoherent frame exists but is currently commented out (`\iffalse`); slide 6 is the Qiskit code listing.
+
+Week 10 `slides.tex` content (`presentation/week10/`):
+- Final-synthesis capstone (16 frames): motivation -> Block 1 edge modes/transition -> Block 2 JW + non-local diagnostic -> Block 3 VQE sweep -> Block 4 depth optimum/coherent-incoherent/parity-topology/length -> three-point thesis -> outlook. Reuses existing figures (mostly the `show_h*` gallery); does not regenerate them.
+
 ### Notes (`notes/`)
 
 Standalone LaTeX documents. Source `.tex` files are tracked; generated `notes/*.pdf` files are ignored and produced locally with `make notes` or by CI for GitHub Pages. Currently:
@@ -190,6 +245,11 @@ Standalone LaTeX documents. Source `.tex` files are tracked; generated `notes/*.
 - `week6_phase_sweep.tex` — Week 6 notes on sweeping `mu`, measuring the non-local edge string, and bridging to Block 4 noise studies.
 - `week7_vqe_sweep.tex` — Week 7 notes on parity-constrained VQE sweep preparation, EfficientSU2 repetitions, subspace fidelity, ideal vs shot-based VQE, and edge-string measurement from bitstrings.
 - `block4_noise_diagnostic.tex` — merged Block 4/Week 8 notes: practical `src/block4.py` frozen-state edge-string noise diagnostic, plus broader theory for measurement-basis rotations, asymmetric SPAM/readout bias, relaxation/dephasing, and noisy VQE optimization explicitly marked as not implemented yet.
+- `week9_note.tex` — Week 9 circuit-level gate-noise study: density-matrix `NoiseModel`, machine-precision verification, the depth-optimum (expressibility threshold) result, and the coherent-vs-incoherent (theta+dtheta) study.
+- `parity_topology_protection.tex` — the professor's Q1/Q2: parity is protected by `Z2` symmetry (not topology), the non-local edge string is not noise-immune at fixed `L`, and chain length acts in opposing directions (intrinsic gap improves as `e^{-L/xi}` while device vulnerability grows with `L`).
+- `topology_noise_reps_scaling.tex` — standalone explanation of why topology matters despite non-immune measurements, and how `L`, `reps`, CNOT count, and measured edge-string contrast trade off.
+- `noisy_vqe_and_backend_noise.tex` — Block 4 extension notes for plots 8-9: noisy-cost VQE optimization and backend-calibrated noise.
+- `scaling_to_large_L.tex` — large-`L` scaling note separating the removable ED reference from the hard noisy-state simulation, with free-fermion, MPS, and trajectory options.
 
 ### Notebooks
 

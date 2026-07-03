@@ -3,6 +3,7 @@ from itertools import product
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import minimize
 from qiskit import transpile
 from qiskit.quantum_info import SparsePauliOp, DensityMatrix, SuperOp, Operator
 from qiskit_aer import AerSimulator
@@ -13,7 +14,7 @@ from block3_core import (
     T, DELTA,
     qubit_hamiltonian, edge_string, parity,
     ed_even_ground_state, shot_estimate,
-    vqe_ansatz, best_state,
+    vqe_ansatz, best_state, state_vector,
 )
 from jordan_wigner import parity_gap
 from bdg_bulk import critical_mu
@@ -83,6 +84,65 @@ def thermal_noise_model(t1=T1_NS, t2=T2_NS, gate_time=GATE_TIME_2Q_NS):
     err1 = thermal_relaxation_error(t1, t2, gate_time)
     nm.add_all_qubit_quantum_error(err1.tensor(err1), ['cx'])
     return nm
+
+
+def amp_damp_noise_model(gamma):
+    """Per-cx amplitude damping (T1 relaxation toward |0>) on each qubit of the pair.
+
+    The pure NON-UNITAL counterpart of depolarizing_noise_model on the same per-cx
+    error axis: amplitude damping does not fix the maximally mixed state, so it breaks
+    the symmetry that makes depolarizing leave the optimum in place.
+    """
+    nm = NoiseModel()
+    err1 = amplitude_damping_error(gamma)
+    nm.add_all_qubit_quantum_error(err1.tensor(err1), ['cx'])
+    return nm
+
+
+# Default seed for the synthetic-device calibration snapshot (GenericBackendV2 fallback).
+BACKEND_SEED = 42
+
+
+def _resolve_fake_backend(L=4, seed=BACKEND_SEED):
+    """Return a FakeBackendV2 with recorded per-qubit/per-gate calibration data.
+
+    Tries, in order, the module paths that ship named IBM fake backends (real
+    device snapshots), then falls back to a synthetic but still heterogeneous
+    GenericBackendV2. Named devices cap at 5 qubits, so L>5 only works through
+    the GenericBackendV2 fallback. Raises a clear error if nothing is available.
+    """
+    # Named 5-qubit snapshots carry genuine recorded calibration; only useful for L<=5.
+    if L <= 5:
+        for modpath in ('qiskit_ibm_runtime.fake_provider',
+                        'qiskit.providers.fake_provider'):
+            for name in ('FakeManilaV2', 'FakeQuitoV2', 'FakeLimaV2', 'FakeAthensV2'):
+                try:
+                    mod = __import__(modpath, fromlist=[name])
+                    return getattr(mod, name)()
+                except (ImportError, AttributeError):
+                    continue
+    # Synthetic fallback: heterogeneous per-pair cx / per-qubit sx / readout errors.
+    try:
+        from qiskit.providers.fake_provider import GenericBackendV2
+    except ImportError as exc:  # pragma: no cover - environment guard
+        raise RuntimeError(
+            'No fake backend available: install qiskit_ibm_runtime for named '
+            'device snapshots, or a qiskit providing GenericBackendV2.') from exc
+    return GenericBackendV2(num_qubits=max(L, 5), basis_gates=BASIS_GATES, seed=seed)
+
+
+def backend_noise_model(backend=None, L=4, seed=BACKEND_SEED):
+    """Build a NoiseModel from a real device's recorded calibration data.
+
+    Unlike the hand-set uniform models above, this captures hardware
+    heterogeneity: per-qubit T1/T2, per-gate error rates, gate durations and
+    readout error, all read off a FakeBackendV2 snapshot. On the density-matrix
+    expectation path the readout ('measure') error is present in the model but
+    never fires, since no measurement instruction is executed.
+    """
+    if backend is None:
+        backend = _resolve_fake_backend(L, seed)
+    return NoiseModel.from_backend(backend)
 
 
 def _transpiled(ansatz, theta):
@@ -285,6 +345,79 @@ def plot_depth_sweep(L=4, t=T, delta=DELTA, points=41, p_cx=0.05, reps_list=(1, 
     clean_axes(ax)
     fig.tight_layout()
     save_fig(fig, 'block4_week9_depth_sweep.pdf')
+
+
+# ── Plot 9: toy uniform noise vs backend-calibrated (real device) noise ────────
+
+def backend_vs_toy_sweep(L=4, t=T, delta=DELTA, mu_values=None, reps=3,
+                         p_cx=0.05, seed=7, backend_seed=BACKEND_SEED,
+                         lam=0.1, maxiter=1500, n_starts=6):
+    """Across mu: ideal, toy uniform depolarizing, and backend-calibrated edge string.
+
+    At each mu the VQE angles are solved once, then the same fixed theta is
+    evaluated under both noise models on the density-matrix path. The toy model
+    is a single uniform per-cx depolarizing strength; the backend model carries
+    the device's heterogeneous per-gate error rates.
+    """
+    backend = _resolve_fake_backend(L, backend_seed)
+    nm_toy = depolarizing_noise_model(p_cx)
+    nm_bk = backend_noise_model(backend)
+    ansatz = vqe_ansatz(L, reps)
+    rng = np.random.default_rng(seed)
+
+    ideal, toy, backend_curve = [], [], []
+    n_cnot = None
+    for mu in mu_values:
+        rec = best_state(mu, L, t, delta, ansatz, lam, rng, maxiter, n_starts)
+        ideal.append(abs(float(rec['string'])))
+        e_toy, _, n_cnot = circuit_level_edge(ansatz, rec['theta'], L, nm_toy)
+        e_bk, _, _ = circuit_level_edge(ansatz, rec['theta'], L, nm_bk)
+        toy.append(abs(e_toy))
+        backend_curve.append(abs(e_bk))
+        print(f"  mu/t={mu/t:>5.2f}  ideal={ideal[-1]:.3f}  "
+              f"toy(p={p_cx:.2f})={toy[-1]:.3f}  backend={backend_curve[-1]:.3f}")
+    return {'mu': mu_values, 'ideal': np.array(ideal), 'toy': np.array(toy),
+            'backend': np.array(backend_curve), 'n_cnot': n_cnot,
+            'backend_name': backend.name, 'p_cx': p_cx, 'reps': reps}
+
+
+# NOISE: toy uniform per-cx depolarizing vs backend-calibrated (NoiseModel.from_backend):
+#        real per-qubit T1/T2, per-gate error rates, readout error, gate durations.
+# APPLIED: circuit-level (channels after each cx of the transpiled ansatz; the
+#          backend 'measure' readout error is in the model but inert on the
+#          density-matrix expectation path).
+@plot(9, 'Toy uniform noise vs backend-calibrated (real device) noise on the edge string')
+def plot_backend_noise(L=4, t=T, delta=DELTA, points=41, p_cx=0.05, reps=3,
+                       seed=7, backend_seed=BACKEND_SEED, lam=0.1,
+                       maxiter=1500, n_starts=6, span=3.5, **_):
+    """Compare the uniform toy model against a device-calibrated NoiseModel across mu."""
+    mu_values = np.linspace(-span * t, span * t, points)
+    data = backend_vs_toy_sweep(L=L, t=t, delta=delta, mu_values=mu_values, reps=reps,
+                                p_cx=p_cx, seed=seed, backend_seed=backend_seed,
+                                lam=lam, maxiter=maxiter, n_starts=n_starts)
+    x = mu_values / t
+    mu_c1, mu_c2 = critical_mu(t)
+    name = data['backend_name']
+
+    fig, ax = plt.subplots(figsize=(8.0, 5.2))
+    ax.axvspan(mu_c1 / t, mu_c2 / t, alpha=0.10, color=COLORS['topological'],
+               label=r'topological $|\mu|<2t$')
+    ax.axvline(mu_c1 / t, color='gray', ls=':', lw=1)
+    ax.axvline(mu_c2 / t, color='gray', ls=':', lw=1)
+    ax.plot(x, data['ideal'], color='black', lw=1.6, ls='--', label='ideal (noiseless)')
+    ax.plot(x, data['toy'], color=COLORS['trivial'], lw=2.0, marker='.', ms=4,
+            label=rf'toy uniform depol. ($p_{{cx}}={p_cx:.2f}$)')
+    ax.plot(x, data['backend'], color=COLORS['topological'], lw=2.0, marker='.', ms=4,
+            label=rf'backend-calibrated ({name})')
+    ax.set_xlabel(r'$\mu/t$')
+    ax.set_ylabel(r'$|\langle O_{\mathrm{edge}}\rangle|$')
+    ax.set_ylim(-0.04, 1.08)
+    ax.set_title(rf'Calibrated device noise vs the uniform toy model '
+                 rf'($L={L}$, $r={reps}$, {data["n_cnot"]} CNOTs, {name})')
+    ax.legend(fontsize=8, frameon=False)
+    clean_axes(ax)
+    fig.tight_layout()
+    save_fig(fig, 'block4_week9_backend_noise.pdf')
 
 
 # ── Plot 6: the depth optimum at the sweet spot (factorization made explicit) ──
@@ -644,7 +777,7 @@ def parity_length_sweep(L_list, t, mu_topo, mu_triv, delta, gamma):
 # APPLIED: frozen-state (single-qubit channel on each qubit of the exact
 #          ground-state density matrix; NOT through the ansatz circuit).
 @plot(5, "Prof Q2: intrinsic protection vs noisy vulnerability across chain length L")
-def plot_length_influence(t=T, delta=DELTA, L_list=(2, 3, 4, 5, 6, 7, 8), gamma=0.1, **_):
+def plot_length_influence(t=T, delta=DELTA, L_list=(2, 4, 6, 8), gamma=0.1, **_):
     """Intrinsic gap improves with L while noise vulnerability worsens with L."""
     data = parity_length_sweep(L_list, t, mu_topo=t, mu_triv=3 * t, delta=delta, gamma=gamma)
     L = data['L']
@@ -677,6 +810,184 @@ def plot_length_influence(t=T, delta=DELTA, L_list=(2, 3, 4, 5, 6, 7, 8), gamma=
     save_fig(fig, 'block4_length_under_noise.pdf')
 
 
+# ── Plot 8: noisy VQE optimization -- optimize UNDER noise vs the ideal-theta ──
+
+def noisy_vqe_cost(theta, ansatz, sim, H_mat, P_mat, lam):
+    """Parity-penalized energy <H> + lam*(1-<P>)^2 read off the NOISY density matrix.
+
+    Mirrors block3_core.vqe_cost, but every expectation is evaluated on a
+    NoiseModel-backed density-matrix simulation of the transpiled preparation
+    circuit instead of the pure statevector. Minimizing this is what "noisy VQE
+    optimization" means: the optimizer sees the landscape the device actually has.
+    """
+    qc = _transpiled(ansatz, theta)
+    qc.save_density_matrix()
+    rho = np.asarray(sim.run(qc).result().data()['density_matrix'].data)
+    e = float(np.real(np.trace(H_mat @ rho)))
+    p = float(np.real(np.trace(P_mat @ rho)))
+    return e + lam * (1.0 - p) ** 2
+
+
+def noisy_optimize(ansatz, H_mat, P_mat, lam, noise_model, rng, maxiter, n_starts, theta_warm):
+    """Minimize the NOISY parity-penalized cost with COBYLA under an arbitrary channel.
+
+    Warm-started from the noiseless optimum theta_warm and refined, so the noise-aware
+    cost is never worse than the ideal-theta baseline (the two strategies coincide at
+    zero noise). n_starts-1 additional random restarts are included and the best noisy
+    cost is kept -- this matters for non-unital noise, whose optimum genuinely moves
+    away from theta_warm. Each cost evaluation is one 4^L density-matrix sim.
+    """
+    sim = AerSimulator(method='density_matrix', noise_model=noise_model)
+    args = (ansatz, sim, H_mat, P_mat, lam)
+    starts = [np.asarray(theta_warm, dtype=float)]
+    for _ in range(max(0, n_starts - 1)):
+        starts.append(rng.uniform(-np.pi, np.pi, ansatz.num_parameters))
+    best = None
+    for x0 in starts:
+        r = minimize(noisy_vqe_cost, x0, args=args, method='COBYLA', options={'maxiter': maxiter})
+        if best is None or r.fun < best.fun:
+            best = r
+    return best.x
+
+
+def noise_aware_contrast(ansatz, L, theta_ideal, H_mat, P_mat, psi_ed, e_ed, lam,
+                         noise_models, rng, maxiter, n_starts, tag):
+    """Best-case (ideal theta) vs noise-aware (re-optimized theta) across a noise family.
+
+    For each noise model: evaluate the fixed noiseless-optimal theta under it
+    (best-case), then re-optimize the NOISY cost from that warm start (noise-aware).
+    Reports three quantities per theta: the noisy energy above the ED ground state
+    (the cost the optimizer minimizes), the noisy edge string (a diagnostic NOT in the
+    cost), and -- crucially -- the NOISELESS fidelity to the ED ground state. The
+    fidelity is the honesty check: a lower noisy energy or a higher edge string means
+    nothing if the underlying state has drifted away from the true Majorana ground
+    state (the optimizer gaming the channel rather than preparing it better).
+    """
+    fid_ideal = float(abs(np.vdot(psi_ed, state_vector(ansatz, theta_ideal))) ** 2)
+    out = {k: [] for k in ('e_best', 'e_aware', 'edge_best', 'edge_aware',
+                           'fid_best', 'fid_aware')}
+    for nm in noise_models:
+        edge_b, rho_b, _ = circuit_level_edge(ansatz, theta_ideal, L, nm)
+        theta_a = noisy_optimize(ansatz, H_mat, P_mat, lam, nm, rng, maxiter, n_starts, theta_ideal)
+        edge_a, rho_a, _ = circuit_level_edge(ansatz, theta_a, L, nm)
+        fid_a = float(abs(np.vdot(psi_ed, state_vector(ansatz, theta_a))) ** 2)
+        out['e_best'].append(expval_from_density(rho_b, H_mat) - e_ed)
+        out['e_aware'].append(expval_from_density(rho_a, H_mat) - e_ed)
+        out['edge_best'].append(abs(edge_b))
+        out['edge_aware'].append(abs(edge_a))
+        out['fid_best'].append(fid_ideal)
+        out['fid_aware'].append(fid_a)
+        print(f"  [{tag}]  dE {out['e_best'][-1]:.3f}->{out['e_aware'][-1]:.3f}  "
+              f"|O| {out['edge_best'][-1]:.3f}->{out['edge_aware'][-1]:.3f}  "
+              f"noiseless_fid {fid_ideal:.3f}->{fid_a:.3f}")
+    return {k: np.asarray(v) for k, v in out.items()}
+
+
+def noisy_vqe_two_channel(L=4, t=T, delta=DELTA, mu=0.0, reps=3, lam=0.1, seed=7,
+                          maxiter=1500, n_starts=6, noisy_maxiter=400, noisy_starts=6,
+                          p_max=0.12, points=7):
+    """Run the best-case-vs-noise-aware contrast for a unital and a non-unital channel.
+
+    Both channels are swept over the SAME per-cx error axis [0, p_max]: depolarizing
+    (unital) and amplitude damping (non-unital, T1 relaxation toward |0>). Using one
+    matched axis makes the contrast apples-to-apples -- the only difference between the
+    columns is unitality. The single noiseless optimum theta_ideal is computed once at
+    the deck's native lam and reused as the warm start for both channels.
+    """
+    rng = np.random.default_rng(seed)
+    ansatz = vqe_ansatz(L, reps)
+    H_mat = qubit_hamiltonian(L, t, mu, delta).to_matrix()
+    P_mat = parity(L).to_matrix()
+    e_ed, psi_ed = ed_even_ground_state(H_mat, P_mat)
+    theta_ideal = best_state(mu, L, t, delta, ansatz, lam, rng, maxiter, n_starts)['theta']
+
+    strengths = np.linspace(0.0, p_max, points)
+    depol_models = [depolarizing_noise_model(s) for s in strengths]
+    ampdamp_models = [amp_damp_noise_model(s) for s in strengths]
+
+    print("  depolarizing (unital):")
+    depol = noise_aware_contrast(ansatz, L, theta_ideal, H_mat, P_mat, psi_ed, e_ed, lam,
+                                 depol_models, rng, noisy_maxiter, noisy_starts, 'depol')
+    print("  amplitude damping (non-unital):")
+    ampdamp = noise_aware_contrast(ansatz, L, theta_ideal, H_mat, P_mat, psi_ed, e_ed, lam,
+                                   ampdamp_models, rng, noisy_maxiter, noisy_starts, 'ampdamp')
+    return {'strength': strengths, 'depol': depol, 'ampdamp': ampdamp,
+            'reps': reps, 'lam': lam, 'mu': mu}
+
+
+def _draw_contrast(ax, x, best, aware, xlabel, ylabel, title, fill=None):
+    """Plot a best-case vs noise-aware pair; shade the gap with 'fill' colour if given."""
+    ax.plot(x, best, color=COLORS['trivial'], lw=2.2, marker='o', ms=4, label='best-case (ideal $\\theta$)')
+    ax.plot(x, aware, color=COLORS['topological'], lw=2.2, ls='--', marker='s', ms=4,
+            label='noise-aware (re-optimized)')
+    if fill is not None:
+        ax.fill_between(x, best, aware, color=fill, alpha=0.15)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontsize=10.5)
+    clean_axes(ax)
+
+
+# NOISE: depolarizing (unital) vs amplitude damping (non-unital), same per-cx axis.
+# APPLIED: circuit-level, INSIDE THE COST -- every optimizer evaluation runs a
+#          density-matrix sim of the noisy preparation circuit, so the optimizer
+#          minimizes the NOISY landscape. Contrasted against the same theta optimized
+#          on the noiseless landscape (the best-case idealization used by plots 2/6).
+@plot(8, 'Noisy VQE optimization: optimizing the noisy cost is not preparing the state')
+def plot_noisy_vqe(L=4, t=T, delta=DELTA, mu_opt=0.0, reps=3, seed=7, maxiter=1500,
+                   n_starts=6, noisy_lam=0.1, noisy_pmax=0.12,
+                   noisy_points=7, noisy_maxiter=400, noisy_starts=6, **_):
+    """2x2 contrast of best-case vs noise-aware optimization for two channel types.
+
+    Columns: depolarizing (unital) | amplitude damping (non-unital), swept over the
+    same per-cx error axis. Top row: the noisy edge string ("what you measure"). Bottom
+    row: the NOISELESS fidelity to the ED ground state ("what you actually prepared").
+
+    Honest reading: under unital noise both rows are flat -- noise-aware optimization
+    changes nothing, which retroactively validates the noiseless-preparation
+    idealization in plots 2/6. Under non-unital noise the noisy optimizer DOES raise the
+    measured edge string (top-right), but the noiseless fidelity FALLS (bottom-right):
+    it inflates the observable by drifting the state away from the true Majorana ground
+    state, not by preparing it better. Minimizing the device-level cost is not the same
+    as preparing the ground state.
+    """
+    data = noisy_vqe_two_channel(L=L, t=t, delta=delta, mu=mu_opt, reps=reps, lam=noisy_lam,
+                                 seed=seed, maxiter=maxiter, n_starts=n_starts,
+                                 noisy_maxiter=noisy_maxiter, noisy_starts=noisy_starts,
+                                 p_max=noisy_pmax, points=noisy_points)
+    s = data['strength']
+    dep, ad = data['depol'], data['ampdamp']
+
+    fig, axes = plt.subplots(2, 2, figsize=(11.5, 8.0))
+    # Top row: the measured (noisy) edge string -- "what you see".
+    _draw_contrast(axes[0, 0], s, dep['edge_best'], dep['edge_aware'],
+                   r'per-cx depolarizing $p_{cx}$', r'$|\langle O_{\mathrm{edge}}\rangle|$',
+                   'Depolarizing (unital): edge string unchanged')
+    _draw_contrast(axes[0, 1], s, ad['edge_best'], ad['edge_aware'],
+                   r'per-cx amplitude damping $\gamma$', r'$|\langle O_{\mathrm{edge}}\rangle|$',
+                   'Amplitude damping (non-unital): edge string rises', fill=COLORS['topological'])
+    # Bottom row: the NOISELESS fidelity to the ED ground state -- "what you got".
+    _draw_contrast(axes[1, 0], s, dep['fid_best'], dep['fid_aware'],
+                   r'per-cx depolarizing $p_{cx}$', 'noiseless fidelity to ED GS',
+                   'Depolarizing: true state unchanged')
+    _draw_contrast(axes[1, 1], s, ad['fid_best'], ad['fid_aware'],
+                   r'per-cx amplitude damping $\gamma$', 'noiseless fidelity to ED GS',
+                   'Amplitude damping: true state DRIFTS away', fill=COLORS['trivial'])
+
+    for ax in axes[0, :]:
+        ax.set_ylim(-0.04, 1.08)
+    fmin = min(dep['fid_aware'].min(), ad['fid_aware'].min())
+    for ax in axes[1, :]:
+        ax.set_ylim(fmin - 0.03, 1.008)
+    axes[0, 0].legend(fontsize=8.5, frameon=False, loc='lower left')
+
+    fig.suptitle(rf'Optimizing the noisy cost is not preparing the state: non-unital noise '
+                 rf'inflates the edge string while the true-state fidelity falls '
+                 rf'($L={L}$, $r={reps}$, $\mu=0$, $\lambda={noisy_lam:.1f}$)', fontsize=11.5)
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    save_fig(fig, 'block4_week9_noisy_vqe.pdf')
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Create the command-line interface for Block 4 plots."""
     p = argparse.ArgumentParser(description='Block 4 runner: circuit-level gate noise on the VQE diagnostic.')
@@ -705,7 +1016,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--mu', type=float, default=T)
     p.add_argument('--p-max', type=float, default=0.3)
     p.add_argument('--gamma', type=float, default=0.1)
-    p.add_argument('--L-list', nargs='+', type=int, default=[2, 3, 4, 5, 6, 7, 8])
+    p.add_argument('--L-list', nargs='+', type=int, default=[2, 4, 6, 8])
+    p.add_argument('--backend-seed', type=int, default=BACKEND_SEED,
+                   help='seed for the synthetic device calibration snapshot (plot 9)')
+    # Plot 8 (noisy VQE optimization) knobs.
+    p.add_argument('--noisy-lam', type=float, default=0.1,
+                   help='parity-penalty weight for the noisy VQE optimization (plot 8); '
+                        'kept at the deck-native 0.1')
+    p.add_argument('--noisy-pmax', type=float, default=0.12,
+                   help='max per-cx error strength for both plot-8 columns '
+                        '(depolarizing p_cx and amplitude-damping gamma share this axis)')
+    p.add_argument('--noisy-points', type=int, default=7,
+                   help='number of noise-strength points per plot-8 column')
+    p.add_argument('--noisy-maxiter', type=int, default=400,
+                   help='COBYLA maxiter for each noisy VQE re-optimization (plot 8)')
+    p.add_argument('--noisy-starts', type=int, default=6,
+                   help='optimizer starts for the noisy VQE (plot 8): 1 warm + (n-1) random')
     return p
 
 
@@ -732,7 +1058,11 @@ def main() -> None:
                   t1=args.t1, t2=args.t2, gate_time=args.gate_time,
                   maxiter=args.maxiter, n_starts=args.starts, lam=args.lam,
                   par_L=args.par_L, mu=args.mu, mu_opt=args.mu_opt, p_max=args.p_max,
-                  gamma=args.gamma, L_list=tuple(args.L_list), sigma_theta=args.sigma_theta)
+                  gamma=args.gamma, L_list=tuple(args.L_list), sigma_theta=args.sigma_theta,
+                  backend_seed=args.backend_seed,
+                  noisy_lam=args.noisy_lam, noisy_pmax=args.noisy_pmax,
+                  noisy_points=args.noisy_points,
+                  noisy_maxiter=args.noisy_maxiter, noisy_starts=args.noisy_starts)
 
     print(f'Generating plots: {targets}\n')
     for n in targets:

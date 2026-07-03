@@ -201,11 +201,12 @@ def plot_majorana_splitting(t=T, delta=DELTA, L=100, **_):
             np.sort(np.abs(KitaevChain(L=l, t=t, mu=mu, delta=delta).spectrum()))[0]
             for l in L_arr
         ])
-        theory = 2 * t * (abs(mu) / (2 * t)) ** L_arr
+        lam    = abs(mu) / (2 * t)
+        theory = 2 * t * (1 - lam ** 2) * lam ** L_arr
 
         line, = ax.semilogy(L_arr, E0_arr, 'o-', ms=4, label=f'numerical  {label}')
         ax.semilogy(L_arr, theory, '--', color=line.get_color(), lw=1.2, alpha=0.6,
-                    label=r'$2t\,(|\mu|/2t)^L$  ' + label)
+                    label=r'$2t\,(1-(|\mu|/2t)^2)(|\mu|/2t)^L$  ' + label)
 
     ax.set_xlabel('Chain length $L$')
     ax.set_ylabel('Near-zero mode energy $E_0$')
@@ -261,7 +262,7 @@ def plot_bulk_dispersion_panels(t=T, delta=DELTA, **_):
     save_fig(fig, 'block1_07_bulk_dispersion_panels.pdf')
 
 
-@plot(9, "np.abs fix: sign-filter artefact vs abs (appendix)")
+@plot(9, "BdG extraction: sign-filter artefact vs abs near-zero mode")
 def plot_npabs_comparison(t=T, delta=DELTA, L=100, **_):
     mu_scan = np.linspace(-4.5 * t, 4.5 * t, 600)
     mu_c1, mu_c2 = critical_mu(t)
@@ -280,7 +281,7 @@ def plot_npabs_comparison(t=T, delta=DELTA, L=100, **_):
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
     titles = [
         r"Wrong: evals[evals $\geq$ 0]  — spurious spikes",
-        r"Correct: np.sort(np.abs(evals))  — exact",
+        r"Lowest mode: np.sort(np.abs(evals))[0]  — stable",
     ]
     colors_method = ['firebrick', COLORS['edge']]
 
@@ -297,7 +298,7 @@ def plot_npabs_comparison(t=T, delta=DELTA, L=100, **_):
 
     axes[0].set_ylabel('Lowest quasiparticle energy $E_0$')
     fig.suptitle(
-        rf'Sign-filter artefact vs $|E|$ fix  ($L={L}$, $t=\Delta=1$, OBC)',
+        rf'Sign-filter artefact vs stable $|E|$ extraction for $E_0$  ($L={L}$, $t=\Delta=1$, OBC)',
         fontsize=13,
     )
     fig.tight_layout(rect=[0, 0, 1, 0.93])

@@ -131,7 +131,8 @@ of the BdG eigenvalues. The near-zero mode has $|E| \approx 0$ regardless
 of the sign of the floating-point result:
 \begin{equation}
   \text{correct}: \quad
-  \{E_n\}_{n=1}^{L} = \text{sort}\bigl(|e_i|\bigr)_{i=1}^{2L}.
+  \{E_n\}_{n=1}^{L}
+  = \text{one copy from each adjacent pair in } \text{sort}\bigl(|e_i|\bigr).
 \end{equation}
 In code, replace
 \begin{verbatim}
@@ -139,11 +140,12 @@ In code, replace
 \end{verbatim}
 with
 \begin{verbatim}
-  return np.sort(np.abs(evals))[:L]  # correct: quasiparticle energies
+  return np.sort(np.abs(evals))[::2] # correct: |E| plus pair deduplication
 \end{verbatim}
-This is the standard way to extract the quasiparticle spectrum from a
-BdG diagonalisation and is immune to the sign ambiguity at near-zero
-eigenvalues.
+The absolute value is what protects the near-zero Majorana mode from a
+floating-point sign flip. The stride is what removes the particle-hole double
+counting: each physical quasiparticle energy appears twice as $\pm E$ before
+taking the absolute value.
 
 \section{Summary}
 
