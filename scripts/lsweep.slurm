@@ -48,8 +48,13 @@ PCX="${PCX:-0.05}"
 STARTS="${STARTS:-8}"
 MAXITER="${MAXITER:-800}"           # L-BFGS-B iterations per start
 NTRAJ="${NTRAJ:-16000}"
+# One worker per core for the (L, reps) optimization grid. Each worker pins
+# itself to a single BLAS thread (block4_scaling sets this during the pool), so
+# WORKERS x 1 thread fills the allocation without oversubscription; the serial
+# noisy phase then reclaims all $OMP_NUM_THREADS threads for Aer.
+WORKERS="${WORKERS:-${SLURM_CPUS_PER_TASK:-16}}"
 
-echo "host=$(hostname)  repo=$REPO  venv=$VENV  threads=$OMP_NUM_THREADS"
+echo "host=$(hostname)  repo=$REPO  venv=$VENV  threads=$OMP_NUM_THREADS  workers=$WORKERS"
 echo "L=$LMIN..$LMAX reps=[$REPS] mu=$MU p_cx=$PCX starts=$STARTS maxiter=$MAXITER n_traj=$NTRAJ"
 
 # Sanity-check the matrix-free primitives before the (long) sweep.
@@ -61,6 +66,6 @@ python -u src/block4_scaling.py --selftest
 # shellcheck disable=SC2086
 python -u src/block4_scaling.py \
     --Lmin "$LMIN" --Lmax "$LMAX" --reps $REPS --mu "$MU" --p-cx "$PCX" \
-    --starts "$STARTS" --maxiter "$MAXITER" --n-traj "$NTRAJ"
+    --starts "$STARTS" --maxiter "$MAXITER" --n-traj "$NTRAJ" --workers "$WORKERS"
 
 echo "done: plots/block4_scaling_Lsweep.pdf (+ plots/block4_scaling_data.npz)"

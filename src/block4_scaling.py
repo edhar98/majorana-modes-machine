@@ -42,6 +42,9 @@ Run:
   sbatch scripts/lsweep.slurm                        # larger L on HPC
 """
 import argparse
+import os
+import multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -150,43 +153,102 @@ def noisy_edge_mps(ansatz, theta, L, noise_model, n_traj=16000, seed=100):
 
 # ── the scan ──────────────────────────────────────────────────────────────────
 
+_THREAD_VARS = ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS',
+                'NUMEXPR_NUM_THREADS')
+
+
+def _optimize_cell(args):
+    """Worker: one (L, reps) noiseless VQE optimization. Top-level so it pickles;
+    returns everything the parent needs to assemble the table and the noisy runs."""
+    (L, reps, mu, t, delta, lam, seed, maxiter, n_starts, e_ref) = args
+    theta, edge, energy, par = optimize_fixed_reps(
+        L, reps, mu, t, delta, lam, seed, maxiter, n_starts, e_ref=e_ref)
+    return (L, reps, theta, edge, energy, par)
+
+
+def _run_cells_parallel(tasks, workers):
+    """Run the (L, reps) optimizations across a spawned process pool.
+
+    The grid is embarrassingly parallel. Each worker is pinned to a single BLAS
+    thread (env set before the pool is created, inherited by the spawned
+    children) so `workers` processes x 1 thread never oversubscribe the node --
+    the right way to use many cores here, since one optimization is serial and
+    its statevectors are too small for BLAS threading to scale. Results stream
+    back via as_completed (order-independent; the parent re-sorts)."""
+    saved = {k: os.environ.get(k) for k in _THREAD_VARS}
+    for k in _THREAD_VARS:
+        os.environ[k] = '1'
+    try:
+        out = []
+        with ProcessPoolExecutor(max_workers=workers,
+                                 mp_context=mp.get_context('spawn')) as ex:
+            futures = [ex.submit(_optimize_cell, a) for a in tasks]
+            for fut in as_completed(futures):
+                out.append(fut.result())
+        return out
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
 def scan(L_list, reps_family=REPS_FAMILY, mu=MU, t=T, delta=DELTA, p_cx=P_CX,
-         lam=LAM, seed=7, maxiter=800, n_starts=8, n_traj=16000, edge_ok=EDGE_OK):
+         lam=LAM, seed=7, maxiter=800, n_starts=8, n_traj=16000, edge_ok=EDGE_OK,
+         workers=1):
     """Full scan feeding both panels.
 
     For every (L, reps): the ED-free noiseless edge string (a table). From it,
     r*(L) = the smallest depth whose noiseless edge clears `edge_ok`. At that
     r*(L): the noisy trajectory edge (+ error) and the CNOT count.
-    """
-    nm = depolarizing_noise_model(p_cx)
-    edge_tab = {reps: [] for reps in reps_family}     # edge_tab[reps][i] for L_list[i]
-    ff_edge, ff_energy = [], []
-    r_star, noisy, err, n_cnot = [], [], [], []
 
+    The (L, reps) optimizations are the expensive, independent part; `workers>1`
+    runs them across a process pool (see `_run_cells_parallel`). The fast noisy
+    trajectory phase then runs serially in the main process, where Aer keeps all
+    threads.
+    """
+    reps_sorted = sorted(reps_family)
+    ff_ref = {L: ff_reference(L, mu, t, delta) for L in L_list}    # (edge, energy)
+    ff_energy = {L: ff_ref[L][1] for L in L_list}
+
+    tasks = [(L, reps, mu, t, delta, lam, seed, maxiter, n_starts, ff_energy[L])
+             for L in L_list for reps in reps_sorted]
+
+    # --- noiseless grid (parallel or serial) ---
+    if workers and workers > 1:
+        print(f"  [grid] {len(tasks)} cells over {workers} workers", flush=True)
+        results = _run_cells_parallel(tasks, workers)
+    else:
+        results = [_optimize_cell(a) for a in tasks]
+
+    cell = {}                                          # (L, reps) -> (theta, edge, energy, par)
+    for (L, reps, theta, edge, energy, par) in results:
+        cell[(L, reps)] = (theta, edge, energy, par)
+        print(f"  L={L:>3} r={reps}  edge={edge:.3f}  dE={energy-ff_energy[L]:+.3f}  "
+              f"P={par:+.3f}", flush=True)
+
+    edge_tab = {reps: np.array([cell[(L, reps)][1] for L in L_list])
+                for reps in reps_sorted}
+
+    # --- noise wall at the minimal adequate depth (serial, threaded) ---
+    nm = depolarizing_noise_model(p_cx)
+    r_star, noisy, err, n_cnot = [], [], [], []
     for L in L_list:
-        fe, fen = ff_reference(L, mu, t, delta)
-        ff_edge.append(fe); ff_energy.append(fen)
-        thetas = {}
-        for reps in sorted(reps_family):
-            theta, edge, energy, par = optimize_fixed_reps(
-                L, reps, mu, t, delta, lam, seed, maxiter, n_starts, e_ref=fen)
-            edge_tab[reps].append(edge)
-            thetas[reps] = theta
-            print(f"  L={L:>3} r={reps}  edge={edge:.3f}  dE={energy-fen:+.3f}  "
-                  f"P={par:+.3f}", flush=True)
-        # minimal adequate depth and its noisy edge
-        adequate = [r for r in reps_family if edge_tab[r][-1] >= edge_ok]
-        rs = min(adequate) if adequate else max(reps_family)
+        adequate = [r for r in reps_sorted if cell[(L, r)][1] >= edge_ok]
+        rs = min(adequate) if adequate else max(reps_sorted)
+        theta = cell[(L, rs)][0]
         ansatz = vqe_ansatz(L, rs)
-        ne, ee = noisy_edge_mps(ansatz, thetas[rs], L, nm, n_traj, seed + 100)
-        nc = _transpiled(ansatz, thetas[rs]).count_ops().get('cx', 0)
+        ne, ee = noisy_edge_mps(ansatz, theta, L, nm, n_traj, seed + 100)
+        nc = _transpiled(ansatz, theta).count_ops().get('cx', 0)
         r_star.append(rs); noisy.append(ne); err.append(ee); n_cnot.append(nc)
-        print(f"  L={L:>3} r*={rs}  n_cnot={nc:>3}  ff={fe:.3f}  "
+        print(f"  L={L:>3} r*={rs}  n_cnot={nc:>3}  ff={ff_ref[L][0]:.3f}  "
               f"noisy={ne:.3f}+-{ee:.3f}", flush=True)
 
     return {'L': np.array(L_list), 'reps_family': tuple(reps_family),
-            'edge_tab': {r: np.array(v) for r, v in edge_tab.items()},
-            'ff_edge': np.array(ff_edge), 'ff_energy': np.array(ff_energy),
+            'edge_tab': edge_tab,
+            'ff_edge': np.array([ff_ref[L][0] for L in L_list]),
+            'ff_energy': np.array([ff_energy[L] for L in L_list]),
             'r_star': np.array(r_star), 'noisy': np.array(noisy),
             'err': np.array(err), 'n_cnot': np.array(n_cnot),
             'mu': mu, 'p_cx': p_cx}
@@ -275,10 +337,10 @@ def render_figure(data, t=T):
 
 def plot_scaling(L_list=(4, 6, 8, 10, 12), reps_family=REPS_FAMILY, mu=MU, p_cx=P_CX,
                  lam=LAM, seed=7, maxiter=800, n_starts=8, n_traj=16000,
-                 t=T, delta=DELTA):
+                 t=T, delta=DELTA, workers=1):
     """Run the scan, cache it, and render the two-panel figure."""
     data = scan(L_list, reps_family, mu, t, delta, p_cx, lam, seed, maxiter,
-                n_starts, n_traj)
+                n_starts, n_traj, workers=workers)
     save_scan(data)
     render_figure(data, t)
     return data
@@ -342,6 +404,9 @@ def build_parser():
     p.add_argument('--starts', type=int, default=8)
     p.add_argument('--n-traj', type=int, default=16000,
                    help='trajectories for the noisy edge string (error bar ~ 1/sqrt(n_traj))')
+    p.add_argument('--workers', type=int, default=1,
+                   help='parallel processes for the (L, reps) optimization grid '
+                        '(1 = serial; set to the core count on HPC)')
     return p
 
 
@@ -360,10 +425,10 @@ def main():
         return
     L_list = tuple(range(args.Lmin, args.Lmax + 1, 2))
     print(f'scan L={L_list}  reps_family={tuple(args.reps)}  mu={args.mu}  '
-          f'p_cx={args.p_cx}\n')
+          f'p_cx={args.p_cx}  workers={args.workers}\n')
     plot_scaling(L_list=L_list, reps_family=tuple(args.reps), mu=args.mu,
                  p_cx=args.p_cx, lam=args.lam, seed=args.seed, maxiter=args.maxiter,
-                 n_starts=args.starts, n_traj=args.n_traj)
+                 n_starts=args.starts, n_traj=args.n_traj, workers=args.workers)
     print('Done.')
 
 
