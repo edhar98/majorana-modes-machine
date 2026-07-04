@@ -29,17 +29,26 @@ Validated by `--selftest`: the ideal expectation matches dense `.to_matrix()` to
 ~1e-15, and the trajectory estimator matches the exact density matrix to ~1
 sigma at L <= 8.
 
-The physics the figure shows (cross-checked against block3_core's ED optimizer):
-  * The edge string X_0 Z..Z X_{L-1} is a weight-L operator that needs real
-    circuit depth to build. At FIXED depth the noiseless edge is essentially
-    binary -- ~0.94 if the depth is adequate, ~0 (exactly) if it is not. There is
-    a depth THRESHOLD r*(L): the shallow depths r=2,3 fail outright for L>=6,
-    while r>=4 succeed through at least L=10, and the threshold grows with L.
-    (Panel A.)
-  * At the minimal adequate depth r*(L), the noiseless state is faithful, but the
-    circuit now carries n_cnot = r*(L-1) CNOTs, so the NOISY edge decays along the
-    (1-p)^{n_cnot} envelope -- the expressibility is bought at a depth that the
-    noise then destroys.  (Panel B.)  This is the fundamental NISQ wall.
+The physics the figure shows (cross-checked against block3_core's ED optimizer;
+grid extended to L=16 on the Leipzig SC cluster). The two failure modes turn out
+to be DECOUPLED, and the large-L wall is noise alone:
+  * Expressibility is cheap and L-INDEPENDENT. At FIXED depth the noiseless edge
+    is essentially binary -- ~0.94 if the depth is adequate, ~0 (exactly) if it
+    is not -- with a depth THRESHOLD that does NOT grow with L: shallow r=2,3 fail
+    outright for L>=6, but a CONSTANT r*=4 already reproduces the edge string all
+    the way to L=16 (r*(L)=[2,4,4,4,4,4,4] for L=4..16). Physically the edge
+    Majoranas are localized at the two ends, so building them costs ~constant
+    depth however long the chain between them. (Panel A. A few dips at high depth
+    -- r=5@L=14, r=6/7@L=16 -- are optimizer stalls at large parameter counts,
+    not physics: a smaller r succeeds at the same L.)
+  * NOISE is the whole large-L story. Because r* is fixed, the CNOT count grows
+    only linearly, n_cnot = r*(L-1) = 4(L-1) = 6..60 for L=4..16, yet the NOISY
+    edge decays exponentially along the (1-p)^{n_cnot} envelope. Under the toy
+    p=0.05 it falls 0.68 -> 0.07 over L=4..16 (effectively dead by L~14). Under a
+    real device (--backend, Cairo 2q err ~7.5e-3, ~6x gentler) the same 60 CNOTs
+    give ~0.6 at L=16 -- the diagnostic survives much further. (Panel B.) The
+    fundamental NISQ wall here is decoherence over a linearly growing gate count,
+    not a growing depth requirement.
 
 Run:
   python src/block4_scaling.py --selftest
@@ -377,8 +386,8 @@ def render_figure(data, t=T, out_tag=''):
     """Draw the two-panel scaling figure from a scan() (or load_scan()) dict.
 
     A: noiseless edge vs L, one curve per fixed depth r -- shallow depths (r=2,3)
-       fail (edge -> 0) beyond L=4 while r>=4 track the free-fermion truth: there
-       is a depth threshold, and it grows with L.
+       fail (edge -> 0) beyond L=4 while r>=4 track the free-fermion truth at a
+       CONSTANT r*=4 through L=16: the depth threshold does not grow with L.
     B: at the minimal adequate depth r*(L), the free-fermion truth, the noisy
        trajectory edge (+ error bar), and the pure-noise envelope (1-p)^{r*(L-1)}
        -- the depth needed for expressibility carries the CNOTs that noise then
