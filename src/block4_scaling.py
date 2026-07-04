@@ -222,7 +222,7 @@ def _optimize_cell(args):
     return (L, reps, theta, edge, energy, par)
 
 
-def _run_cells_parallel(tasks, workers):
+def _run_cells_parallel(tasks, workers, on_result=None):
     """Run the (L, reps) optimizations across a spawned process pool.
 
     The grid is embarrassingly parallel. Each worker is pinned to a single BLAS
@@ -230,7 +230,8 @@ def _run_cells_parallel(tasks, workers):
     children) so `workers` processes x 1 thread never oversubscribe the node --
     the right way to use many cores here, since one optimization is serial and
     its statevectors are too small for BLAS threading to scale. Results stream
-    back via as_completed (order-independent; the parent re-sorts)."""
+    back via as_completed (order-independent; the parent re-sorts); `on_result`
+    is called on each as it lands, for live progress."""
     saved = {k: os.environ.get(k) for k in _THREAD_VARS}
     for k in _THREAD_VARS:
         os.environ[k] = '1'
@@ -240,7 +241,10 @@ def _run_cells_parallel(tasks, workers):
                                  mp_context=mp.get_context('spawn')) as ex:
             futures = [ex.submit(_optimize_cell, a) for a in tasks]
             for fut in as_completed(futures):
-                out.append(fut.result())
+                res = fut.result()
+                if on_result is not None:
+                    on_result(res)
+                out.append(res)
         return out
     finally:
         for k, v in saved.items():
@@ -271,19 +275,28 @@ def scan(L_list, reps_family=REPS_FAMILY, mu=MU, t=T, delta=DELTA, p_cx=P_CX,
     tasks = [(L, reps, mu, t, delta, lam, seed, maxiter, n_starts, ff_energy[L])
              for L in L_list for reps in reps_sorted]
 
-    # --- noiseless grid (parallel or serial) ---
+    # --- noiseless grid (parallel or serial), reporting each cell as it lands ---
+    n_cells = len(tasks)
+    done = [0]
+
+    def _report(res):
+        L, reps, _theta, edge, energy, par = res
+        done[0] += 1
+        print(f"  [{done[0]:>2}/{n_cells}] L={L:>3} r={reps}  edge={edge:.3f}  "
+              f"dE={energy - ff_energy[L]:+.3f}  P={par:+.3f}", flush=True)
+
     if workers and workers > 1:
-        print(f"  [grid] {len(tasks)} cells over {workers} workers", flush=True)
-        results = _run_cells_parallel(tasks, workers)
+        print(f"  [grid] {n_cells} cells over {workers} workers", flush=True)
+        results = _run_cells_parallel(tasks, workers, on_result=_report)
     else:
-        results = [_optimize_cell(a) for a in tasks]
+        results = []
+        for a in tasks:
+            res = _optimize_cell(a)
+            _report(res)
+            results.append(res)
 
-    cell = {}                                          # (L, reps) -> (theta, edge, energy, par)
-    for (L, reps, theta, edge, energy, par) in results:
-        cell[(L, reps)] = (theta, edge, energy, par)
-        print(f"  L={L:>3} r={reps}  edge={edge:.3f}  dE={energy-ff_energy[L]:+.3f}  "
-              f"P={par:+.3f}", flush=True)
-
+    cell = {(L, reps): (theta, edge, energy, par)
+            for (L, reps, theta, edge, energy, par) in results}
     edge_tab = {reps: np.array([cell[(L, reps)][1] for L in L_list])
                 for reps in reps_sorted}
 
@@ -293,8 +306,9 @@ def scan(L_list, reps_family=REPS_FAMILY, mu=MU, t=T, delta=DELTA, p_cx=P_CX,
     if dev is not None and max(L_list) > dev.num_qubits:
         raise ValueError(f'{backend} has {dev.num_qubits} qubits < Lmax={max(L_list)}')
     p_env = p_cx
+    print(f"  [noise] {len(L_list)} trajectory runs at r*(L)", flush=True)
     r_star, noisy, err, n_cnot = [], [], [], []
-    for L in L_list:
+    for i, L in enumerate(L_list, 1):
         adequate = [r for r in reps_sorted if cell[(L, r)][1] >= edge_ok]
         rs = min(adequate) if adequate else max(reps_sorted)
         theta = cell[(L, rs)][0]
@@ -306,8 +320,8 @@ def scan(L_list, reps_family=REPS_FAMILY, mu=MU, t=T, delta=DELTA, p_cx=P_CX,
         ne, ee = noisy_edge_mps(ansatz, theta, L, nm, n_traj, seed + 100)
         nc = _transpiled(ansatz, theta).count_ops().get('cx', 0)
         r_star.append(rs); noisy.append(ne); err.append(ee); n_cnot.append(nc)
-        print(f"  L={L:>3} r*={rs}  n_cnot={nc:>3}  ff={ff_ref[L][0]:.3f}  "
-              f"noisy={ne:.3f}+-{ee:.3f}", flush=True)
+        print(f"  [{i:>2}/{len(L_list)}] L={L:>3} r*={rs}  n_cnot={nc:>3}  "
+              f"ff={ff_ref[L][0]:.3f}  noisy={ne:.3f}+-{ee:.3f}", flush=True)
 
     noise_label = (rf'{dev.name} (real): 2q err {p_env:.1e}' if dev is not None
                    else rf'toy depol. $p_{{cx}}={p_cx:.2f}$')
@@ -495,7 +509,7 @@ def main():
         render_figure(load_scan())
         print('Done.')
         return
-    L_list = tuple(range(args.Lmin, args.Lmax + 1, 2))
+    L_list = tuple(range(args.Lmin, args.Lmax + 1, 1))
     noise = args.backend if args.backend else f'toy p_cx={args.p_cx}'
     print(f'scan L={L_list}  reps_family={tuple(args.reps)}  mu={args.mu}  '
           f'noise={noise}  workers={args.workers}\n')
