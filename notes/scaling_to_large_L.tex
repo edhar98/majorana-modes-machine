@@ -16,9 +16,11 @@
 \newcommand{\Tr}{\operatorname{Tr}}
 \newcommand{\cx}{\texttt{cx}}
 \newcommand{\chimax}{\chi_{\max}}
+\newcommand{\code}[1]{\texttt{#1}}
 
 \title{Scaling the Kitaev/VQE Simulation to Large $L$\\
-\large Exact diagonalization, density matrices, matrix product states, and free fermions}
+\large From the analysis to the built pipeline: free fermions, statevectors,
+MPS trajectories, and device-calibrated noise}
 \author{Seminar notes}
 \date{\today}
 
@@ -26,51 +28,62 @@
 \maketitle
 
 \begin{abstract}
-Can the Block-4 noise study be pushed from $L=4$ toward $L=16$ (and beyond) on
-HPC? This note works through the question honestly. The pipeline hides
-\emph{two} exponential objects with very different escape routes. The
-\textbf{exact-diagonalization reference} is fully removable: the Kitaev
-Hamiltonian is a free-fermion model, so its ground state and observables follow
-from a $2L\times 2L$ Bogoliubov--de~Gennes (BdG) matrix in $O(L^3)$ time, exact
-to $L\sim$ hundreds. The \textbf{noisy VQE-prepared state} is the hard one:
-the \texttt{EfficientSU2} ansatz is a non-Gaussian, essentially universal
-circuit, so no classical method escapes exponential cost unconditionally.
-Matrix product states (MPS) help \emph{when entanglement is low}, and a direct
-probe of the real ansatz shows the bond dimension $\chi$ is bounded
-\emph{independent of $L$} at fixed depth ($\chi=8$ for reps${}=3$, all $L$).
-But the same probe exposes a fundamental wall: $\chi\approx 2^{\text{reps}}$
-exactly, while the fixed-depth ansatz \emph{loses fidelity} with $L$
-($0.99\to0.02$ over $L=4\to12$). Keeping the VQE faithful forces
-reps${}\sim L$, which sends $\chi$ back to $2^{O(L)}$. MPS is cheap precisely
-where the ansatz fails and expensive precisely where it works --- there is no
-free lunch, and that \emph{is} the NISQ statement.
+Can the Block-4 noise study be pushed from $L=4$ toward $L=16$ (and beyond)?
+This note works through the question and then documents the pipeline that was
+actually built to answer it (\code{src/free\_fermion.py},
+\code{src/block4\_scaling.py}, \code{scripts/lsweep.slurm}). The original
+Block-4 evaluation hides \emph{two} exponential objects. The
+\textbf{exact-diagonalization (ED) reference} is fully removable: the Kitaev
+Hamiltonian is free-fermion, so its ground state and the edge string follow from
+a $2L\times 2L$ Bogoliubov--de~Gennes (BdG) matrix in $O(L^3)$, exact to
+$L\sim$ hundreds. The \textbf{noisy VQE-prepared state} is the hard one; we
+remove its $4^L$ density matrix with quantum-trajectory sampling on a
+matrix-product-state (MPS) backend ($2^L$, not $4^L$), and we compute the
+\emph{ideal} VQE expectations from a $2^L$ statevector with sparse Pauli
+operators (never the $2^L\times2^L$ dense Hamiltonian). Along the way several
+implementation choices proved essential and are documented in full: the working
+point $\mu=0.5t$ rather than the degenerate sweet spot $\mu=0$; an
+\textbf{L-BFGS-B} optimizer with an ED-free convergence oracle in place of
+COBYLA; even-parity--sector state selection without ED; a device noise model
+that transplants \emph{real} IBM calibration onto the native linear chain; and a
+process-pool parallelisation of the $(L,\text{reps})$ grid. The scientific
+payoff is a clean, honest result at $L\le 16$: for the edge-string diagnostic
+the two failure modes \emph{decouple}. Expressibility is cheap and
+$L$-independent --- a \emph{constant} depth $r^\ast=4$ reproduces $\expv{\Oedge}$
+all the way to $L=16$ --- so the large-$L$ wall is \textbf{noise alone}: at fixed
+depth the CNOT count grows linearly and decoherence erases the diagnostic.
 \end{abstract}
 
+\tableofcontents
+
+\part{The analysis: where the exponentials hide}
+
 \section{Two exponential objects}
-The current Block-4 evaluation ($\texttt{src/block4.py}$, plots 8--9) contains
-two objects that scale exponentially in the number of qubits $L$:
+The original Block-4 evaluation (\code{src/block4.py}, plots 8--9) contains two
+objects that scale exponentially in the number of qubits $L$:
 \begin{enumerate}
-\item the \textbf{ED reference} --- \texttt{np.linalg.eigh} on the
+\item the \textbf{ED reference} --- \code{np.linalg.eigh} on the
       $2^L\times 2^L$ Hamiltonian, used for the ideal $\expv{\Oedge}$ curve, the
       parity gap, and the fidelity post-selection;
 \item the \textbf{noisy state} --- an exact density matrix $\rho$ of dimension
       $2^L\times 2^L$ (i.e.\ $4^L$ complex entries), produced by
-      \texttt{save\_density\_matrix} on the Aer \texttt{density\_matrix} method.
+      \code{save\_density\_matrix} on the Aer \code{density\_matrix} method.
 \end{enumerate}
-The observables themselves are \emph{not} the problem: \texttt{qubit\_hamiltonian},
-\texttt{edge\_string}, and \texttt{parity} are already \texttt{SparsePauliOp}
-objects with $O(L)$ Pauli terms. The blow-up comes entirely from calling
-\texttt{.to\_matrix()} on them and from \texttt{eigh}. The two objects are
-addressed separately below.
+The observables themselves are \emph{not} the problem: \code{qubit\_hamiltonian},
+\code{edge\_string}, and \code{parity} are already \code{SparsePauliOp} objects
+with $O(L)$ Pauli terms. The blow-up comes entirely from calling
+\code{.to\_matrix()} on them and from \code{eigh}. The two objects are addressed
+separately below, and both are removed in the built pipeline
+(Part~\ref{part:impl}).
 
 \section{The dense wall}
-Object 2 sets the practical ceiling. A dense $2^L\times 2^L$ complex\,128 matrix
+Object~2 sets the practical ceiling. A dense $2^L\times 2^L$ complex\,128 matrix
 costs $16\cdot 4^L$ bytes, and the pipeline holds several copies ($\rho$, $H$,
 $\Pop$, ED eigenvectors, Aer's internal state):
 \begin{center}
 \begin{tabular}{rrrl}
 \toprule
-$L$ & density matrix & $+$ copies & ED \texttt{eigh} cost \\
+$L$ & density matrix & $+$ copies & ED \code{eigh} cost \\
 \midrule
 12 & 0.27\,GB & ${\sim}1$\,GB & seconds \\
 14 & 4.3\,GB & ${\sim}20$\,GB & minutes \\
@@ -79,13 +92,13 @@ $L$ & density matrix & $+$ copies & ED \texttt{eigh} cost \\
 \bottomrule
 \end{tabular}
 \end{center}
-Worse, \emph{every} VQE cost evaluation is a full $4^L$ density-matrix
-simulation, run $\text{maxiter}\times\text{n\_starts}$ times per $L$. Beyond
-$L\approx 14$ a single $L$-point becomes hours to days. Even on a large-memory
-HPC node the dense path does not reach $L=16$ in feasible wall-clock time; this
-is the ``dense wall'' at $L\approx 15$.
+Worse, \emph{every} VQE cost evaluation in the dense path is a full $4^L$
+density-matrix simulation, run $\text{maxiter}\times\text{n\_starts}$ times per
+$L$. Beyond $L\approx 14$ a single $L$-point becomes hours to days. This is the
+``dense wall'' at $L\approx 15$, and it is the wall the new pipeline is built to
+beat.
 
-\section{Escaping object 1: free fermions}
+\section{Escaping object 1: free fermions (the idea)}
 The Kitaev Hamiltonian is quadratic in fermions. After a Jordan--Wigner map the
 qubit form is
 \[
@@ -93,156 +106,375 @@ H=-\tfrac{\mu}{2}\sum_j Z_j
   +\tfrac{t-\Delta}{2}\sum_j X_jX_{j+1}
   +\tfrac{t+\Delta}{2}\sum_j Y_jY_{j+1},
 \]
-which is a free-fermion (BdG) model. Its ground state, spectrum, correlation
-matrix, and the parity gap $\Delta_P(L)\sim e^{-L/\xi}$ all follow from
-diagonalizing a $2L\times 2L$ BdG matrix in $O(L^3)$ time --- \emph{no}
-exponential object. The edge operator $\Oedge$ is a product of Majorana
-operators, so its ground-state expectation is a Pfaffian of a submatrix of the
-covariance matrix (Wick's theorem). This is exactly how Majorana splitting is
-computed for $L\sim 1000$ in the literature. \textbf{Conclusion: the ED
-reference is removable outright}, exact and cheap to $L\sim$ hundreds. This is
-the content of \texttt{src/free\_fermion.py}.
+a free-fermion (BdG) model. Its ground state, spectrum, covariance matrix, and
+the parity gap $\Delta_P(L)\sim e^{-L/\xi}$ all follow from a $2L\times 2L$ BdG
+matrix in $O(L^3)$ --- no exponential object. The edge operator $\Oedge$ is a
+product of two Majorana operators, so its ground-state expectation is a single
+entry of the covariance matrix (Wick's theorem). \textbf{The ED reference is
+removable outright}; the construction is \code{src/free\_fermion.py}
+(\S\ref{sec:ff}).
 
-\section{Escaping object 2: trajectories and MPS}
+\section{Escaping object 2: trajectories and MPS (the idea)}
 \subsection{Quantum-trajectory statevector sampling}
 Noise (a mixed state) does not require the full density matrix. In the
 quantum-trajectory picture each shot is a \emph{pure} statevector ($2^L$, not
 $4^L$) in which the Kraus operators are sampled stochastically; averaging an
-observable over $N_{\text{traj}}$ trajectories reconstructs
-$\Tr(O\rho)$ up to a statistical error $\propto 1/\sqrt{N_{\text{traj}}}$.
-Memory drops from $4^L$ to $2^L$ ($\sim$1\,MB at $L=16$), at the honest cost of
-\emph{error bars} on the noisy curves.
+observable over $N_{\text{traj}}$ trajectories reconstructs $\Tr(O\rho)$ up to a
+statistical error $\propto 1/\sqrt{N_{\text{traj}}}$. Memory drops from $4^L$ to
+$2^L$ ($\sim$1\,MB at $L=16$), at the honest cost of \emph{error bars}.
 
 \subsection{Matrix product states}
-A general $L$-qubit state is a tensor with $2^L$ amplitudes. An MPS factorizes
-it into a chain of small tensors, one per site, linked by bond indices of
-dimension $\chi$:
-\[
-\ket{\psi}=\sum_{\{s\}}A^{s_0}A^{s_1}\cdots A^{s_{L-1}}\ket{s_0\ldots s_{L-1}},
-\qquad \text{memory}=O(L\,\chi^2).
-\]
-Across any cut, $\chi$ equals the number of nonzero Schmidt coefficients --- a
-direct measure of \emph{entanglement} across that cut. A gapped 1D ground state
-obeys an area law, so its entanglement is bounded independent of $L$; then
-$\chi$ is constant and MPS is \emph{linear} in $L$. A critical or volume-law
-state needs $\chi\sim 2^{L/2}$ and MPS is exponential again. Aer provides
-\texttt{method='matrix\_product\_state'} and supports noise through trajectory
-sampling; the empirical test confirms it runs and exposes the per-bond $\chi$.
+An MPS factorises the $2^L$-amplitude tensor into a chain of small tensors linked
+by bond indices of dimension $\chi$, with memory $O(L\chi^2)$. Across any cut
+$\chi$ equals the number of nonzero Schmidt coefficients --- a direct measure of
+entanglement. A gapped 1D state (area law) has $\chi$ bounded independent of $L$
+and MPS is \emph{linear} in $L$; a volume-law state needs $\chi\sim 2^{L/2}$.
+A two-qubit gate can double $\chi$ across its bond; truncating to $\chimax$
+Schmidt values discards a quantifiable \emph{weight} (the sum of squared
+discarded coefficients), so truncation error is a logged, controllable knob
+rather than a hidden bias. If nothing is discarded the MPS is exact.
 
-\subsection{Truncation error, and why the risk is controllable}
-A two-qubit gate can double $\chi$ across its bond. To stay cheap one performs
-an SVD there and keeps only the largest $\chimax$ Schmidt values. The discarded
-weight --- the sum of squared discarded Schmidt coefficients --- \emph{is} the
-truncation error: the fraction of the state's norm thrown away. If nothing is
-discarded the MPS is \emph{exact}. If $\chimax$ is set below what the state
-needs, the simulated state becomes a nearby but different state and
-$\expv{\Oedge}$ acquires a systematic bias. Crucially this is a knob with a
-readout: Aer reports the discarded weight, and the convergence check ``run at
-$\chimax$ and $2\chimax$; if the observable does not move, the result is
-effectively exact'' makes the error visible and quantitative rather than
-hidden. A truncated number never silently corrupts a result as long as the
-discarded weight is logged.
-
-\section{The $\chi$-probe: what the real ansatz actually does}
-We measured the \emph{exact} (uncapped) max bond dimension of the real
-\texttt{EfficientSU2}(\texttt{ry}, linear, reps) state directly.
+\section{The $\chi$-probe: what the real ansatz does}\label{sec:chi}
+We measured the exact (uncapped) max bond dimension of the real
+\code{EfficientSU2}(\code{ry}, linear, reps) state.
 
 \paragraph{$\chi$ is flat in $L$ at fixed depth.}
-Worst-of-random-$\theta$ max $\chi$ (reps${}=3$):
+Worst-of-random-$\theta$ max $\chi$ (reps${}=3$): $\chi=8$ for all
+$L\in\{6,10,14,18,22\}$, far below the volume-law ceiling
+$2^{\lfloor L/2\rfloor}=8,32,128,512,2048$. A reps${}=r$ linear ansatz has a
+light cone of width ${\sim}r$, so entanglement is bounded independent of $L$;
+noise does not inflate it. Cap $\chimax=16$ and the simulation is exact to
+$L=100$.
+
+\paragraph{$\chi$ grows exponentially in depth.}
+At $L=14$: reps${}=1\ldots8\Rightarrow\chi=2,4,8,16,32,64,128$, i.e.\
+$\chi\approx 2^{\text{reps}}$ until it saturates the $2^{L/2}$ ceiling.
+
+\paragraph{The fixed-depth ansatz loses the \emph{full} state.}
+VQE \emph{full-state} fidelity to the true ground state at reps${}=3$
+(measured at $\mu=0$): $0.99,0.50,0.25,0.10,0.02$ over $L=4,6,8,10,12$.
+A fixed-depth hardware-efficient ansatz cannot represent the whole topological
+ground state as $L$ grows.
+
+\paragraph{Reconciliation (important).} This full-state collapse is real, but it
+does \emph{not} by itself decide the fate of the \emph{edge-string diagnostic},
+which is a \emph{localised} two-Majorana quantity. Part~\ref{part:results} shows
+that $\expv{\Oedge}$ is in fact recovered at a \emph{constant} depth
+$r^\ast=4$ up to $L=16$. So: the full wavefunction needs growing depth (this
+section), but the specific observable the experiment measures does not. The two
+statements are consistent because a shallow circuit can build the two localised
+edge operators without reproducing the entire bulk.
+
+\section{The MPS wall is fundamental for the full state}
+Combining the probes: MPS is cheap where the ansatz has low depth
+(constant $\chi$), which is exactly where the VQE \emph{full-state} fidelity
+$\to0$; and repairing fidelity by adding depth drives $\chi\sim 2^{\text{reps}}$
+back up. If the required reps grows linearly with $L$, this is $\chi\sim
+2^{O(L)}$. MPS buys a smaller exponential base ($2^{\text{reps}}$ vs $4^L$), a
+few extra qubits, not unbounded $L$ --- the honest simulation-cost face of
+``NISQ does not inherit topological protection.'' The one unconditionally
+polynomial regime is a matchgate/Gaussian ansatz with fermion-Gaussian noise
+($O(L^3)$ covariance algebra), but that answers a cleaner \emph{different}
+question and is not the generic hardware-efficient story.
+
+\part{The built pipeline: implementation}\label{part:impl}
+
+Everything below is implemented and validated. The reference is
+\code{src/free\_fermion.py}; the study is \code{src/block4\_scaling.py}; the HPC
+wrapper is \code{scripts/lsweep.slurm}.
+
+\section{The free-fermion BdG solver}\label{sec:ff}
+\subsection{Majorana Hamiltonian}
+With Majorana operators $\gamma_{2j}=(\prod_{k<j}Z_k)X_j$ and
+$\gamma_{2j+1}=(\prod_{k<j}Z_k)Y_j$ the qubit Hamiltonian becomes
+$H=\tfrac{i}{2}\sum_{a<b}A_{ab}\,\gamma_a\gamma_b$ with $A$ real antisymmetric,
+$2L\times2L$. Its nonzero couplings (from the Jordan--Wigner map) are
+\[
+A_{2j,\,2j+1}=\mu,\qquad
+A_{2j+1,\,2j+2}=\Delta-t,\qquad
+A_{2j,\,2j+3}=t+\Delta,
+\]
+plus antisymmetric partners.
+
+\subsection{Canonical form: why \code{eigh(iA)}, not real Schur}
+The energy needs the canonical frequencies $\varepsilon_k\ge0$ with
+$A=O\bigoplus_k\varepsilon_k\!\left(\begin{smallmatrix}0&1\\-1&0\end{smallmatrix}\right)O^{\!\top}$
+and $E_0=-\tfrac12\sum_k\varepsilon_k$. The first implementation used
+\code{scipy.linalg.schur(A, output='real')} and read the $2\times2$ blocks. This
+\textbf{silently breaks at large $L$}: the topological near-zero edge modes
+underflow machine precision and the real-Schur block extraction mis-assigns
+them, giving a wrong energy (at $L=80$, $E=-19.3$ instead of ${\approx}-83$).
+The fix diagonalises the Hermitian matrix $iA$ instead: its eigenvalues are
+$\pm\varepsilon_k$, and for a positive eigenvalue $\varepsilon$ with unit
+eigenvector $v=a+ib$ one has $Aa=\varepsilon b$, $Ab=-\varepsilon a$ and
+$|a|=|b|=1/\sqrt2$, $a\!\cdot\!b=0$ (because $v^\top v=0$, $v$ being orthogonal
+to its $-\varepsilon$ partner $v^\ast$). The orthonormal columns
+$(\sqrt2\,\mathrm{Im}\,v,\ \sqrt2\,\mathrm{Re}\,v)$ give the canonical block. This
+route has no block-guessing and is stable: the energy is now correct and scales
+linearly to $L=160$ and beyond.
+
+\subsection{Ground state, covariance, and the edge string}
+The ground state fills all negative modes; its Majorana covariance is
+$M_{ab}=i\expv{\gamma_a\gamma_b}=O\,(\bigoplus_k
+-\!\left(\begin{smallmatrix}0&1\\-1&0\end{smallmatrix}\right))\,O^{\!\top}$ (the block sign
+is $\expv{i\gamma\gamma}=-1$ in the ground state; getting this sign wrong flips
+all observables, which the self-test caught). The key identity is
+\[
+\Oedge=-\,i\,\gamma_1\gamma_{2L-2}
+\quad\Longrightarrow\quad
+\expv{\Oedge}=-\,M_{1,\,2L-2},
+\]
+a \emph{single} entry of the covariance matrix, and $\expv{Z_s}=-M_{2s,2s+1}$.
+
+\subsection{Self-test}
+\code{free\_fermion.py} self-tests against the exact \code{eigh} path
+(\code{block3\_core}) at \emph{gapped} $\mu\in\{0.5,1.0,2.5\}t$, $L\in\{4,6,8\}$:
+energy agrees to $\sim10^{-15}$, and the edge string, $\expv{Z_0}$, and the
+many-body parity splitting all match. The parity gap decays as $e^{-L/\xi}$
+($1.8\times10^{-6}$ at $L=10$, $1.7\times10^{-12}$ at $L=20$, below machine
+precision by $L=40$). The test deliberately avoids $\mu=0$ --- see
+\S\ref{sec:mu}.
+
+\section{The ideal path: statevector, not \code{to\_matrix}}
+The ideal (noiseless) VQE expectations of $H$, $\Pop$, and $\Oedge$ are computed
+as $\bra{\psi(\theta)}\,O\,\ket{\psi(\theta)}$ with a $2^L$ \code{Statevector} and
+the \code{SparsePauliOp} directly (\code{Statevector.expectation\_value}). This
+never forms the $2^L\times2^L$ dense $H$, so it is exact and dramatically faster
+than \code{.to\_matrix()}: at $L=14$, $6.6$\,ms versus $3357$\,ms
+(${\sim}500\times$), agreeing to $\sim10^{-15}$. A $2^L$ statevector is trivial
+to $L\sim22$ (16\,MB at $L=20$); it is the mild, unavoidable object (and MPS-
+compresses to $\chi\sim2^{\text{reps}}$ beyond that). \emph{This is why the
+dense-\code{eigh} scan was slow and the statevector scan is fast --- it is the
+same physics without the $4^L$ matrix.}
+
+\section{The noisy path: MPS trajectories with honest error bars}
+The noisy edge string is
+\code{AerSimulator(method='matrix\_product\_state',\,noise\_model=\ldots)} run for
+$N_{\text{traj}}$ shots; each shot is one stochastic-Kraus trajectory (a pure
+state, $2^L$, $\chi\le2^{\text{reps}}$). We read
+\code{save\_expectation\_value\_variance}, which returns $[\text{mean},
+\text{var}]$ with \code{var} the single-trajectory variance of $\Oedge$
+($\approx1$ for a Pauli); the standard error on the mean is
+$\sqrt{\text{var}/N_{\text{traj}}}$.
+
+\paragraph{Validation.} Against the exact density matrix the estimator is
+unbiased and converges as $1/\sqrt{N}$: the difference falls $0.030\to0.0008$ as
+$N=1\to20000$. At reps${}=3$ the MPS and statevector trajectories are
+bit-identical (no truncation). \textbf{Caveat found the hard way:}
+\code{seed\_simulator} does \emph{not} decorrelate re-runs on this Aer path, so
+batch-averaging independent seeds badly under-estimates the error; the honest way
+to shrink the bar is to raise $N_{\text{traj}}$, and the variance instruction
+gives the correct bar in one run.
+
+\section{Choosing the working point: \texorpdfstring{$\mu=0.5t$}{mu=0.5t}, not
+\texorpdfstring{$\mu=0$}{mu=0}}\label{sec:mu}
+The Week-9 decks call $\mu=0$ the ``sweet spot,'' but it is the one point where
+the edge-string reference is \emph{ill-defined}. At $\mu=0$ with $t=\Delta$ the
+two end Majoranas $\gamma_1,\gamma_{2L-2}$ are \emph{exact} zero modes: the BdG
+ground state is parity-degenerate ($\Delta_P=0$), the two zero modes are
+decoupled, and the covariance entry $M_{1,2L-2}=0$. The free-fermion solver
+therefore returns $\expv{\Oedge}=0$ at $\mu=0$ --- correct for the symmetric
+vacuum, but useless as a reference. The VQE inherits the same pathology: with a
+vanishing parity gap the even and odd sectors are near-degenerate, so an energy
+minimiser lands on even/odd \emph{superpositions} whose edge string cancels to
+$\approx0$. (An early sweep at $\mu=0$ produced exactly this: erratic
+$\expv{\Oedge}\in\{0.0,0.1,0.008,\ldots\}$.)
+
+The cure is to work at a \emph{gapped} topological point, $\mu=0.5t$ ($|\mu|<2t$).
+There the free-fermion edge string is well-defined and stable
+($\expv{\Oedge}\to0.9375$, saturating with $L$), the parity gap is small but
+nonzero ($\sim10^{-3}$ at $L=4$ down to $\sim10^{-10}$ at $L=16$), and both the
+reference and the VQE are clean. $\mu=0.5t$ is the default everywhere in
+\code{block4\_scaling.py}.
+
+\section{The VQE optimiser}\label{sec:opt}
+\subsection{Cost and ED-free state selection}
+The cost is $\expv{H}+\lambda(1-\expv{\Pop})^2$ on the statevector. The parity
+penalty must be \emph{firm}: at $\mu=0.5t$ the parity gap is $\sim10^{-4}$, so a
+weak penalty ($\lambda=0.1$) lets the optimiser drift into superpositions with
+$\expv{\Oedge}\approx0$; $\lambda=1.0$ pins the even sector. The old
+\code{block3\_core} pipeline selected the best of several starts by \emph{ED
+fidelity} --- unavailable at large $L$. We replace it with an ED-free rule:
+among the restarts, keep the lowest-energy optimum that sits in the even sector
+($\expv{\Pop}\ge0.5$), which is the correct variational target (the
+lowest-energy even-parity state the depth-$r$ ansatz can make).
+
+\subsection{COBYLA \texorpdfstring{$\to$}{->} L-BFGS-B}
+The original optimiser was COBYLA. It \textbf{silently fails above ${\sim}30$
+parameters}: at $L=10$, reps${}=5$ ($60$ parameters, true edge $0.939$) COBYLA
+with $8$ starts returned $0.034$ (energy $0.95$ above the ground state). Gradient
+information fixes it. The comparison (same cell):
 \begin{center}
-\begin{tabular}{rrrrrr}
+\begin{tabular}{llrr}
 \toprule
-$L$ & 6 & 10 & 14 & 18 & 22 \\
-$\chi$ & 8 & 8 & 8 & 8 & 8 \\
-$2^{\lfloor L/2\rfloor}$ (vol.\ law) & 8 & 32 & 128 & 512 & 2048 \\
+optimiser & starts & edge & $\Delta E$ \\
+\midrule
+COBYLA    & 8  & 0.034 \emph{(fail)} & $+0.954$ \\
+COBYLA    & 20 & 0.935 & $+0.068$ \\
+L-BFGS-B  & 8  & 0.939 & $+0.033$ \\
+L-BFGS-B  & 20 & 0.939 & $+0.033$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-A reps${}=r$ linear ansatz has a light cone of width ${\sim}r$, so entanglement
-across any cut is bounded \emph{independent of $L$}. At reps${}=3$, $\chi$ pins
-at $8$ for all $L$, far below the volume-law ceiling, and noise does not inflate
-it. \textbf{The truncation risk essentially does not exist for a shallow
-ansatz}: cap $\chimax=16$ and the simulation is exact to $L=100$.
+L-BFGS-B is reliable with only $8$ starts (better than COBYLA with $20$), so it
+is the optimiser used throughout.
 
-\paragraph{$\chi$ grows exponentially in depth.}
-At fixed $L=14$:
+\subsection{Free-fermion energy as an ED-free convergence oracle}
+Because the exact ground energy $E_{\mathrm{ff}}$ is available for free
+(\S\ref{sec:ff}), we use it to stop restarting: as soon as an even-sector optimum
+comes within $\code{conv\_tol}=0.1$ of $E_{\mathrm{ff}}$ the search halts. Easy
+cells converge on the first start; genuinely hard or \emph{inexpressible} cells
+(too-small $r$) exhaust \code{n\_starts} and honestly report the best the ansatz
+managed. This both speeds the grid and keeps the ``failure'' cells honest.
+
+\subsection{A warm start that does \emph{not} work}
+We tried seeding depth $r$ from the padded depth-$(r{-}1)$ solution. It has no
+effect: \code{EfficientSU2}(reps${}=r$) carries an \emph{extra fixed CX
+entangler} relative to reps${}=r{-}1$, so padding a shorter solution with a zero
+rotation layer does \emph{not} reproduce the shallower state --- the extra
+entangler scrambles it. The idea was dropped; random restarts with L-BFGS-B are
+what is used.
+
+\subsection{Cross-check against ED}
+To be sure the ``collapse'' cells are physics and not a broken optimiser, we ran
+\code{block3\_core.best\_state} (dense, ED-fidelity selection, $20$ starts) at
+$L=6$, reps${}=3$: it also returns $\expv{\Oedge}=0.000$ (fidelity $0.53$). The
+matrix-free optimiser agrees with the ED ground truth.
+
+\section{Device-calibrated noise: real hardware parameters}
+The toy model is a uniform per-\cx{} depolarising channel ($p_{cx}=0.05$). To use
+\emph{real} hardware parameters one cannot simply call
+\code{NoiseModel.from\_backend} on the linear-chain circuit: the real
+$\ge16$-qubit devices are \emph{heavy-hex} (and often ECR/CZ-native), so our
+$\cx(i,i{+}1)$ gates are \emph{not} calibrated edges and would receive \emph{no}
+two-qubit noise. We verified this on \code{FakeCairoV2}: its \code{from\_backend}
+model has \cx{} errors only on the $12$ real device edges, none of which are
+$(0,1),(1,2),\ldots$.
+
+\code{device\_noise\_model} therefore \emph{transplants} the genuine recorded
+channels onto the native chain: the real per-qubit single-qubit ($sx$) error
+channels for qubits $0\ldots L{-}1$ as-is, and a representative (median-error)
+real two-qubit channel on every \cx{}. Real \code{FakeCairoV2} numbers:
+$T_1\approx97\,\mu$s, $T_2\approx81\,\mu$s, $1q$ error $2.7\times10^{-4}$,
+$2q$ error $7.5\times10^{-3}$, $2q$ duration $236$\,ns --- so the real $2q$ error
+is ${\sim}6\times$ \emph{smaller} than the toy $0.05$.
+
+\paragraph{Two honest options.} (A) \emph{Full device transpilation} routes the
+circuit onto the real topology with SWAPs and uses \code{from\_backend} directly
+--- ``what you'd get on Cairo today,'' but dominated by routing overhead. (B)
+\emph{Real parameters on the native chain} (the transplant above) --- isolates
+the \emph{intrinsic} device noise from the compiler. We use (B); it is what
+``real hardware parameters'' most directly means and keeps the clean scaling
+narrative. \code{--backend FakeCairoV2} (27q) or \code{FakeWashingtonV2} (127q,
+for $L>27$) selects it.
+
+\section{Parallelising the grid}
+The $(L,\text{reps})$ optimisations are independent, so \code{--workers N} runs
+them across a spawned \code{ProcessPoolExecutor}. Each worker is pinned to a
+\emph{single} BLAS thread (thread-limit env set before the pool, inherited by the
+spawned children), because one L-BFGS-B optimisation is serial and its $2^L$
+statevectors are too small for BLAS threading to scale --- oversubscription
+actively slows it. So $N$ workers $\times\,1$ thread fill the node cleanly; the
+fast noisy trajectory phase then runs serially in the main process, where Aer
+reclaims all threads. Empirically: the $L=4\ldots10$ Cairo grid on $8$ workers
+took $7$ minutes ($\sim6\times$ efficiency). Live \code{[k/N]} progress is
+printed as each cell lands.
+
+\section{Reproducibility}
+\begin{itemize}
+\item \code{python src/block4\_scaling.py --selftest} --- validates both
+      primitives (statevector vs dense $\sim10^{-15}$; trajectory vs density
+      matrix $\sim1\sigma$).
+\item \code{--Lmax N [--backend FakeCairoV2] [--workers K]} --- runs the scan,
+      caches the data (\code{plots/block4\_scaling\_data[\_tag].npz}), and renders
+      the figure; \code{--out-tag} keeps toy and device runs from overwriting each
+      other.
+\item \code{--replot [--out-tag \ldots]} --- redraws from the cache without
+      recomputing (restyle, or replot an HPC run locally).
+\item \code{[BACKEND=FakeCairoV2] sbatch scripts/lsweep.slurm} --- the Leipzig SC
+      cluster wrapper (\code{paul} CPU partition; \code{module load} $+$
+      user-site qiskit), \code{WORKERS} defaulting to \code{cpus-per-task}.
+\end{itemize}
+
+\part{Results}\label{part:results}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{block4_scaling_Lsweep.pdf}
+\caption{Two-panel scaling figure ($\mu=0.5t$; toy $p_{cx}=0.05$; grid run to
+$L=16$ on the cluster). \textbf{Left:} noiseless edge string for a family of
+fixed depths $r$, with the exact free-fermion truth. Shallow $r=2,3$ fail beyond
+$L=4$; a constant $r\ge4$ tracks the truth to $L=16$. (The dips at $r=5,L=14$ and
+$r=6,7,L=16$ are optimiser stalls at large parameter counts, not physics --- a
+smaller $r$ succeeds there.) \textbf{Right:} at the minimal adequate depth
+$r^\ast(L)$, the noisy trajectory edge string decays along the $(1-p)^{n_{cnot}}$
+envelope as the CNOT count grows.}
+\end{figure}
+
+\section{The two failure modes decouple}
+The $L=16$ cluster run (toy $p_{cx}=0.05$, reps family $2\ldots7$) gives the
+noiseless edge table
 \begin{center}
 \begin{tabular}{rrrrrrrr}
 \toprule
-reps & 1 & 2 & 3 & 4 & 5 & 6 & 8 \\
-$\chi$ & 2 & 4 & 8 & 16 & 32 & 64 & 128 \\
-\bottomrule
-\end{tabular}
-\end{center}
-i.e.\ $\chi\approx 2^{\text{reps}}$ (until it saturates the $2^{L/2}$ ceiling).
-
-\paragraph{The fixed-depth ansatz loses the state.}
-VQE fidelity to the true ground state at reps${}=3$:
-\begin{center}
-\begin{tabular}{rrrrrr}
-\toprule
-$L$ & 4 & 6 & 8 & 10 & 12 \\
-fidelity & 0.99 & 0.50 & 0.25 & 0.10 & 0.02 \\
-\bottomrule
-\end{tabular}
-\end{center}
-A fixed-depth hardware-efficient ansatz simply cannot represent the topological
-ground state as $L$ grows; keeping the fidelity up requires reps${}\sim L$.
-
-\section{The wall is fundamental, not a coding artifact}
-Combining the three tables: the regime where MPS is cheap (small reps, constant
-$\chi$) is exactly the regime where the VQE \emph{fails} (fidelity $\to 0$); and
-the regime where the VQE \emph{works} (reps${}\sim L$) is exactly where
-$\chi\sim 2^{\text{reps}}\sim 2^{O(L)}$ blows MPS back up. A state that genuinely
-needs a deep circuit to prepare is genuinely expensive to simulate classically
---- MPS buys a smaller exponential base ($2^{\text{reps}}$ vs $4^L$), a few
-extra qubits, not unbounded $L$. This is the honest simulation-cost face of
-``NISQ does not inherit topological protection.''
-
-\paragraph{The one unconditionally polynomial regime.}
-The true Kitaev ground state is Gaussian and area-law: it \emph{has} a small-$\chi$
-MPS. The \texttt{ry} ansatz is merely an inefficient, non-Gaussian
-parametrization of it. A \textbf{matchgate/Gaussian ansatz} (only
-$R_z$-type single-qubit gates $+$ nearest-neighbor matchgate entanglers)
-prepares the same state at $O(L)$ depth with bounded $\chi$, and under
-\emph{fermion-Gaussian} noise (amplitude damping/loss is Gaussian for fermions;
-depolarizing is not) the entire simulation reduces to covariance-matrix algebra,
-$O(L^3)$, exact, $L\to$ thousands. The catch: this answers a cleaner but
-\emph{different} question --- it is no longer the generic hardware-efficient
-NISQ story.
-
-\section{Recommended architecture}
-\begin{center}
-\begin{tabular}{lll}
-\toprule
-piece & scalable replacement & exact? \\
+$r\backslash L$ & 4 & 6 & 8 & 10 & 12 & 14 & 16 \\
 \midrule
-ideal $\expv{\Oedge}$, gap & free-fermion BdG ($L^3$) & exact, $L\to$ hundreds \\
-noisy VQE $\expv{\Oedge}$ & MPS $+$ noise trajectories ($L\chi^2$) & exact if $\chi$ bounded \\
-unbounded $L$ & matchgate ansatz $+$ Gaussian noise ($L^3$) & exact, different model \\
+2 & 0.93 & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+3 & 0.93 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+4 & 0.93 & 0.97 & 0.94 & 0.97 & 0.94 & 0.97 & 0.97 \\
+5 & 0.93 & 0.94 & 0.97 & 0.97 & 0.97 & \emph{0.00} & 0.94 \\
+6 & 0.93 & 0.94 & 0.94 & 0.94 & 0.94 & 0.97 & \emph{0.01} \\
+7 & 0.93 & 0.94 & 0.93 & 0.93 & 0.97 & 0.97 & \emph{0.00} \\
 \bottomrule
 \end{tabular}
 \end{center}
-The concrete plan: build \texttt{src/free\_fermion.py} (an unconditional win)
-and pair it with a \emph{fixed-reps} MPS sweep that makes the ansatz's
-expressibility collapse visible against the exact ideal curve. That is honest,
-cheap, reaches large $L$, and turns the wall itself into the scientific point.
-Validation anchor: at $L\le 12$, where the exact density-matrix path still runs,
-cross-check the MPS-trajectory and free-fermion values against the exact
-numbers before extrapolating.
+so the minimal adequate depth is
+$r^\ast(L)=[2,4,4,4,4,4,4]$ for $L=4\ldots16$. The italic entries are the
+optimiser stalls (a smaller $r$ works at the same $L$).
 
-\paragraph{Backends for the noisy curve.} A device-calibrated sweep needs a
-snapshot whose coupling map embeds a length-$L$ line so the linear-entanglement
-\cx{} pairs sit on real edges with no SWAP inflation. Named 5-qubit snapshots
-(\texttt{fake\_manila}, etc.) cap at $L=5$; \texttt{FakeGuadalupeV2} is 16 qubits
-but its heavy-hex graph only contains a 13-node line. The clean choices are the
-27-qubit heavy-hex snapshots (\texttt{FakeCairoV2}/\texttt{FakeKolkataV2}/%
-\texttt{FakeHanoiV2}, 21-node line) or a 20-qubit device (18-node line).
+\paragraph{Expressibility is cheap and $L$-independent.} A \emph{constant} depth
+$r^\ast=4$ reproduces the edge string all the way to $L=16$ --- it does
+\textbf{not} grow with $L$. Physically the edge Majoranas are localised at the two
+ends, so building them costs $\sim$constant depth however long the chain between
+them is. This refines the earlier expectation (``depth must grow with $L$'') from
+the $\chi$-probe (\S\ref{sec:chi}): that statement is about the \emph{full}
+wavefunction; the \emph{edge-string diagnostic} escapes it.
 
-\paragraph{Reproduce.} $\chi$-probe:
-\texttt{python scratch/chi\_probe.py} (measures $\chi$ vs $L$ and vs reps against
-the volume-law ceiling). Free-fermion reference: \texttt{src/free\_fermion.py}
-(BdG ground state, edge string, parity gap; validated against \texttt{eigh} at
-$L\le 12$).
+\paragraph{Noise is the whole large-$L$ story.} Because $r^\ast$ is fixed, the
+CNOT count grows only linearly, $n_{cnot}=r^\ast(L-1)=4(L-1)=6,20,28,36,44,52,60$,
+yet the noisy edge decays exponentially along $(1-p)^{n_{cnot}}$:
+\begin{center}
+\begin{tabular}{rrrrrrrr}
+\toprule
+$L$ & 4 & 6 & 8 & 10 & 12 & 14 & 16 \\
+$n_{cnot}$ & 6 & 20 & 28 & 36 & 44 & 52 & 60 \\
+noisy $\expv{\Oedge}$ (toy) & 0.68 & 0.37 & 0.23 & 0.17 & 0.10 & 0.08 & 0.07 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Under the toy $p=0.05$ the diagnostic is effectively dead by $L\approx14$.
+
+\section{Toy versus real hardware}
+The toy $p=0.05$ is ${\sim}6\times$ harsher than a real device. The same
+$60$ CNOTs under real Cairo ($2q$ error $7.5\times10^{-3}$) give
+$(1-0.0075)^{60}\approx0.64$, i.e.\ $\expv{\Oedge}\approx0.6$ \emph{at $L=16$} ---
+the diagnostic \emph{survives}. A device-calibrated run to $L=10$ already shows
+this: noisy $\expv{\Oedge}=0.86,0.76,0.65,0.61$ at $L=4,6,8,10$ versus the toy
+$0.68,0.37,0.23,0.17$. So ``noise kills the edge string by $L\approx16$'' is an
+artifact of the toy strength; on real IBM parameters it persists considerably
+further, and the honest large-$L$ statement requires the \code{--backend} sweep.
+
+\section{Conclusion}
+For the edge-string diagnostic the classical-simulation and NISQ questions come
+apart cleanly. The \emph{reference} is free (free-fermion BdG, exact to hundreds
+of sites). The \emph{ideal} VQE state is a mild $2^L$ object, computed without any
+$4^L$ matrix, and its expressibility for this observable is $L$-independent
+(constant $r^\ast=4$). The genuine large-$L$ wall is therefore neither ED nor
+expressibility but \textbf{decoherence over a linearly growing gate count} ---
+and its severity is set by the real per-gate error rate, which for present IBM
+hardware is gentle enough that the topological diagnostic survives to noticeably
+larger $L$ than the toy model suggests. The full wavefunction still obeys the
+harder wall of \S\ref{sec:chi}; the point is that the \emph{measured} topological
+signature does not have to.
 
 \end{document}
