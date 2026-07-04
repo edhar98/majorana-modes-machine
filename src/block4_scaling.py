@@ -337,6 +337,17 @@ def scan(L_list, reps_family=REPS_FAMILY, mu=MU, t=T, delta=DELTA, p_cx=P_CX,
 CACHE = 'plots/block4_scaling_data.npz'
 
 
+def _cache_path(out_tag=''):
+    """npz cache path, optionally suffixed so parallel runs (e.g. different noise
+    backends) do not clobber each other's data."""
+    return f'plots/block4_scaling_data_{out_tag}.npz' if out_tag else CACHE
+
+
+def _fig_name(out_tag=''):
+    """Figure filename, suffixed to match _cache_path (see save_fig in utils)."""
+    return f'block4_scaling_Lsweep_{out_tag}.pdf' if out_tag else 'block4_scaling_Lsweep.pdf'
+
+
 def save_scan(data, path=CACHE):
     """Persist a scan() result so the figure can be restyled without recomputing
     (and so a long HPC scan can be replotted locally)."""
@@ -362,7 +373,7 @@ def load_scan(path=CACHE):
             'noise_label': str(z['noise_label']) if 'noise_label' in z else ''}
 
 
-def render_figure(data, t=T):
+def render_figure(data, t=T, out_tag=''):
     """Draw the two-panel scaling figure from a scan() (or load_scan()) dict.
 
     A: noiseless edge vs L, one curve per fixed depth r -- shallow depths (r=2,3)
@@ -415,17 +426,17 @@ def render_figure(data, t=T):
     fig.suptitle(rf'Two ways a fixed-depth preparation fails as $L$ grows '
                  rf'($\mu={mu/t:.1f}t$, noise: {noise_label})', fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
-    save_fig(fig, 'block4_scaling_Lsweep.pdf')
+    save_fig(fig, _fig_name(out_tag))
 
 
 def plot_scaling(L_list=(4, 6, 8, 10, 12), reps_family=REPS_FAMILY, mu=MU, p_cx=P_CX,
                  lam=LAM, seed=7, maxiter=800, n_starts=8, n_traj=16000,
-                 t=T, delta=DELTA, workers=1, backend=None):
+                 t=T, delta=DELTA, workers=1, backend=None, out_tag=''):
     """Run the scan, cache it, and render the two-panel figure."""
     data = scan(L_list, reps_family, mu, t, delta, p_cx, lam, seed, maxiter,
                 n_starts, n_traj, workers=workers, backend=backend)
-    save_scan(data)
-    render_figure(data, t)
+    save_scan(data, path=_cache_path(out_tag))
+    render_figure(data, t, out_tag=out_tag)
     return data
 
 
@@ -493,6 +504,9 @@ def build_parser():
     p.add_argument('--backend', type=str, default=None,
                    help='real IBM device snapshot for the noise model (e.g. '
                         'FakeCairoV2, FakeWashingtonV2); default = toy depolarizing --p-cx')
+    p.add_argument('--out-tag', type=str, default='',
+                   help='suffix for the output pdf/npz (e.g. FakeCairoV2) so parallel '
+                        'runs with different noise do not overwrite each other')
     return p
 
 
@@ -505,8 +519,9 @@ def main():
     plt.rcParams.update({'axes.grid': False, 'axes.facecolor': 'white',
                          'figure.facecolor': 'white'})
     if args.replot:
-        print(f'replotting from cache {CACHE}')
-        render_figure(load_scan())
+        cache = _cache_path(args.out_tag)
+        print(f'replotting from cache {cache}')
+        render_figure(load_scan(cache), out_tag=args.out_tag)
         print('Done.')
         return
     L_list = tuple(range(args.Lmin, args.Lmax + 1, 1))
@@ -516,7 +531,7 @@ def main():
     plot_scaling(L_list=L_list, reps_family=tuple(args.reps), mu=args.mu,
                  p_cx=args.p_cx, lam=args.lam, seed=args.seed, maxiter=args.maxiter,
                  n_starts=args.starts, n_traj=args.n_traj, workers=args.workers,
-                 backend=args.backend)
+                 backend=args.backend, out_tag=args.out_tag)
     print('Done.')
 
 

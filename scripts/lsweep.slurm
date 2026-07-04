@@ -57,6 +57,10 @@ PCX="${PCX:-0.05}"
 # snapshot for calibrated noise, e.g. BACKEND=FakeCairoV2 (27q) or
 # FakeWashingtonV2 (127q, for L>27). The device must have >= Lmax qubits.
 BACKEND="${BACKEND:-}"
+# Output filename tag so a device-calibrated run does not overwrite the toy run's
+# plots/block4_scaling_Lsweep.pdf and _data.npz. Defaults to the backend name
+# (e.g. FakeCairoV2); empty for the toy run keeps the original filenames.
+OUTTAG="${OUTTAG:-$BACKEND}"
 STARTS="${STARTS:-8}"
 MAXITER="${MAXITER:-800}"           # L-BFGS-B iterations per start
 NTRAJ="${NTRAJ:-16000}"
@@ -67,7 +71,7 @@ NTRAJ="${NTRAJ:-16000}"
 WORKERS="${WORKERS:-${SLURM_CPUS_PER_TASK:-16}}"
 
 echo "host=$(hostname)  repo=$REPO  python=$(which python)  threads=$OMP_NUM_THREADS  workers=$WORKERS"
-echo "L=$LMIN..$LMAX reps=[$REPS] mu=$MU noise=${BACKEND:-toy p_cx=$PCX} starts=$STARTS maxiter=$MAXITER n_traj=$NTRAJ"
+echo "L=$LMIN..$LMAX reps=[$REPS] mu=$MU noise=${BACKEND:-toy p_cx=$PCX} out_tag=${OUTTAG:-<none>} starts=$STARTS maxiter=$MAXITER n_traj=$NTRAJ"
 
 # Sanity-check the matrix-free primitives before the (long) sweep.
 python -u src/block4_scaling.py --selftest
@@ -80,6 +84,6 @@ python -u src/block4_scaling.py --selftest
 python -u src/block4_scaling.py \
     --Lmin "$LMIN" --Lmax "$LMAX" --reps $REPS --mu "$MU" --p-cx "$PCX" \
     --starts "$STARTS" --maxiter "$MAXITER" --n-traj "$NTRAJ" --workers "$WORKERS" \
-    ${BACKEND:+--backend "$BACKEND"}
+    ${BACKEND:+--backend "$BACKEND"} ${OUTTAG:+--out-tag "$OUTTAG"}
 
 echo "done: plots/block4_scaling_Lsweep.pdf (+ plots/block4_scaling_data.npz)"
