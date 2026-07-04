@@ -23,16 +23,24 @@
 set -euo pipefail
 
 # --- environment -------------------------------------------------------------
-# Repo root = the directory this script's parent lives in (scripts/..).
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Repo root. Under Slurm the batch script runs from a spool copy, so BASH_SOURCE
+# points into /var/spool and not the repo -- prefer SLURM_SUBMIT_DIR (the dir
+# `sbatch` was invoked from). Fall back to scripts/.. for a direct `bash` run.
+REPO="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$REPO"
 mkdir -p logs plots
 
-# Project virtualenv. On the cluster this path may differ from the workstation's
-# /opt/python-envs/myenv; override with `VENV=/path/to/venv sbatch ...`.
-VENV="${VENV:-/opt/python-envs/myenv}"
-# shellcheck disable=SC1091
-source "$VENV/bin/activate"
+# Cluster Python: load the environment module and use the user-site qiskit stack
+# (installed once on the login node with `pip install --user qiskit qiskit-aer
+# qiskit-algorithms`). numpy/scipy/matplotlib already live in ~/.local for py3.12.
+# The compute node inherits the same module tree as the login node. Override the
+# module with `PYMODULE=Python/3.13.5-GCCcore-14.3.0 sbatch ...`.
+PYMODULE="${PYMODULE:-Python/3.12.3-GCCcore-13.3.0}"
+set +u                              # modules.sh references unbound vars under `set -u`
+source /etc/profile.d/modules.sh
+module purge
+module load "$PYMODULE"
+set -u
 
 # Keep BLAS/OpenMP from oversubscribing beyond the allocation.
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-16}"
@@ -54,7 +62,7 @@ NTRAJ="${NTRAJ:-16000}"
 # noisy phase then reclaims all $OMP_NUM_THREADS threads for Aer.
 WORKERS="${WORKERS:-${SLURM_CPUS_PER_TASK:-16}}"
 
-echo "host=$(hostname)  repo=$REPO  venv=$VENV  threads=$OMP_NUM_THREADS  workers=$WORKERS"
+echo "host=$(hostname)  repo=$REPO  python=$(which python)  threads=$OMP_NUM_THREADS  workers=$WORKERS"
 echo "L=$LMIN..$LMAX reps=[$REPS] mu=$MU p_cx=$PCX starts=$STARTS maxiter=$MAXITER n_traj=$NTRAJ"
 
 # Sanity-check the matrix-free primitives before the (long) sweep.
