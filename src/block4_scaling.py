@@ -14,11 +14,16 @@ removed:
       (16 MB at L=20) and is the mild, unavoidable object. (Beyond that it MPS-
       compresses to chi ~ 2^reps; see the chi-probe note.)
 
-  noisy VQE state -- MPS-trajectory sampling of O_edge under per-cx depolarizing
-      noise: each shot is one stochastic-Kraus trajectory (a pure state, 2^L,
-      chi <= 2^reps), and averaging N_traj of them is an unbiased estimator of
-      Tr(O rho) that converges as 1/sqrt(N_traj). This removes the 4^L density
-      matrix -- the real memory wall (~17 GB at L=15).
+  noisy VQE state -- MPS-trajectory sampling of O_edge: each shot is one
+      stochastic-Kraus trajectory (a pure state, 2^L, chi <= 2^reps), and
+      averaging N_traj of them is an unbiased estimator of Tr(O rho) that
+      converges as 1/sqrt(N_traj). This removes the 4^L density matrix -- the
+      real memory wall (~17 GB at L=15). The noise is either a toy uniform
+      per-cx depolarizing channel (--p-cx) or a real IBM device's recorded
+      calibration (--backend FakeCairoV2 etc.): `device_noise_model` transplants
+      the device's genuine per-qubit 1q errors and a representative real 2q error
+      channel onto the native linear chain (the real chips are heavy-hex, so
+      from_backend alone would leave our cx pairs noiseless).
 
 Validated by `--selftest`: the ideal expectation matches dense `.to_matrix()` to
 ~1e-15, and the trajectory estimator matches the exact density matrix to ~1
@@ -38,8 +43,9 @@ The physics the figure shows (cross-checked against block3_core's ED optimizer):
 
 Run:
   python src/block4_scaling.py --selftest
-  python src/block4_scaling.py --Lmax 12            # local
-  sbatch scripts/lsweep.slurm                        # larger L on HPC
+  python src/block4_scaling.py --Lmax 12                         # toy noise, local
+  python src/block4_scaling.py --Lmax 12 --backend FakeCairoV2   # real device noise
+  BACKEND=FakeCairoV2 sbatch scripts/lsweep.slurm               # larger L on HPC
 """
 import argparse
 import os
@@ -51,6 +57,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from qiskit.quantum_info import Statevector
 from qiskit_aer import AerSimulator
+from qiskit_aer.noise import NoiseModel
 
 from block3_core import T, DELTA, vqe_ansatz, qubit_hamiltonian, edge_string, parity
 from block4 import depolarizing_noise_model, _transpiled
@@ -151,6 +158,55 @@ def noisy_edge_mps(ansatz, theta, L, noise_model, n_traj=16000, seed=100):
     return abs(float(mean)), stderr
 
 
+# ── device-calibrated noise (real hardware parameters) ─────────────────────────
+
+def _resolve_device(name):
+    """Instantiate a real IBM device snapshot by name (real recorded calibration)."""
+    from qiskit_ibm_runtime.fake_provider import __dict__ as fp
+    if name not in fp:
+        raise ValueError(f"unknown device '{name}'. Examples: FakeCairoV2 (27q, "
+                         f"CX-native), FakeWashingtonV2 (127q).")
+    return fp[name]()
+
+
+def device_noise_model(backend, L):
+    """NoiseModel with the device's REAL per-gate error channels, mapped onto the
+    linear chain (qubits 0..L-1).
+
+    `NoiseModel.from_backend` carries the genuine recorded calibration -- per-qubit
+    sx errors (thermal T1/T2 + gate infidelity) and per-EDGE two-qubit errors. But
+    the real devices are heavy-hex, so our cx(i,i+1) are not calibrated edges and
+    would otherwise get NO 2q noise. So we take the real per-qubit 1q channels for
+    qubits 0..L-1 as-is, and transplant a representative (median-error) real 2q
+    channel onto every cx of the chain -- real error magnitudes, applied to the
+    native linear geometry. Returns (nm, twoq_error_rate).
+    """
+    base = NoiseModel.from_backend(backend)
+    lqe = base._local_quantum_errors
+    nm = NoiseModel(basis_gates=['rz', 'sx', 'cx'])
+
+    # real per-qubit single-qubit (sx) errors for the chain's qubits
+    sx_err = lqe.get('sx', {})
+    for q in range(L):
+        e = sx_err.get((q,))
+        if e is not None:
+            nm.add_quantum_error(e, 'sx', [q])
+
+    # real two-qubit channel: the device's native 2q gate (cx on Cairo-era chips),
+    # representative = the edge whose reported error is closest to the median.
+    twoq = next((g for g in ('cx', 'ecr', 'cz') if lqe.get(g)), None)
+    if twoq is None:
+        raise RuntimeError(f'{backend.name}: no 2q error channel found')
+    tgt = backend.target[twoq]
+    edges = [k for k in lqe[twoq] if tgt.get(k) and tgt[k].error is not None]
+    rates = np.array([tgt[k].error for k in edges])
+    med = edges[int(np.argmin(np.abs(rates - np.median(rates))))]
+    rep = lqe[twoq][med]
+    for q in range(L - 1):
+        nm.add_quantum_error(rep, 'cx', [q, q + 1])
+    return nm, float(tgt[med].error)
+
+
 # ── the scan ──────────────────────────────────────────────────────────────────
 
 _THREAD_VARS = ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS',
@@ -196,7 +252,7 @@ def _run_cells_parallel(tasks, workers):
 
 def scan(L_list, reps_family=REPS_FAMILY, mu=MU, t=T, delta=DELTA, p_cx=P_CX,
          lam=LAM, seed=7, maxiter=800, n_starts=8, n_traj=16000, edge_ok=EDGE_OK,
-         workers=1):
+         workers=1, backend=None):
     """Full scan feeding both panels.
 
     For every (L, reps): the ED-free noiseless edge string (a table). From it,
@@ -232,26 +288,36 @@ def scan(L_list, reps_family=REPS_FAMILY, mu=MU, t=T, delta=DELTA, p_cx=P_CX,
                 for reps in reps_sorted}
 
     # --- noise wall at the minimal adequate depth (serial, threaded) ---
-    nm = depolarizing_noise_model(p_cx)
+    # Toy uniform depolarizing (p_cx) or real device-calibrated noise (backend).
+    dev = _resolve_device(backend) if backend else None
+    if dev is not None and max(L_list) > dev.num_qubits:
+        raise ValueError(f'{backend} has {dev.num_qubits} qubits < Lmax={max(L_list)}')
+    p_env = p_cx
     r_star, noisy, err, n_cnot = [], [], [], []
     for L in L_list:
         adequate = [r for r in reps_sorted if cell[(L, r)][1] >= edge_ok]
         rs = min(adequate) if adequate else max(reps_sorted)
         theta = cell[(L, rs)][0]
         ansatz = vqe_ansatz(L, rs)
+        if dev is not None:
+            nm, p_env = device_noise_model(dev, L)     # real per-qubit + median 2q rate
+        else:
+            nm = depolarizing_noise_model(p_cx)
         ne, ee = noisy_edge_mps(ansatz, theta, L, nm, n_traj, seed + 100)
         nc = _transpiled(ansatz, theta).count_ops().get('cx', 0)
         r_star.append(rs); noisy.append(ne); err.append(ee); n_cnot.append(nc)
         print(f"  L={L:>3} r*={rs}  n_cnot={nc:>3}  ff={ff_ref[L][0]:.3f}  "
               f"noisy={ne:.3f}+-{ee:.3f}", flush=True)
 
+    noise_label = (rf'{dev.name} (real): 2q err {p_env:.1e}' if dev is not None
+                   else rf'toy depol. $p_{{cx}}={p_cx:.2f}$')
     return {'L': np.array(L_list), 'reps_family': tuple(reps_family),
             'edge_tab': edge_tab,
             'ff_edge': np.array([ff_ref[L][0] for L in L_list]),
             'ff_energy': np.array([ff_energy[L] for L in L_list]),
             'r_star': np.array(r_star), 'noisy': np.array(noisy),
             'err': np.array(err), 'n_cnot': np.array(n_cnot),
-            'mu': mu, 'p_cx': p_cx}
+            'mu': mu, 'p_cx': p_env, 'noise_label': noise_label}
 
 
 CACHE = 'plots/block4_scaling_data.npz'
@@ -265,7 +331,8 @@ def save_scan(data, path=CACHE):
     np.savez(path, L=data['L'], reps_family=reps, edge_mat=edge_mat,
              ff_edge=data['ff_edge'], ff_energy=data['ff_energy'],
              r_star=data['r_star'], noisy=data['noisy'], err=data['err'],
-             n_cnot=data['n_cnot'], mu=data['mu'], p_cx=data['p_cx'])
+             n_cnot=data['n_cnot'], mu=data['mu'], p_cx=data['p_cx'],
+             noise_label=data.get('noise_label', ''))
     print(f"  [cached] {path}", flush=True)
 
 
@@ -277,7 +344,8 @@ def load_scan(path=CACHE):
             'edge_tab': {r: z['edge_mat'][i] for i, r in enumerate(reps_family)},
             'ff_edge': z['ff_edge'], 'ff_energy': z['ff_energy'],
             'r_star': z['r_star'], 'noisy': z['noisy'], 'err': z['err'],
-            'n_cnot': z['n_cnot'], 'mu': float(z['mu']), 'p_cx': float(z['p_cx'])}
+            'n_cnot': z['n_cnot'], 'mu': float(z['mu']), 'p_cx': float(z['p_cx']),
+            'noise_label': str(z['noise_label']) if 'noise_label' in z else ''}
 
 
 def render_figure(data, t=T):
@@ -293,6 +361,7 @@ def render_figure(data, t=T):
     """
     L, mu, p_cx = data['L'], data['mu'], data['p_cx']
     reps_family = data['reps_family']
+    noise_label = data.get('noise_label') or rf'toy depol. $p_{{cx}}={p_cx:.2f}$'
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(13.0, 5.2))
 
     # Panel A -- expressibility threshold.
@@ -314,10 +383,10 @@ def render_figure(data, t=T):
     axB.plot(L, data['ff_edge'], color='black', lw=1.8, ls='--', marker='D', ms=5,
              label='exact GS (free-fermion)')
     axB.plot(L, envelope, color=COLORS['bulk'], lw=1.6, ls=':', marker='^', ms=5,
-             label=r'noise envelope $(1-p)^{r^\ast(L-1)}$')
+             label=rf'2q-error envelope $(1-{p_cx:.1e})^{{r^\ast(L-1)}}$')
     axB.errorbar(L, data['noisy'], yerr=data['err'], color=COLORS['trivial'], lw=2.2,
                  marker='s', ms=6, capsize=3,
-                 label=rf'noisy VQE at $r^\ast(L)$, $p_{{cx}}={p_cx:.2f}$')
+                 label=rf'noisy VQE at $r^\ast(L)$ — {noise_label}')
     for x, y, rs, nc in zip(L, data['noisy'], data['r_star'], data['n_cnot']):
         axB.annotate(rf'$r^\ast={int(rs)}$' '\n' rf'${int(nc)}$ CX', (x, y),
                      textcoords='offset points', xytext=(0, 9), ha='center',
@@ -330,17 +399,17 @@ def render_figure(data, t=T):
     clean_axes(axB)
 
     fig.suptitle(rf'Two ways a fixed-depth preparation fails as $L$ grows '
-                 rf'($\mu={mu/t:.1f}t$, $p_{{cx}}={p_cx:.2f}$)', fontsize=13)
+                 rf'($\mu={mu/t:.1f}t$, noise: {noise_label})', fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     save_fig(fig, 'block4_scaling_Lsweep.pdf')
 
 
 def plot_scaling(L_list=(4, 6, 8, 10, 12), reps_family=REPS_FAMILY, mu=MU, p_cx=P_CX,
                  lam=LAM, seed=7, maxiter=800, n_starts=8, n_traj=16000,
-                 t=T, delta=DELTA, workers=1):
+                 t=T, delta=DELTA, workers=1, backend=None):
     """Run the scan, cache it, and render the two-panel figure."""
     data = scan(L_list, reps_family, mu, t, delta, p_cx, lam, seed, maxiter,
-                n_starts, n_traj, workers=workers)
+                n_starts, n_traj, workers=workers, backend=backend)
     save_scan(data)
     render_figure(data, t)
     return data
@@ -407,6 +476,9 @@ def build_parser():
     p.add_argument('--workers', type=int, default=1,
                    help='parallel processes for the (L, reps) optimization grid '
                         '(1 = serial; set to the core count on HPC)')
+    p.add_argument('--backend', type=str, default=None,
+                   help='real IBM device snapshot for the noise model (e.g. '
+                        'FakeCairoV2, FakeWashingtonV2); default = toy depolarizing --p-cx')
     return p
 
 
@@ -424,11 +496,13 @@ def main():
         print('Done.')
         return
     L_list = tuple(range(args.Lmin, args.Lmax + 1, 2))
+    noise = args.backend if args.backend else f'toy p_cx={args.p_cx}'
     print(f'scan L={L_list}  reps_family={tuple(args.reps)}  mu={args.mu}  '
-          f'p_cx={args.p_cx}  workers={args.workers}\n')
+          f'noise={noise}  workers={args.workers}\n')
     plot_scaling(L_list=L_list, reps_family=tuple(args.reps), mu=args.mu,
                  p_cx=args.p_cx, lam=args.lam, seed=args.seed, maxiter=args.maxiter,
-                 n_starts=args.starts, n_traj=args.n_traj, workers=args.workers)
+                 n_starts=args.starts, n_traj=args.n_traj, workers=args.workers,
+                 backend=args.backend)
     print('Done.')
 
 
