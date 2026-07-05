@@ -215,7 +215,26 @@
   \end{columns}
   \vspace{0.05cm}
   \footnotesize
-  Toy model ($p=0.05$): effectively dead by $L\!\approx\!14$. But under \textbf{real IBM calibration} (Cairo, $2q$ error $\approx0.0075$, ${\sim}6\times$ gentler) the same $60$ CNOTs keep $\expv{O_{\mathrm{edge}}}\approx0.6$ at $L=16$ --- the diagnostic \textbf{survives much further} on real devices.
+  Toy model ($p=0.05$): effectively dead by $L\!\approx\!14$. But under \textbf{real IBM calibration} (Cairo, $2q$ error $\approx0.0075$, ${\sim}6\times$ gentler) the same $60$ CNOTs keep $\expv{O_{\mathrm{edge}}}$ \emph{plateauing} near ${\sim}0.5$ out to $L=16$ --- the diagnostic \textbf{survives much further} on real devices (next slide).
+\end{frame}
+
+\begin{frame}{Block 4 --- NISQ Reality Check V: Real Hardware vs Toy Model}
+  \begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.80\textheight,keepaspectratio]{block4_scaling_toy_vs_real.pdf}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \small
+      Same states, same $r^\ast=4$, same $6\!\to\!60$ CNOTs --- only the \emph{noise model} differs (single-step $L=4\ldots16$, Leipzig SC cluster).
+      \begin{itemize}
+        \item \textcolor{trivial}{\textbf{Toy} $p=0.05$}: washed out to ${\sim}0.07$ by $L=16$.
+        \item \textcolor{topological}{\textbf{Real IBM Cairo}} ($2q$ err $7.5\times10^{-3}$): decays, then \textbf{plateaus near ${\sim}0.5$} --- the topological signature stays \textbf{robustly measurable to $L=16$}.
+      \end{itemize}
+      \vspace{0.1cm}
+      The toy model is ${\sim}6\times$ too pessimistic: real per-gate errors are gentle enough that the diagnostic survives far beyond the toy prediction.
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % ============================ CLOSING =====================================
@@ -225,7 +244,7 @@
     \item \textbf{Parity (symmetry) is protected} under noise; the \textbf{edge string (topology) is not} noise-immune at fixed $L$.
     \item Classically, both exponentials are removable: the ED reference $\to$ \textbf{free fermions} (BdG), the $4^L$ density matrix $\to$ \textbf{MPS trajectories} --- only a mild $2^L$ statevector remains.
     \item For the edge-string diagnostic, \textbf{expressibility is $L$-independent} (constant depth $r^\ast=4$): the large-$L$ wall is \emph{decoherence} over a linearly growing gate count.
-    \item On \textbf{real IBM noise} the signature survives to noticeably larger $L$ than a naive toy model predicts.
+    \item On \textbf{real IBM noise} the signature \textbf{plateaus near ${\sim}0.5$} and stays measurable to $L=16$ --- far beyond where the toy model ($p=0.05$) predicts.
   \end{itemize}
   \vfill
   \centering
