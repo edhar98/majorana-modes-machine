@@ -106,7 +106,7 @@
       \footnotesize
       On a finite chain the two end Majoranas overlap and split, $\Delta_P(L)\sim e^{-L/\xi}$.
       \begin{itemize}
-        \item \textbf{Exponential protection}: the parity gap shrinks as the chain grows --- longer chains are intrinsically better.
+        \item \textbf{Exponential protection}: the parity gap shrinks as the chain grows --- longer is better.
         \item \textbf{Jordan--Wigner} gives the \emph{exact} qubit Hamiltonian
         {\scriptsize\[
           H=-\tfrac{\mu}{2}\!\sum_j Z_j+\tfrac{t-\Delta}{2}\!\sum_j X_jX_{j+1}+\tfrac{t+\Delta}{2}\!\sum_j Y_jY_{j+1}.
@@ -128,10 +128,9 @@
       \small
       Prepare the ground state \emph{variationally}, then detect the phase from a \emph{circuit-measurable} observable.
       \begin{itemize}
-        \item \textbf{Parity-penalized VQE} (\texttt{EfficientSU2} ansatz) prepares the even-sector ground state --- no exact eigenvector needed.
-        \item The topology lives in a \textbf{non-local edge string}
-        \[ O_{\mathrm{edge}}=\Oedge. \]
-        \item Sweeping $\mu$, the string \textbf{turns on} in the topological phase and vanishes in the trivial phase --- it tracks the transition.
+        \item \textbf{Parity-penalized VQE} (\texttt{EfficientSU2}) prepares the even-sector ground state --- no exact eigenvector needed.
+        \item Topology lives in a \textbf{non-local edge string} $O_{\mathrm{edge}}=\Oedge$.
+        \item Sweeping $\mu$: the string \textbf{turns on} in the topological phase, off in the trivial --- it tracks the transition.
       \end{itemize}
     \end{column}
   \end{columns}
@@ -164,11 +163,11 @@
     \end{column}
     \begin{column}{0.42\textwidth}
       \small
-      With a \texttt{NoiseModel}-backed estimator, \emph{every} VQE cost evaluation is corrupted.
+With a \texttt{NoiseModel}-backed estimator, \emph{every} VQE cost evaluation is corrupted.
       \begin{itemize}
-        \item \textbf{Honest warning}: minimizing the \emph{noisy} cost is not the same as preparing the true state.
-        \item Non-unital (e.g.\ $T_1$) noise can \emph{inflate} the measured edge string while the true-state \textbf{fidelity falls}.
-        \item The optimizer happily exploits the noise --- a good number is not a good state.
+        \item \textbf{The two rows:} \emph{top} $=$ measured edge string; \emph{bottom} $=$ \textbf{true-state fidelity} to the exact ground state.
+        \item Non-unital noise ($T_1$, \emph{right}) \textbf{inflates the edge string} while \textbf{fidelity collapses} --- the observable lies.
+        \item Optimizing the noisy cost $\ne$ preparing the state.
       \end{itemize}
     \end{column}
   \end{columns}
@@ -177,16 +176,17 @@
 \begin{frame}{Block 4 --- NISQ Reality Check III: Scaling to Large $L$ (Methods)}
   \small
   To push past the dense $L\!\approx\!15$ wall, the pipeline removes \emph{every} exponential object except the mild $2^L$ statevector.
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.47\textwidth}
       \begin{block}{Removing the two exponentials}
         \begin{itemize}
-          \item \textbf{ED reference $\to$ free fermions}: the Kitaev model is quadratic, so the exact ground state \& edge string come from a $2L\times2L$ \textbf{Bogoliubov--de~Gennes} matrix in $O(L^3)$ (exact to hundreds of sites).
-          \item \textbf{$4^L$ density matrix $\to$ MPS trajectories}: the noisy edge string is sampled by \textbf{quantum-trajectory MPS} ($2^L$ per trajectory) with honest $1/\sqrt{N}$ error bars.
+          \item \textbf{ED reference $\to$ free fermions}: the model is quadratic, so the exact ground state \& edge string come from a $2L\times2L$ \textbf{Bogoliubov--de~Gennes} matrix in $O(L^3)$.
+          \item \textbf{$4^L$ density matrix $\to$ MPS trajectories}: the noisy edge string is sampled by \textbf{quantum-trajectory MPS} ($2^L$ per trajectory), $1/\sqrt{N}$ error bars.
         \end{itemize}
       \end{block}
     \end{column}
-    \begin{column}{0.5\textwidth}
+    \hfill
+    \begin{column}{0.47\textwidth}
       \begin{block}{The mild object + HPC}
         \begin{itemize}
           \item \textbf{Ideal VQE}: a $2^L$ statevector with \emph{sparse} Pauli operators --- never the $4^L$ dense Hamiltonian ($\sim\!500\times$ faster at $L=14$).
@@ -194,6 +194,43 @@
           \item The $(L,\text{reps})$ grid is parallelized on the \textbf{Leipzig SC cluster}.
         \end{itemize}
       \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Block 4 --- Methods Aside: MPS and the Bond Dimension $\chi$}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \small
+      \textbf{Matrix Product States (MPS)}
+      \begin{itemize}
+        \item An $L$-qubit state has $2^L$ amplitudes. An MPS factorizes that one giant tensor into a \textbf{chain of small per-site tensors} linked by \emph{virtual bonds}.
+      \end{itemize}
+      \vspace{0.15cm}
+      \begin{center}
+        \begin{tikzpicture}[every node/.style={font=\scriptsize}]
+          \foreach \x in {0,1,2,3} {
+            \node[draw,circle,fill=topological!25,minimum size=0.48cm] (t\x) at (\x*1.15,0) {};
+            \draw (t\x) -- ++(0,-0.5) node[below]{$2$};
+          }
+          \foreach \x/\y in {0/1,1/2,2/3} {
+            \draw (t\x) -- (t\y) node[midway,above]{$\chi$};
+          }
+        \end{tikzpicture}
+      \end{center}
+      \vspace{0.1cm}
+      Memory $2^L \to O(L\,\chi^2)$: \textbf{linear in $L$} whenever the bond dimension $\chi$ stays bounded.
+    \end{column}
+    \hfill
+    \begin{column}{0.48\textwidth}
+      \small
+      \textbf{The bond dimension $\chi$}
+      \begin{itemize}
+        \item $\chi$ $=$ width of a virtual bond $=$ how much \textbf{entanglement} can cross a cut. Product state $\chi=1$; a generic (volume-law) state needs $\chi\sim2^{L/2}$.
+        \item \textbf{Key:} our fixed-depth ansatz ($r$ reps of linear entanglers) builds at most $\chi\le 2^{r}$ across any cut --- set by \emph{circuit depth, not $L$}.
+      \end{itemize}
+      \vspace{0.1cm}
+      At $r^\ast=4$: $\chi\le 16$ for \emph{every} $L$ --- the noisy edge string costs ${\sim}$linear in $L$, breaking the dense $L\!\approx\!15$ wall.
     \end{column}
   \end{columns}
 \end{frame}
@@ -208,31 +245,31 @@
       \small
       \textbf{The two failure modes decouple.}
       \begin{itemize}
-        \item \textbf{Left:} expressibility is \emph{cheap and $L$-independent} --- a \textbf{constant} depth $r^\ast=4$ reproduces the edge string to $L=16$ (shallow $r=2,3$ fail). The localized edge Majoranas cost $\sim$constant depth however long the chain.
-        \item \textbf{Right:} at fixed depth the CNOT count grows \emph{linearly}, $n_{\mathrm{cnot}}=4(L-1)$, so \textbf{noise is the sole large-$L$ wall} --- the edge string decays exponentially.
+        \item \textbf{Left:} expressibility is \emph{cheap and $L$-independent} --- a \textbf{constant} depth $r^\ast=4$ reproduces the edge string to $L=16$ (shallow $r=2,3$ fail).
+        \item \textbf{Right:} at fixed depth $n_{\mathrm{cnot}}=4(L-1)$ grows \emph{linearly}, so \textbf{noise is the sole large-$L$ wall} --- the edge string decays exponentially.
       \end{itemize}
     \end{column}
   \end{columns}
   \vspace{0.05cm}
   \footnotesize
-  Toy model ($p=0.05$): effectively dead by $L\!\approx\!14$. But under \textbf{real IBM calibration} (Cairo, $2q$ error $\approx0.0075$, ${\sim}6\times$ gentler) the same $60$ CNOTs keep $\expv{O_{\mathrm{edge}}}$ \emph{plateauing} near ${\sim}0.5$ out to $L=16$ --- the diagnostic \textbf{survives much further} on real devices (next slide).
+  Toy ($p=0.05$): dead by $L\!\approx\!14$. Real Cairo ($2q$ err ${\approx}0.0075$, ${\sim}6\times$ gentler) keeps $\expv{O_{\mathrm{edge}}}$ \emph{plateauing} ${\sim}0.5$ to $L=16$ --- it \textbf{survives far further} (next slide).
 \end{frame}
 
-\begin{frame}{Block 4 --- NISQ Reality Check V: Real Hardware vs Toy Model}
+\begin{frame}{Block 4 --- NISQ Reality Check V: Real Hardware to $L=100$}
   \begin{columns}[T]
     \begin{column}{0.62\textwidth}
       \centering
-      \includegraphics[width=\textwidth,height=0.80\textheight,keepaspectratio]{block4_scaling_toy_vs_real.pdf}
+      \includegraphics[width=\textwidth,height=0.80\textheight,keepaspectratio]{block4_largeL_overlay.pdf}
     \end{column}
     \begin{column}{0.38\textwidth}
       \small
-      Same states, same $r^\ast=4$, same $6\!\to\!60$ CNOTs --- only the \emph{noise model} differs (single-step $L=4\ldots16$, Leipzig SC cluster).
+      Every run at $r^\ast=4$, one axis.
       \begin{itemize}
-        \item \textcolor{trivial}{\textbf{Toy} $p=0.05$}: washed out to ${\sim}0.07$ by $L=16$.
-        \item \textcolor{topological}{\textbf{Real IBM Cairo}} ($2q$ err $7.5\times10^{-3}$): decays, then \textbf{plateaus near ${\sim}0.5$} --- the topological signature stays \textbf{robustly measurable to $L=16$}.
+        \item \textbf{Noiseless} (black): flat ${\sim}0.9$ --- topological at \emph{every} $L$.
+        \item \textcolor{gray}{\textbf{Toy}} $p{=}0.05$: ${\sim}6\times$ too harsh, dead by $L=16$.
+        \item \textbf{Real IBM} (\textcolor{critical}{Cairo} / \textcolor{topological}{Brooklyn} / \textcolor{trivial}{Washington}): survive far further; \textbf{agree on the overlap}, ordered by 2q error.
+        \item Gone (${\sim}0.09$) only by $L=100$ --- decoherence over a \emph{linear} CNOT count.
       \end{itemize}
-      \vspace{0.1cm}
-      The toy model is ${\sim}6\times$ too pessimistic: real per-gate errors are gentle enough that the diagnostic survives far beyond the toy prediction.
     \end{column}
   \end{columns}
 \end{frame}
