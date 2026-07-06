@@ -148,6 +148,7 @@ Weekly presentation slides:
 | 7 | Block 3 VQE sweep — parity-constrained state preparation | [week7.pdf](https://edhar98.github.io/majorana-modes-machine/week7.pdf) |
 | 8 | Block 4 kickoff — noise model and failure modes | [week8.pdf](https://edhar98.github.io/majorana-modes-machine/week8.pdf) |
 | 9 | Block 4 — gate-error integration via Qiskit, verification, topological protection | [week9.pdf](https://edhar98.github.io/majorana-modes-machine/week9.pdf) |
+| 10 | Block 4 — NISC Reality Check, Summary | [week10.pdf](https://edhar98.github.io/majorana-modes-machine/week10.pdf) |
 
 ## Notes
 
