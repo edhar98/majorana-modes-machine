@@ -24,29 +24,15 @@
 \definecolor{codecomment}{HTML}{228b22}
 \definecolor{codestring}{HTML}{8b0000}
 
-\lstset{
-  language=Python,
-  basicstyle=\ttfamily\scriptsize,
-  keywordstyle=\color{codekw}\bfseries,
-  commentstyle=\color{codecomment}\itshape,
-  stringstyle=\color{codestring},
-  backgroundcolor=\color{codebg},
-  frame=single,
-  showstringspaces=false,
-  breaklines=true
-}
-
 \newcommand{\ket}[1]{|#1\rangle}
 \newcommand{\bra}[1]{\langle#1|}
-\newcommand{\dyad}[1]{\ket{#1}\bra{#1}}
 \newcommand{\Oedge}{X_0Z_1\cdots Z_{L-2}X_{L-1}}
-\newcommand{\E}{\mathcal{E}}
-\newcommand{\U}{\mathcal{U}}
 \newcommand{\Tr}{\operatorname{Tr}}
 \newcommand{\Pop}{\hat{P}}
+\newcommand{\expv}[1]{\langle #1\rangle}
 
-\title[Kitaev Chain -- Final Synthesis]{Majorana Modes in the Machine}
-\subtitle{Final Synthesis: From the Kitaev Chain to a Noisy Quantum Processor}
+\title[Majorana Modes in the Machine]{Majorana Modes in the Machine}
+\subtitle{Project Summary --- Kitaev Chain \& Majorana Zero Modes on NISQ Hardware}
 \author{Dobromir Stoev\\ Edgar Harutyunyan\\ Guilherme Schewtschik\\ Jaskaran Singh\\ Zhengyi Liu\\ Zhenming Shi}
 \institute{Advanced Seminar -- AI-Augmented Theoretical Physics}
 \date{\today}
@@ -57,326 +43,307 @@
   \titlepage
 \end{frame}
 
-% ── 2. Motivation ─────────────────────────────────────────────────────────────
-\begin{frame}{The Question Behind the Project}
+% ---------------------------------------------------------------------------
+\begin{frame}{The Project in One Slide}
   \begin{columns}[T]
-    \begin{column}{0.56\textwidth}
+    \begin{column}{0.55\textwidth}
       \small
-      \textbf{Majorana zero modes} are the textbook route to a topological qubit:
-      information stored \emph{non-locally} across the two ends of a wire.
+      \textbf{The bridge: fermions $\to$ qubits $\to$ NISQ}
       \begin{itemize}
-        \item The \textbf{Kitaev chain} is the minimal model that hosts them.
-        \item A real quantum processor is \textbf{noisy} (NISQ): finite $T_1/T_2$,
-              imperfect gates, no error correction.
+        \item The \textbf{1D Kitaev chain} is the minimal model of a 1D topological superconductor: in the topological phase it hosts \textbf{Majorana zero modes} localized at its two ends.
+        \item A \textbf{Jordan--Wigner} map turns that fermionic model into an exact qubit Hamiltonian --- so a quantum device can, in principle, host the physics.
+        \item We prepare its ground state by \textbf{VQE} and read the topological signature from a circuit-measurable observable.
       \end{itemize}
-      \begin{block}{Central question}
-        If we \emph{simulate} the Kitaev chain on a gate-based quantum computer,
-        does the topological signature survive the machine that runs it?
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \small
+      \begin{block}{The question}
+        Can a \emph{topological signature} be prepared and still \emph{survive} on a noisy NISQ device --- and how far in system size $L$ can it be pushed?
       \end{block}
-    \end{column}
-    \begin{column}{0.44\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.68\textheight,keepaspectratio]{show_h7_phase_banner.png}\\
-      {\scriptsize The topological window $|\mu|<2t$ we will track throughout.}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ── 3. Roadmap ────────────────────────────────────────────────────────────────
-\begin{frame}{The Arc in Four Blocks}
-  \small
-  \begin{itemize}
-    \item \textbf{Block 1 -- The physics.} Kitaev Hamiltonian, Majorana edge modes,
-          the topological phase transition and its bulk invariant.
-    \item \textbf{Block 2 -- Onto qubits.} Jordan--Wigner mapping, fermion parity,
-          and a \emph{non-local} observable that sees the topology.
-    \item \textbf{Block 3 -- State preparation.} A parity-controlled VQE prepares the
-          ground state across the phase diagram; the diagnostic is validated.
-    \item \textbf{Block 4 -- NISQ reality.} Circuit-level gate noise: what breaks the
-          signal, what protects it, and how deep a circuit should be.
-  \end{itemize}
-  \vspace{0.15cm}
-  \centering
-  \footnotesize This talk follows one thread end-to-end: the \textbf{non-local edge string}
-  $\langle \Oedge\rangle$, from exact physics to a noisy circuit.
-\end{frame}
-
-% ── 4. Block 1: Majorana edge modes ───────────────────────────────────────────
-\begin{frame}{Block 1 -- Where the Majorana Lives}
-  \centering
-  \includegraphics[width=0.86\textwidth,height=0.70\textheight,keepaspectratio]{show_h1_majorana_wavefunction.png}\\
-  \footnotesize
-  In the \textbf{topological} phase ($|\mu|<2t$) one fermion splits into two Majorana
-  halves $\gamma_A,\gamma_B$ pinned to the wire ends, at zero energy. In the
-  \textbf{trivial} phase the lowest mode is gapped and delocalized. The two ends share
-  \emph{one} non-local fermion -- that is the qubit.
-\end{frame}
-
-% ── 5. Block 1: transition ────────────────────────────────────────────────────
-\begin{frame}{Block 1 -- A Genuine Phase Transition}
-  \begin{columns}[T]
-    \begin{column}{0.62\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{show_h3_transition_views.png}
-    \end{column}
-    \begin{column}{0.36\textwidth}
+      \vspace{0.15cm}
       \footnotesize
-      The bulk gap closes exactly at $|\mu|=2t$ and reopens: the two phases cannot be
-      connected without a gap closing.
-      \begin{itemize}
-        \item Topological ($|\mu|<2t$): edge modes, protected degeneracy.
-        \item Trivial ($|\mu|>2t$): no edge modes.
-      \end{itemize}
-      A \textbf{bulk invariant} (winding number) labels the phases; it is a property of
-      the whole band, not of any single site.
+      \textbf{Four Blocks:}
+      \begin{enumerate}
+        \item the physics bridge,
+        \item finite-size physics \& qubit encoding,
+        \item measuring topology with circuits,
+        \item the NISQ reality check (results).
+      \end{enumerate}
     \end{column}
   \end{columns}
 \end{frame}
 
-% ── 6. Block 2: onto qubits + diagnostic ──────────────────────────────────────
-\begin{frame}{Block 2 -- Onto Qubits, and a Non-Local Diagnostic}
+% ============================ BLOCK 1 =====================================
+\begin{frame}{Block 1 --- The Physics Bridge}
   \begin{columns}[T]
     \begin{column}{0.52\textwidth}
-      \small
-      \textbf{Jordan--Wigner} maps the fermion chain to $L$ qubits. Two objects survive
-      the mapping as the physics:
-      \begin{itemize}
-        \item \textbf{Fermion parity} $\Pop=\prod_j Z_j$, a conserved $\mathbb{Z}_2$
-              charge ($[H,\Pop]=0$).
-        \item The \textbf{edge string} $\Oedge$ -- the operator that links the two ends.
-      \end{itemize}
-      No \emph{local} operator (e.g.\ $\langle Z_0\rangle$) can see the topological
-      order; only the string does.
+      \centering
+      \includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{block1_03_phase_diagram.pdf}
     \end{column}
     \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.76\textheight,keepaspectratio]{show_h4_edge_string.png}
+      \small
+      The Kitaev chain: $p$-wave pairing on a 1D lattice,
+      \[
+        E_k=\sqrt{(\mu+2t\cos k)^2+(2\Delta\sin k)^2}.
+      \]
+      \begin{itemize}
+        \item \textbf{Bulk gap} closes only at $|\mu|=2t$ --- the phase boundary.
+        \item \textbf{Topological phase} for $|\mu|<2t$: a $\mathbb{Z}_2$ \textbf{winding number} $\nu=1$; trivial ($\nu=0$) outside.
+        \item Bulk--boundary correspondence $\Rightarrow$ \textbf{Majorana zero modes} pinned to the ends in the topological phase.
+      \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
-% ── 7. Block 3: VQE ───────────────────────────────────────────────────────────
-\begin{frame}{Block 3 -- Preparing the State with a VQE}
+% ============================ BLOCK 2 =====================================
+\begin{frame}{Block 2 --- Finite-Size Physics \& Qubit Encoding}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{block2_01_parity_gap_vs_bdg.pdf}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \footnotesize
+      On a finite chain the two end Majoranas overlap and split, $\Delta_P(L)\sim e^{-L/\xi}$.
+      \begin{itemize}
+        \item \textbf{Exponential protection}: the parity gap shrinks as the chain grows --- longer is better.
+        \item \textbf{Jordan--Wigner} gives the \emph{exact} qubit Hamiltonian
+        {\scriptsize\[
+          H=-\tfrac{\mu}{2}\!\sum_j Z_j+\tfrac{t-\Delta}{2}\!\sum_j X_jX_{j+1}+\tfrac{t+\Delta}{2}\!\sum_j Y_jY_{j+1}.
+        \]}
+        \item \textbf{Parity} $\Pop=\prod_j Z_j$ is a $\mathbb{Z}_2$ symmetry: even/odd sectors label the two near-degenerate ground states.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================ BLOCK 3 =====================================
+\begin{frame}{Block 3 --- Measuring Topology with Quantum Circuits (VQE)}
+  \begin{columns}[T]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{block3_week7_vqe_sweep.pdf}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \small
+      Prepare the ground state \emph{variationally}, then detect the phase from a \emph{circuit-measurable} observable.
+      \begin{itemize}
+        \item \textbf{Parity-penalized VQE} (\texttt{EfficientSU2}) prepares the even-sector ground state --- no exact eigenvector needed.
+        \item Topology lives in a \textbf{non-local edge string} $O_{\mathrm{edge}}=\Oedge$.
+        \item Sweeping $\mu$: the string \textbf{turns on} in the topological phase, off in the trivial --- it tracks the transition.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================ BLOCK 4 =====================================
+\begin{frame}{Block 4 --- NISQ Reality Check I: Noise Breaks the Diagnostic}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.62\textheight,keepaspectratio]{block4_week9_depth_sweep.pdf}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.62\textheight,keepaspectratio]{block4_parity_vs_noise.pdf}
+    \end{column}
+  \end{columns}
+  \vspace{0.1cm}
+  \footnotesize
+  Circuit-level gate noise enters \emph{through the gates}: each \texttt{cx} adds an error channel, so the signal decays as $(1-p_{\mathrm{cx}})^{r(L-1)}$ with depth.
+  \textbf{Left:} an under-expressive ansatz is dead everywhere; once expressive, deeper circuits are pushed down by accumulated CNOT noise.
+  \textbf{Right:} \textcolor{topological}{parity is a symmetry} (protected under dephasing), but the \textcolor{trivial}{edge string (topology) is not noise-immune} --- it decays under every channel.
+\end{frame}
+
+\begin{frame}{Block 4 --- NISQ Reality Check II: Optimizing $\ne$ Preparing}
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{block4_week9_noisy_vqe.pdf}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+With a \texttt{NoiseModel}-backed estimator, \emph{every} VQE cost evaluation is corrupted.
+      \begin{itemize}
+        \item \textbf{The two rows:} \emph{top} $=$ measured edge string; \emph{bottom} $=$ \textbf{true-state fidelity} to the exact ground state.
+        \item Non-unital noise ($T_1$, \emph{right}) \textbf{inflates the edge string} while \textbf{fidelity collapses} --- the observable lies.
+        \item Optimizing the noisy cost $\ne$ preparing the state.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Block 4 --- NISQ Reality Check III: Scaling to Large $L$ (Methods)}
+  \small
+  To push past the dense $L\!\approx\!15$ wall, the pipeline removes \emph{every} exponential object except the mild $2^L$ statevector.
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Removing the two exponentials}
+        \begin{itemize}
+          \item \textbf{ED reference $\to$ free fermions}: the model is quadratic, so the exact ground state \& edge string come from a $2L\times2L$ \textbf{Bogoliubov--de~Gennes} matrix in $O(L^3)$.
+          \item \textbf{$4^L$ density matrix $\to$ MPS trajectories}: the noisy edge string is sampled by \textbf{quantum-trajectory MPS} ($2^L$ per trajectory), $1/\sqrt{N}$ error bars.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \hfill
+    \begin{column}{0.47\textwidth}
+      \begin{block}{The mild object + HPC}
+        \begin{itemize}
+          \item \textbf{Ideal VQE}: a $2^L$ statevector with \emph{sparse} Pauli operators --- never the $4^L$ dense Hamiltonian ($\sim\!500\times$ faster at $L=14$).
+          \item Working point $\mu=0.5t$ (gapped), L-BFGS-B optimizer, ED-free even-sector selection.
+          \item The $(L,\text{reps})$ grid is parallelized on the \textbf{Leipzig SC cluster}.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Block 4 --- Methods Aside: MPS and the Bond Dimension $\chi$}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \small
+      \textbf{Matrix Product States (MPS)}
+      \begin{itemize}
+        \item An $L$-qubit state has $2^L$ amplitudes. An MPS factorizes that one giant tensor into a \textbf{chain of small per-site tensors} linked by \emph{virtual bonds}.
+      \end{itemize}
+      \vspace{0.15cm}
+      \begin{center}
+        \begin{tikzpicture}[every node/.style={font=\scriptsize}]
+          \foreach \x in {0,1,2,3} {
+            \node[draw,circle,fill=topological!25,minimum size=0.48cm] (t\x) at (\x*1.15,0) {};
+            \draw (t\x) -- ++(0,-0.5) node[below]{$2$};
+          }
+          \foreach \x/\y in {0/1,1/2,2/3} {
+            \draw (t\x) -- (t\y) node[midway,above]{$\chi$};
+          }
+        \end{tikzpicture}
+      \end{center}
+      \vspace{0.1cm}
+      Memory $2^L \to O(L\,\chi^2)$: \textbf{linear in $L$} whenever the bond dimension $\chi$ stays bounded.
+    \end{column}
+    \hfill
+    \begin{column}{0.48\textwidth}
+      \small
+      \textbf{The bond dimension $\chi$}
+      \begin{itemize}
+        \item $\chi$ $=$ width of a virtual bond $=$ how much \textbf{entanglement} can cross a cut. Product state $\chi=1$; a generic (volume-law) state needs $\chi\sim2^{L/2}$.
+        \item \textbf{Key:} our fixed-depth ansatz ($r$ reps of linear entanglers) builds at most $\chi\le 2^{r}$ across any cut --- set by \emph{circuit depth, not $L$}.
+      \end{itemize}
+      \vspace{0.1cm}
+      At $r^\ast=4$: $\chi\le 16$ for \emph{every} $L$ --- the noisy edge string costs ${\sim}$linear in $L$, breaking the dense $L\!\approx\!15$ wall.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Block 4 --- NISQ Reality Check IV: The Scaling Result}
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{block4_scaling_Lsweep.pdf}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \textbf{The two failure modes decouple.}
+      \begin{itemize}
+        \item \textbf{Left:} expressibility is \emph{cheap and $L$-independent} --- a \textbf{constant} depth $r^\ast=4$ reproduces the edge string to $L=16$ (shallow $r=2,3$ fail).
+        \item \textbf{Right:} at fixed depth $n_{\mathrm{cnot}}=4(L-1)$ grows \emph{linearly}, so \textbf{noise is the sole large-$L$ wall} --- the edge string decays exponentially.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{0.05cm}
+  \footnotesize
+  Toy ($p=0.05$): dead by $L\!\approx\!14$. Real Cairo ($2q$ err ${\approx}0.0075$, ${\sim}6\times$ gentler) keeps $\expv{O_{\mathrm{edge}}}$ \emph{plateauing} ${\sim}0.5$ to $L=16$ --- it \textbf{survives far further} (next slide).
+\end{frame}
+
+\begin{frame}{Block 4 --- NISQ Reality Check V: Real Hardware to $L=100$}
   \begin{columns}[T]
     \begin{column}{0.62\textwidth}
       \centering
-      \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{block3_week7_vqe_sweep.pdf}
-    \end{column}
-    \begin{column}{0.36\textwidth}
-      \footnotesize
-      A parity-constrained \textbf{EfficientSU2} ansatz is optimized across $\mu$
-      (warm-started to stay in the even sector). The VQE-prepared state reproduces the
-      exact edge-string diagnostic: high inside the topological window, vanishing
-      outside.
-      \vspace{0.15cm}
-
-      This is the \emph{noiseless} circuit we now expose to a device.
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ── 8. Block 4: circuit-level noise ───────────────────────────────────────────
-\begin{frame}{Block 4 -- The NISQ Reality Check}
-  \small
-  We keep the \emph{same} validated VQE state and evolve it as a \textbf{density matrix}
-  through a Qiskit \texttt{NoiseModel}: a quantum channel fires after every gate, and the
-  diagnostic is read as $\Tr[\Oedge\,\rho]$.
-  \begin{itemize}
-    \item \textbf{Depolarizing / thermal ($T_1,T_2$) / phase / amplitude} damping,
-          applied at the circuit level.
-    \item Verified to machine precision ($\sim\!10^{-15}$) against an independent
-          gate-by-gate reference evolution.
-  \end{itemize}
-  \begin{block}{Four questions Block 4 answers}
-    \footnotesize
-    How deep should the circuit be? \; Which errors are recoverable? \;
-    Is parity ``topologically'' protected? \; Does a longer chain help?
-  \end{block}
-\end{frame}
-
-% ── 9. Block 4: depth optimum ─────────────────────────────────────────────────
-\begin{frame}{Block 4 -- The Depth Optimum}
-  \begin{columns}[T]
-    \begin{column}{0.6\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{show_h2_depth_optimum.png}
+      \includegraphics[width=\textwidth,height=0.80\textheight,keepaspectratio]{block4_largeL_overlay.pdf}
     \end{column}
     \begin{column}{0.38\textwidth}
-      \footnotesize
-      Expressibility is a \textbf{threshold}: below a minimum depth the ansatz cannot
-      represent the state; above it, the ideal signal saturates. Gate noise then
-      \emph{decays} as $(1-p_{cx})^{r(L-1)}$.
-      \vspace{0.15cm}
-
-      The optimum is the \textbf{shallowest adequately-expressive depth} -- just deep
-      enough, never deeper.
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ── 10. Block 4: coherent vs incoherent ───────────────────────────────────────
-\begin{frame}{Block 4 -- Two Families of Error}
-  \centering
-  \includegraphics[width=0.9\textwidth,height=0.70\textheight,keepaspectratio]{show_h6_coherent_vs_incoherent.png}\\
-  \footnotesize
-  \textbf{Coherent} (miscalibrated angles $\theta^\ast\!+\!\delta\theta$, ideal gates):
-  the state stays \emph{pure} ($\Tr\rho^2=1$) -- recoverable by recalibration.
-  \textbf{Incoherent} (depolarizing channel): genuine decoherence -- signal \emph{and}
-  purity fall, and the loss cannot be undone.
-\end{frame}
-
-% ── 11. Block 4: parity vs topology ───────────────────────────────────────────
-\begin{frame}{Block 4 -- Parity Protection $\neq$ Topological Protection}
-  \centering
-  \includegraphics[width=0.92\textwidth,height=0.70\textheight,keepaspectratio]{show_h5_parity_vs_topology.png}\\
-  \footnotesize
-  \textbf{Left:} parity-preserving phase damping keeps $\langle\Pop\rangle=1$ exactly;
-  parity is a \emph{symmetry} ($\mathbb{Z}_2$), protected in \emph{every} phase.
-  \textbf{Right:} the topological edge string still decays under every channel -- the
-  symmetry is not the topology.
-\end{frame}
-
-% ── 12. Block 4: noise severs the string / length ─────────────────────────────
-\begin{frame}{Block 4 -- Noise Severs the Non-Local Link}
-  \centering
-  \includegraphics[width=0.92\textwidth,height=0.70\textheight,keepaspectratio]{show_h9_majorana_under_noise.png}\\
-  \footnotesize
-  The Majorana signal is carried by the non-local string, so there are \emph{no} local
-  lobes to hide behind: noise cuts the link between the two ends. \textbf{Left:} the link
-  weakens with separation $L$. \textbf{Right:} on the true VQE state, circuit CNOT noise
-  drives $|\langle\Oedge\rangle|$ from $0.99$ down to $0.26$.
-\end{frame}
-
-% ── 12b. Block 4: backend-calibrated noise ────────────────────────────────────
-\begin{frame}{Block 4 -- From a Toy Model to a Real Device}
-  \begin{columns}[T]
-    \begin{column}{0.6\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.74\textheight,keepaspectratio]{block4_week9_backend_noise.pdf}
-    \end{column}
-    \begin{column}{0.38\textwidth}
-      \footnotesize
-      Replacing the hand-set uniform noise with \texttt{NoiseModel.from\_backend}
-      pulls in a real device's recorded calibration (IBM \texttt{fake\_manila}:
-      per-qubit $T_1/T_2$, per-gate error rates $\sim\!0.01$).
+      \small
+      Every run at $r^\ast=4$, one axis.
       \begin{itemize}
-        \item At $\mu=0$: ideal $0.99 \to$ \textbf{device $0.87$} $\to$ uniform
-              toy ($p=0.05$) $0.67$.
-        \item The calibrated curve sits \emph{between} the two: a uniform toy
-              model \textbf{overstates} the damage.
+        \item \textbf{Noiseless} (black): flat ${\sim}0.9$ --- topological at \emph{every} $L$.
+        \item \textcolor{gray}{\textbf{Toy}} $p{=}0.05$: ${\sim}6\times$ too harsh, dead by $L=16$.
+        \item \textbf{Real IBM} (\textcolor{critical}{Cairo} / \textcolor{topological}{Brooklyn} / \textcolor{trivial}{Washington}): survive far further; \textbf{agree on the overlap}, ordered by 2q error.
+        \item Gone (${\sim}0.09$) only by $L=100$ --- decoherence over a \emph{linear} CNOT count.
       \end{itemize}
-      \textbf{Caveat:} the density matrix is read directly, so backend
-      \emph{readout} error is excluded -- even the device curve is mildly optimistic.
     \end{column}
   \end{columns}
 \end{frame}
 
-% ── 12c. Block 4: noisy VQE optimization ──────────────────────────────────────
-\begin{frame}{Block 4 -- Optimizing the Noisy Cost Is Not Preparing the State}
-  \begin{columns}[T]
-    \begin{column}{0.6\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.64\textheight,keepaspectratio]{block4_week9_noisy_vqe.pdf}
-    \end{column}
-    \begin{column}{0.38\textwidth}
-      \footnotesize
-      The noise now lives \emph{inside} the optimizer -- every cost evaluation is a
-      noisy density-matrix run.
-      \begin{itemize}
-        \item \textbf{Unital} (depolarizing): noise-aware $=$ best-case. This
-              \emph{validates} the noiseless-preparation idealization used throughout.
-        \item \textbf{Non-unital} (amplitude damping): the optimizer \textbf{raises}
-              the edge string (top) while true-state fidelity \textbf{falls} (bottom).
-      \end{itemize}
-      A better \emph{number}, a worse \emph{state}.
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ── 13. Synthesis / thesis ────────────────────────────────────────────────────
-\begin{frame}{Synthesis -- What the Project Establishes}
+\begin{frame}{Block 4 --- Which Physical Errors Kill the Topology?}
   \small
-  \begin{enumerate}
-    \item \textbf{The topology is real, but the signal is non-local.} A single
-          edge-string observable tracks the phase from exact diagonalization all the way
-          to a noisy circuit -- no local probe can.
-    \item \textbf{Parity is symmetry-protected, not topologically protected.} It can be
-          exactly conserved under noise while the topological signal decays: the two must
-          not be conflated.
-    \item \textbf{On NISQ, depth is the lever.} Signal $=$ expressibility threshold
-          $\times$ accumulated gate noise; the optimum is the shallowest
-          adequately-expressive circuit.
-    \item \textbf{Optimizing the device cost $\neq$ preparing the state.} Under
-          non-unital noise a noise-aware VQE can inflate the measured edge string
-          while its fidelity to the true ground state falls -- so we report the
-          honest number, not the flattering one.
-  \end{enumerate}
-  \vspace{0.1cm}
-  \centering
-  \footnotesize A longer chain sharpens the physics (smaller parity gap) but costs more
-  gates -- the device and the physics pull in opposite directions.
-\end{frame}
-
-% ── 14. Methods / what we built ───────────────────────────────────────────────
-\begin{frame}{What We Built}
-  \small
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \textbf{Physics engine}
-      \begin{itemize}
-        \item Exact BdG diagonalization, winding invariant, finite-size scaling.
-        \item Jordan--Wigner qubit Hamiltonian and parity sectors.
-      \end{itemize}
-      \textbf{Quantum circuits}
-      \begin{itemize}
-        \item Parity-constrained VQE (Qiskit), warm-started sweeps.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \textbf{Noise laboratory}
-      \begin{itemize}
-        \item Circuit-level \texttt{NoiseModel} (density-matrix), machine-precision
-              verified.
-        \item Depth, channel, coherent/incoherent, and length studies.
-      \end{itemize}
-      \textbf{Communication}
-      \begin{itemize}
-        \item Intuition-first figure gallery, published to GitHub Pages.
-      \end{itemize}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ── 15. Outlook ───────────────────────────────────────────────────────────────
-\begin{frame}{Outlook}
-  \small
-  \begin{itemize}
-    \item \textbf{Error mitigation.} Zero-noise extrapolation / readout correction on the
-          edge-string estimator -- can the non-local signal be recovered post hoc?
-    \item \textbf{Scaling to larger $L$.} The dense density-matrix path walls near
-          $L\!\approx\!15$; a sparse even-sector solver with statevector VQE and an
-          \emph{ED-free} selection criterion would reach $L\!\sim\!20$--$24$ on HPC.
-    \item \textbf{Beyond the minimal model.} Longer chains, disorder, and interactions
-          toward a more realistic topological wire.
-  \end{itemize}
+  A perturbation is harmless only if it is \textbf{(i) local}, \textbf{(ii) fermion-parity preserving}, and \textbf{(iii) weaker than the bulk gap $\Delta$}. Break any one and the phase dies.
+  \vspace{0.15cm}
+  \begin{center}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Physical error (Kitaev $H$)} & \textbf{Jordan--Wigner $\to$ qubit} & \textbf{Verdict} \\
+    \midrule
+    Charge noise $\delta\mu_i\,c_i^\dagger c_i$ & $\sum_i\delta h_i\,Z_i$ \; (parity-even) & \textcolor{topological}{\textbf{robust}} (up to $\Delta$) \\
+    Quasiparticle poisoning $c_i^\dagger$ & $\bigl(\prod_{k<i}Z_k\bigr)(X_i\!\mp\!iY_i)$ \; (parity-\emph{odd}) & \textcolor{trivial}{\textbf{fatal}}: flips the bit \\
+    Gap closure $\mu\!\to\!2t$ & $\sum_i Z_i$ dominates $\sum_i X_iX_{i+1}$ & \textcolor{trivial}{\textbf{fatal}}: phase transition \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
   \vspace{0.1cm}
   \footnotesize
-  Two prior outlook items are now \emph{done} (this deck): a \texttt{NoiseModel}-backed
-  \textbf{noisy VQE optimization} and \textbf{backend-calibrated} noise from real
-  device data.
+  \textbf{What to measure:} the string order $O_{\mathrm{edge}}$, the fermion parity $P=\prod_j Z_j$, and the splitting $\delta E=|E_{\mathrm{even}}-E_{\mathrm{odd}}|\sim e^{-L/\xi}$ --- exactly the three objects Blocks 2--4 already compute.
 \end{frame}
 
-% ── 16. Closing ───────────────────────────────────────────────────────────────
-\begin{frame}{Thank You}
+\begin{frame}{Block 4 --- Robust Error: Local Disorder (Exact, to $L=32$)}
+  \begin{columns}[T]
+    \begin{column}{0.66\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{block4_disorder_robustness.pdf}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \small
+      Charge noise $=$ a random field $\sum_j\delta h_j Z_j$ (parity-even). Free-fermion BdG with per-site $\mu_j$, exact.
+      \begin{itemize}
+        \item Below the bulk gap $\Delta$ the edge string \textbf{holds} and the splitting stays \emph{exponentially} small.
+        \item Past $W\!\sim\!\Delta$ the gap closes and both die.
+      \end{itemize}
+      \textbf{Local, parity-even, sub-gap $\Rightarrow$ topologically harmless.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Block 4 --- Fatal Error: Quasiparticle Poisoning}
+  \begin{columns}[T]
+    \begin{column}{0.66\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{block4_robust_vs_fatal.pdf}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \small
+      A stray electron $c_0+c_0^\dagger=\gamma_0=X_0$ is \textbf{parity-odd}. Exact diagonalisation, $L=10$.
+      \begin{itemize}
+        \item \textcolor{topological}{Parity-even} $Z$-disorder: $\langle P\rangle{=}{+}1$, edge string survives.
+        \item \textcolor{trivial}{Parity-odd} $g\,X_0$: $\langle P\rangle$ and $O_{\mathrm{edge}}$ \textbf{collapse}.
+      \end{itemize}
+      \textbf{QP poisoning is the Achilles heel}: the poisoning time must beat the gate time.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================ CLOSING =====================================
+\begin{frame}{Takeaways}
+  \begin{itemize}
+    \item The Kitaev chain's Majorana edge signature can be \textbf{prepared and measured on qubits} via a non-local string order $O_{\mathrm{edge}}=\Oedge$.
+    \item \textbf{Parity (symmetry) is protected} under noise; the \textbf{edge string (topology) is not} noise-immune at fixed $L$.
+    \item Classically, both exponentials are removable: the ED reference $\to$ \textbf{free fermions} (BdG), the $4^L$ density matrix $\to$ \textbf{MPS trajectories} --- only a mild $2^L$ statevector remains.
+    \item For the edge-string diagnostic, \textbf{expressibility is $L$-independent} (constant depth $r^\ast=4$): the large-$L$ wall is \emph{decoherence} over a linearly growing gate count.
+    \item On \textbf{real IBM noise} the signature survives far beyond the toy model ($p=0.05$), staying measurable to $L\!\sim\!48$ across devices.
+    \item \textbf{Which errors kill topology?} Local parity-even sub-gap noise is harmless; \textbf{quasiparticle poisoning} (parity-odd) and gap closure are fatal.
+  \end{itemize}
+  \vfill
   \centering
-  \vspace{0.3cm}
-  {\large Majorana Modes in the Machine}\\[0.2cm]
-  \small From the Kitaev chain to a noisy processor -- one non-local signal, followed end
-  to end.\\[0.4cm]
-  \footnotesize
-  Code: \texttt{src/} (blocks 1--4, \texttt{showcase.py}).\quad
-  Notes: \texttt{notes/}.\quad
-  Figures: GitHub Pages gallery.
+  \footnotesize Notes: \texttt{scaling\_to\_large\_L.tex}, \texttt{kitaev\_error\_taxonomy.tex}, \texttt{parity\_topology\_protection.tex}.
 \end{frame}
 
 \end{document}

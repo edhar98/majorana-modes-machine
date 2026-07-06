@@ -88,7 +88,7 @@ Depolarizing noise is symmetric and structureless --- the right first check, but
 
 \paragraph{Why this matters for the Majorana diagnostic.} Two effects are qualitatively distinct from symmetric depolarizing contrast loss:
 \begin{itemize}
-  \item \textbf{$T_1$ is parity poisoning.} In the Jordan--Wigner encoding qubit occupation tracks fermion occupation, so $\ket{1}\to\ket{0}$ flips the fermion parity and pushes the state out of the even sector the diagnostic lives in.
+  \item \textbf{$T_1$ is parity poisoning.} In the repository Jordan--Wigner convention $c_j^\dagger c_j=(I+Z_j)/2$, so $\ket0$ is the occupied local state. Qiskit amplitude damping maps $\ket1\to\ket0$; the important point is that this changes the local $Z_j$ eigenvalue and can flip the global fermion parity, pushing the state out of the even sector the diagnostic lives in.
   \item \textbf{$T_2$ kills non-local coherence.} The edge string is an endpoint-to-endpoint correlator; pure dephasing suppresses exactly the off-diagonal coherence that carries it.
 \end{itemize}
 Because relaxation is gate-duration-dependent and two-qubit gates are the longest, putting the dominant noise on the \texttt{cx} operations is justified from first principles.
