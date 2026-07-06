@@ -32,7 +32,8 @@ depolarizing rate, or one global $T_1/T_2$). This note documents lifting both.
 First, we put the noise \emph{inside} the optimizer, so every cost evaluation is a
 noisy density-matrix simulation. The finding is a clean dichotomy: for
 \textbf{unital} noise (depolarizing) noise-aware optimization changes nothing --
-which retroactively \emph{validates} the noiseless-preparation idealization -- while
+which supports the noiseless-preparation idealization for this $L=4$ ansatz and
+noise model -- while
 for \textbf{non-unital} noise (amplitude damping) it raises the \emph{measured} edge
 string but \emph{lowers} the noiseless fidelity to the true ground state. Minimizing
 the device-level cost is therefore not the same as preparing the state: a better
@@ -232,9 +233,9 @@ at $L=4$.
         symmetric (unital) gate noise it changes nothing; for non-unital noise it can
         raise a chosen observable while degrading fidelity to the target -- an
         artifact to be reported honestly, not a mitigation.
-  \item The unital null result is the quiet payoff: it certifies that the
+  \item The unital null result is the quiet payoff: it indicates that the
         noiseless-preparation idealization used elsewhere in Block~4 is not hiding an
-        optimistic bias for depolarizing noise.
+        obvious optimistic bias for this depolarizing-noise test.
   \item Uniform toy noise is a conservative caricature: a calibrated device model is
         milder, though still not noise-immune, and the device curve here is itself
         optimistic because readout error is excluded.

@@ -53,8 +53,9 @@ $f=\tfrac12(\gamma_L+i\gamma_R)$ whose occupation is the parity bit; the even/od
 ground states become degenerate with splitting (the \emph{parity gap})
 \begin{equation}
   \Delta_P(L)=\bigl|E_0^{+}-E_0^{-}\bigr|
-  \;\approx\; 2t\Bigl(\tfrac{|\mu|}{2t}\Bigr)^{L}=2t\,e^{-L/\xi},
-  \qquad \xi^{-1}=\ln\tfrac{2t}{|\mu|}.
+  \;\approx\; 2t(1-\lambda^2)\lambda^{L},
+  \qquad
+  \lambda=\frac{|\mu|}{2t}=e^{-1/\xi}.
 \end{equation}
 Because $f$ joins the two ends, no \emph{local} operator can read or flip the
 bit. The question for Block 4 is what survives once the device decoheres.
@@ -77,9 +78,11 @@ Channel (Qiskit) & Acts through & vs.\ $\Pop=\prod_j Z_j$ & Effect on $\expv{\Po
 $Z_j$ commutes with $\Pop$, so dephasing leaves $\expv{\Pop}$ untouched. $X_j,Y_j$
 and the lowering operator $\sigma^-=\tfrac{X+iY}{2}$ anticommute with $Z_j$, so a
 single such event flips the global parity. Amplitude damping is additionally
-\emph{biased}: it preferentially sends $\ket1\to\ket0$, i.e.\ removes
-Jordan--Wigner fermions, so it leaks the protected even state into the odd sector
-rather than scrambling it symmetrically.
+\emph{biased}: it preferentially sends $\ket1\to\ket0$. In the repository
+Jordan--Wigner convention $c_j^\dagger c_j=(I+Z_j)/2$, so $\ket0$ is the
+occupied local state; the essential point is that the channel changes the local
+$Z_j$ eigenvalue and can therefore leak the protected even state into the odd
+sector rather than scrambling it symmetrically.
 
 \paragraph{Connection to Week 9.} The realistic \texttt{thermal\_relaxation\_error}
 $(T_1,T_2,\tau)$ used in the Week 9 gate-noise study is exactly the composition of
