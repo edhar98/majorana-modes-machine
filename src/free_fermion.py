@@ -37,15 +37,20 @@ def majorana_matrix(L, t=T, delta=DELTA, mu=0.0):
     """Real antisymmetric 2L x 2L matrix A with H = (i/2) sum_{a<b} A_ab g_a g_b.
 
     Nonzero couplings (derived from the Jordan-Wigner map of the qubit H):
-      on-site   A[2j, 2j+1]   = mu           (from -mu/2 Z_j = i mu/2 g_{2j} g_{2j+1})
+      on-site   A[2j, 2j+1]   = mu_j         (from -mu_j/2 Z_j = i mu_j/2 g_{2j} g_{2j+1})
       bond b-a  A[2j+1, 2j+2] = delta - t    (from (t-delta)/2 X_j X_{j+1})
       bond a-b  A[2j,   2j+3] = t + delta     (from (t+delta)/2 Y_j Y_{j+1})
     plus antisymmetric partners.
+
+    `mu` may be a scalar (uniform chemical potential) or a length-L array of
+    per-site values mu_j -- the latter is how local chemical-potential disorder
+    (charge noise, sum_j delta mu_j Z_j in the qubit picture) enters.
     """
     n = 2 * L
+    mu_arr = np.broadcast_to(np.asarray(mu, dtype=float), (L,))
     A = np.zeros((n, n))
     for j in range(L):
-        A[2 * j, 2 * j + 1] = mu
+        A[2 * j, 2 * j + 1] = mu_arr[j]
     for j in range(L - 1):
         A[2 * j + 1, 2 * j + 2] = delta - t
         A[2 * j, 2 * j + 3] = t + delta

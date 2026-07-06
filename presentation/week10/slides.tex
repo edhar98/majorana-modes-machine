@@ -274,6 +274,63 @@ With a \texttt{NoiseModel}-backed estimator, \emph{every} VQE cost evaluation is
   \end{columns}
 \end{frame}
 
+\begin{frame}{Block 4 --- Which Physical Errors Kill the Topology?}
+  \small
+  A perturbation is harmless only if it is \textbf{(i) local}, \textbf{(ii) fermion-parity preserving}, and \textbf{(iii) weaker than the bulk gap $\Delta$}. Break any one and the phase dies.
+  \vspace{0.15cm}
+  \begin{center}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Physical error (Kitaev $H$)} & \textbf{Jordan--Wigner $\to$ qubit} & \textbf{Verdict} \\
+    \midrule
+    Charge noise $\delta\mu_i\,c_i^\dagger c_i$ & $\sum_i\delta h_i\,Z_i$ \; (parity-even) & \textcolor{topological}{\textbf{robust}} (up to $\Delta$) \\
+    Quasiparticle poisoning $c_i^\dagger$ & $\bigl(\prod_{k<i}Z_k\bigr)(X_i\!\mp\!iY_i)$ \; (parity-\emph{odd}) & \textcolor{trivial}{\textbf{fatal}}: flips the bit \\
+    Gap closure $\mu\!\to\!2t$ & $\sum_i Z_i$ dominates $\sum_i X_iX_{i+1}$ & \textcolor{trivial}{\textbf{fatal}}: phase transition \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.1cm}
+  \footnotesize
+  \textbf{What to measure:} the string order $O_{\mathrm{edge}}$, the fermion parity $P=\prod_j Z_j$, and the splitting $\delta E=|E_{\mathrm{even}}-E_{\mathrm{odd}}|\sim e^{-L/\xi}$ --- exactly the three objects Blocks 2--4 already compute.
+\end{frame}
+
+\begin{frame}{Block 4 --- Robust Error: Local Disorder (Exact, to $L=32$)}
+  \begin{columns}[T]
+    \begin{column}{0.66\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{block4_disorder_robustness.pdf}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \small
+      Charge noise $=$ a random field $\sum_j\delta h_j Z_j$ (parity-even). Free-fermion BdG with per-site $\mu_j$, exact.
+      \begin{itemize}
+        \item Below the bulk gap $\Delta$ the edge string \textbf{holds} and the splitting stays \emph{exponentially} small.
+        \item Past $W\!\sim\!\Delta$ the gap closes and both die.
+      \end{itemize}
+      \textbf{Local, parity-even, sub-gap $\Rightarrow$ topologically harmless.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Block 4 --- Fatal Error: Quasiparticle Poisoning}
+  \begin{columns}[T]
+    \begin{column}{0.66\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{block4_robust_vs_fatal.pdf}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \small
+      A stray electron $c_0+c_0^\dagger=\gamma_0=X_0$ is \textbf{parity-odd}. Exact diagonalisation, $L=10$.
+      \begin{itemize}
+        \item \textcolor{topological}{Parity-even} $Z$-disorder: $\langle P\rangle{=}{+}1$, edge string survives.
+        \item \textcolor{trivial}{Parity-odd} $g\,X_0$: $\langle P\rangle$ and $O_{\mathrm{edge}}$ \textbf{collapse}.
+      \end{itemize}
+      \textbf{QP poisoning is the Achilles heel}: the poisoning time must beat the gate time.
+    \end{column}
+  \end{columns}
+\end{frame}
+
 % ============================ CLOSING =====================================
 \begin{frame}{Takeaways}
   \begin{itemize}
@@ -281,11 +338,12 @@ With a \texttt{NoiseModel}-backed estimator, \emph{every} VQE cost evaluation is
     \item \textbf{Parity (symmetry) is protected} under noise; the \textbf{edge string (topology) is not} noise-immune at fixed $L$.
     \item Classically, both exponentials are removable: the ED reference $\to$ \textbf{free fermions} (BdG), the $4^L$ density matrix $\to$ \textbf{MPS trajectories} --- only a mild $2^L$ statevector remains.
     \item For the edge-string diagnostic, \textbf{expressibility is $L$-independent} (constant depth $r^\ast=4$): the large-$L$ wall is \emph{decoherence} over a linearly growing gate count.
-    \item On \textbf{real IBM noise} the signature \textbf{plateaus near ${\sim}0.5$} and stays measurable to $L=16$ --- far beyond where the toy model ($p=0.05$) predicts.
+    \item On \textbf{real IBM noise} the signature survives far beyond the toy model ($p=0.05$), staying measurable to $L\!\sim\!48$ across devices.
+    \item \textbf{Which errors kill topology?} Local parity-even sub-gap noise is harmless; \textbf{quasiparticle poisoning} (parity-odd) and gap closure are fatal.
   \end{itemize}
   \vfill
   \centering
-  \footnotesize Notes: \texttt{scaling\_to\_large\_L.tex}, \texttt{week9\_note.tex}, \texttt{parity\_topology\_protection.tex}.
+  \footnotesize Notes: \texttt{scaling\_to\_large\_L.tex}, \texttt{kitaev\_error\_taxonomy.tex}, \texttt{parity\_topology\_protection.tex}.
 \end{frame}
 
 \end{document}
