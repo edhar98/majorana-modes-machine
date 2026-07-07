@@ -6,6 +6,13 @@
 \usepackage{xcolor}
 \definecolor{topological}{HTML}{1f77b4}
 \definecolor{trivial}{HTML}{d62728}
+\definecolor{codebg}{HTML}{f5f5f5}
+\usepackage{listings}
+\lstset{language=Python, basicstyle=\ttfamily\footnotesize, columns=fullflexible,
+        keepspaces=true, breaklines=true, showstringspaces=false,
+        backgroundcolor=\color{codebg}, frame=single, rulecolor=\color{codebg!60!black},
+        xleftmargin=0.5em, framexleftmargin=0.5em, aboveskip=0.6em, belowskip=0.6em,
+        commentstyle=\color{topological!60!black}\itshape}
 \geometry{margin=2.5cm}
 \graphicspath{{../plots/}}
 
@@ -107,7 +114,98 @@ gap. The splitting is \emph{exponentially smaller} for larger $L$ (right panel),
 both curves staying pinned until $W\!\sim\!\Delta$.}
 \end{figure}
 
+\section{Charge noise at the code level}
+The same physical error --- local chemical-potential (charge) noise --- is realised
+in three different solvers in the codebase. All three encode the \emph{identical}
+perturbation; they differ only in representation and in what they can measure.
+
+\subsection{Physical origin and the JW map}
+Charge noise is a random shift of each site's chemical potential,
+$\delta\mu_i\,c_i^\dagger c_i=\delta\mu_i\,n_i$. Jordan--Wigner sends the number
+operator to a \emph{diagonal} single-qubit operator,
+\begin{equation}
+  n_i=c_i^\dagger c_i=\tfrac12\bigl(1-Z_i\bigr)
+  \quad\Longrightarrow\quad
+  \delta\mu_i\,n_i=\text{const}-\tfrac{\delta\mu_i}{2}\,Z_i ,
+\end{equation}
+so charge noise is a per-site longitudinal field $\sum_i\delta h_i Z_i$ with
+$\delta h_i=-\delta\mu_i/2$. Two properties drive everything below, and each one
+shows up mechanically in the code: it is \textbf{parity-even} ($[Z_i,\Pop]=0$, so
+it can be added as a real diagonal and the state keeps its parity sector), and at
+the fermion level it is nothing but a \textbf{per-site $\mu_i$}.
+
+\subsection{(A) Exact BdG: a per-site $\mu_j$}
+The free-fermion solver (\code{src/free\_fermion.py}) takes a scalar \emph{or} a
+length-$L$ array $\mu$; each site's value lands on that site's on-site Majorana
+coupling in the $2L\times2L$ antisymmetric matrix,
+\begin{lstlisting}
+mu_arr = np.broadcast_to(np.asarray(mu, dtype=float), (L,))
+A = np.zeros((2*L, 2*L))
+for j in range(L):
+    A[2*j, 2*j+1] = mu_arr[j]      # -mu_j/2 Z_j -> i mu_j/2 g_{2j} g_{2j+1}
+\end{lstlisting}
+\code{disorder\_sweep} (\code{src/block4\_errors.py}) is then just: draw a random
+per-site $\mu$, solve, and average the diagnostics over realisations,
+\begin{lstlisting}
+for r in range(n_real):
+    mu_j = mu0 + rng.uniform(-W, W, size=L)   # charge noise = random per-site mu
+    gr   = ground(L, T, DELTA, mu_j)
+    e[r] = abs(ff_edge(gr['cov']))            # edge string
+    g[r] = gr['parity_gap']                   # splitting
+\end{lstlisting}
+Here $W$ is the half-width of the uniform draw (the $x$-axis of the robust figure).
+Because each solve is an $O(L^3)$ diagonalisation of a $2L\times2L$ matrix, this is
+exact to $L=32$.
+
+\subsection{(B) ED contrast: a diagonal $Z$-field}
+On the qubit Hamiltonian the same field is added \emph{directly}, exploiting that
+$Z_j$ is diagonal (\code{contrast\_ed}, \code{src/block4\_errors.py}):
+\begin{lstlisting}
+zdiag = [local_z(L, j).to_matrix(sparse=True).diagonal().real for j in range(L)]
+...
+dh  = rng.uniform(-s, s, size=L)
+d   = sum(dh[j] * zdiag[j] for j in range(L))   # sum_j dh_j Z_j, as a diagonal
+H   = H0 + sp.diags(d)                           # cheap: no dense matrix add
+psi = _ground_even(H, Pdiag)                     # <- stay in the EVEN sector
+\end{lstlisting}
+The \code{\_ground\_even} projection is the code-level statement of
+``parity-preserving'': a parity-even perturbation cannot move the logical bit out
+of its sector, so the edge string is read \emph{within} the even sector. (The fatal
+channel of \S\ref{sec:fatal} uses the unconstrained ground state instead, so parity
+is free to flip --- the single line that separates robust from fatal.)
+
+\subsection{(C) VQE target: a SparsePauliOp}
+For the on-circuit demonstration the field becomes a \code{SparsePauliOp} added to
+the VQE target (\code{vqe\_overlay}, \code{src/block4\_errors.py}):
+\begin{lstlisting}
+def H_robust(s):
+    H = H0
+    for j in range(L):
+        H = H + (s * w[j]) * local_z(L, j)    # H0 + s * sum_j w_j Z_j
+    return H.simplify()
+# w = rng.uniform(-1, 1, size=L) fixed; optimize with lam=1, even_select=True
+\end{lstlisting}
+The profile $w$ is a \emph{fixed} seeded pattern scaled by $s$ (deterministic, so
+each $s$ is one Hamiltonian and one optimisation, no disorder averaging), and VQE
+runs with the parity penalty on, mirroring (B). This produces the ideal- and
+noisy-VQE markers of \code{block4\_vqe\_taxonomy.pdf}.
+
+\paragraph{One sign identity.} Since $H_0$ carries $-\tfrac{\mu_0}{2}\sum_j Z_j$,
+adding $s\,w_j Z_j$ is exactly an effective per-site $\mu_j=\mu_0-2s\,w_j$: (C) and
+(A) are the \emph{same} charge-noise perturbation, once as a qubit operator and once
+as a per-site chemical potential.
+
+\subsection{Why ``robust'' is automatic}
+In all three the field enters as a \textbf{real, diagonal, parity-even} term and the
+state is taken in the even sector, so $\expv{\Pop}\equiv+1$ by construction and
+$\expv{O_{\mathrm{edge}}}$ only erodes once $W$ (or $s$) approaches the bulk gap
+$\Delta$ --- the \code{axvline} at $\Delta$ in the robust figure. Contrast the fatal
+channel, which is added as an \textbf{off-diagonal, parity-odd} $X_0$ and solved
+\emph{without} the even-sector projection: that one representational difference is
+what flips it from robust to fatal.
+
 \section{Negative control: quasiparticle poisoning is fatal (exact diagonalisation)}
+\label{sec:fatal}
 A quasiparticle-poisoning event adds or removes one fermion at the end,
 $c_0+c_0^\dagger=\gamma_0=X_0$ --- a \emph{parity-odd} boundary operator. Because
 the logical bit lives in two \emph{zero-energy} Majoranas, an arbitrarily weak
