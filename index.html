@@ -3,149 +3,910 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Seminar project on Majorana modes, Kitaev-chain topology, VQE preparation, and NISQ noise.">
   <title>Majorana Modes in the Machine</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem auto; max-width: 1000px; padding: 0 1rem; line-height: 1.5; }
-    h1 { margin-bottom: 0.25rem; }
-    h2 { margin-top: 2.4rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
-    ul { padding-left: 1.25rem; }
-    li { margin: 0.35rem 0; }
-    a { text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .muted { color: #888; }
-    .thesis { font-size: 1.1rem; }
-    /* White cards so figures render identically in light & dark themes. */
-    .hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; margin: 1.5rem 0; }
-    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
-    figure.card { margin: 0; background: #fff; border-radius: 10px; padding: 0.7rem; box-shadow: 0 1px 6px rgba(0,0,0,0.18); }
-    figure.card img { width: 100%; height: auto; border-radius: 6px; display: block; }
-    figure.card figcaption { font-size: 0.92rem; color: #333; margin-top: 0.55rem; }
-    figure.card .links { font-size: 0.85rem; margin-top: 0.4rem; color: #555; }
+:root {
+  color-scheme: light;
+  --ink: #121417;
+  --muted: #626a72;
+  --line: #dfe3e7;
+  --paper: #ffffff;
+  --wash: #f6f4f0;
+  --accent: #d7358a;
+  --accent-2: #167f7a;
+  --accent-gradient: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--wash);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+a {
+  color: inherit;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+.hero {
+  position: relative;
+  min-height: 68vh;
+  padding: 1.25rem;
+  display: flex;
+  align-items: end;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+.hero-copy {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 1.35rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 8px solid transparent;
+  border-image: var(--accent-gradient) 1;
+}
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--accent-2);
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h1 {
+  margin-bottom: 0.75rem;
+  font-size: 3rem;
+  line-height: 1.04;
+}
+h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+h3 {
+  margin-bottom: 0.35rem;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+.lede {
+  max-width: 720px;
+  margin-bottom: 1rem;
+  color: #272b31;
+  font-size: 1.08rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.1rem;
+}
+.action {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.58rem 0.8rem;
+  border: 1px solid transparent;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.action.secondary {
+  background: #ffffff;
+  border-color: #cfd5db;
+  color: var(--ink);
+}
+main {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+.band {
+  padding: 3rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+.thesis {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.thesis li {
+  padding: 0.95rem 1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--accent-2);
+  border-radius: 8px;
+}
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.stage,
+.figure-card,
+.week-card,
+.note-group {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.stage {
+  min-height: 12rem;
+  padding: 1rem;
+}
+.stage strong {
+  display: inline-block;
+  margin-bottom: 0.55rem;
+  color: var(--accent-2);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.stage p,
+.figure-card p,
+.week-card p {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.figure-card {
+  overflow: hidden;
+}
+.media {
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+.media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.figure-body,
+.week-card,
+.note-group {
+  padding: 1rem;
+}
+.meta {
+  margin-bottom: 0.45rem;
+  color: var(--accent-2);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+.links a {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+  color: #1f2933;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.weeks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.week-card {
+  min-height: 10.5rem;
+  display: flex;
+  flex-direction: column;
+}
+.week-card .links {
+  margin-top: auto;
+  padding-top: 0.9rem;
+}
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.note-group h3 {
+  color: var(--accent-2);
+}
+.note-group ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.note-group li {
+  margin: 0.35rem 0;
+}
+.empty {
+  color: var(--muted);
+}
+footer {
+  padding: 2rem 0 3rem;
+  color: var(--muted);
+}
+@media (max-width: 900px) {
+  .intro-grid,
+  .timeline,
+  .gallery,
+  .weeks,
+  .notes {
+    grid-template-columns: 1fr;
+  }
+  .hero {
+    min-height: 62vh;
+    padding: 0.85rem;
+  }
+  .hero::before {
+    background-position: center top;
+    background-size: 100% auto;
+  }
+  .hero-copy {
+    padding: 1rem;
+  }
+  h1 {
+    font-size: 2.25rem;
+  }
+}
   </style>
 </head>
 <body>
-  <h1>Majorana Modes in the Machine</h1>
-  <p class="muted">Advanced Seminar — AI-Augmented Theoretical Physics</p>
-  <p class="thesis">Can a noisy (NISQ) quantum device still resolve the
-    topological phase of a Kitaev chain? A nine-week study from the bulk
-    physics of Majorana zero modes to circuit-level gate noise on a VQE.</p>
-  <div class="hero">
-    <figure class="card">
-      <a href="img/show_h1_majorana_wavefunction.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h1_majorana_wavefunction.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="Real-space Majorana zero-mode wavefunction"></a>
-      <figcaption><strong>Where the Majorana lives.</strong> One fermion split
-        into two halves pinned to opposite ends of the wire — the topological
-        phase made visible.</figcaption>
-    </figure>
-    <figure class="card">
-      <a href="img/show_h2_depth_optimum.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h2_depth_optimum.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="Optimal circuit depth under gate noise"></a>
-      <figcaption><strong>The depth optimum.</strong> Deeper circuits express the
-        state better but accumulate gate noise; the measured signal peaks at a
-        finite, shallow depth.</figcaption>
-    </figure>
-  </div>
-  <h2>The story in figures</h2>
-  <div class="gallery">
-    <figure class="card">
-      <a href="img/show_h7_phase_banner.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h7_phase_banner.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="Kitaev chain phase diagram"></a>
-      <figcaption><strong>The map.</strong> The bulk gap closes and the winding
-        number flips at $\mu=\pm2t$: the topological window in the middle.</figcaption>
-      <div class="links"><a href="week1.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 1 slides</a></div>
-    </figure>
-    <figure class="card">
-      <a href="img/show_h3_transition_views.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h3_transition_views.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="The phase transition in three synchronized views"></a>
-      <figcaption><strong>Crossing the transition.</strong> As $\mu$ sweeps, the
-        gap closes, the d-vector loop slips off the origin, and the edge mode
-        lifts off zero — all at once.</figcaption>
-      <div class="links"><a href="week1.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 1 slides</a></div>
-    </figure>
-    <figure class="card">
-      <a href="img/show_h4_edge_string.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h4_edge_string.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="The non-local edge string vs a local probe"></a>
-      <figcaption><strong>A non-local probe.</strong> The edge string pierces the
-        whole chain and tracks the phase; no single-site measurement can see it.</figcaption>
-      <div class="links"><a href="week6.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 6 slides</a> ·
-        <a href="notes/measuring_topology_qiskit.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">note</a></div>
-    </figure>
-    <figure class="card">
-      <a href="img/show_h9_majorana_under_noise.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h9_majorana_under_noise.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="The Majorana correlation severed by gate noise"></a>
-      <figcaption><strong>Noise severs the link.</strong> In the qubit/VQE
-        encoding there are no local lobes to blur (parity forbids local order);
-        noise instead cuts the non-local string between the two ends — the
-        end-to-end correlation collapses with Majorana separation and with
-        circuit depth.</figcaption>
-      <div class="links"><a href="week9.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 9 slides</a> ·
-        <a href="notes/block4_noise_diagnostic.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">note</a></div>
-    </figure>
-    <figure class="card">
-      <a href="img/show_h5_parity_vs_topology.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h5_parity_vs_topology.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="Parity vs edge string under noise"></a>
-      <figcaption><strong>Symmetry is not topology.</strong> Parity is exactly
-        conserved under dephasing, yet the non-local edge string still decays.</figcaption>
-      <div class="links"><a href="week9.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 9 slides</a> ·
-        <a href="notes/parity_topology_protection.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">note</a></div>
-    </figure>
-    <figure class="card">
-      <a href="img/show_h6_coherent_vs_incoherent.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h6_coherent_vs_incoherent.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="Coherent rotation vs incoherent mixing"></a>
-      <figcaption><strong>Rotation vs mixing.</strong> Coherent miscalibration keeps
-        the state pure (purity $\approx1$); incoherent gate noise mixes it
-        (purity falls).</figcaption>
-      <div class="links"><a href="week9.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 9 slides</a></div>
-    </figure>
-    <figure class="card">
-      <a href="img/show_h8_length_tradeoff.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">
-        <img src="img/show_h8_length_tradeoff.png?v=d923d1ec47304667b395ec6c4c1d8be33ef81304"
-             alt="Chain-length tradeoff under noise"></a>
-      <figcaption><strong>The length tradeoff.</strong> Longer chains protect the
-        qubit intrinsically but expose more sites and gates to noise — the two
-        effects pull opposite ways.</figcaption>
-      <div class="links"><a href="notes/finite_size_majorana_splitting.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">note</a> ·
-        <a href="notes/majorana_splitting_vs_L.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">note</a></div>
-    </figure>
-  </div>
-  <h2>Presentations</h2>
-  <ul>
-              <li><a href="week1.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 1 slides</a></li>
-              <li><a href="week2.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 2 slides</a></li>
-              <li><a href="week3.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 3 slides</a></li>
-              <li><a href="week4.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 4 slides</a></li>
-              <li><a href="week5.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 5 slides</a></li>
-              <li><a href="week6.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 6 slides</a></li>
-              <li><a href="week7.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 7 slides</a></li>
-              <li><a href="week8.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 8 slides</a></li>
-              <li><a href="week9.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 9 slides</a></li>
-              <li><a href="week10.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">Week 10 slides</a></li>
-  </ul>
-  <h2>Notes</h2>
-  <ul>
-              <li><a href="notes/block4_noise_diagnostic.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">block4 noise diagnostic</a></li>
-              <li><a href="notes/finite_size_majorana_splitting.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">finite size majorana splitting</a></li>
-              <li><a href="notes/ising_comparison.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">ising comparison</a></li>
-              <li><a href="notes/kitaev_error_taxonomy.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">kitaev error taxonomy</a></li>
-              <li><a href="notes/majorana_splitting_vs_L.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">majorana splitting vs L</a></li>
-              <li><a href="notes/measuring_topology_qiskit.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">measuring topology qiskit</a></li>
-              <li><a href="notes/noisy_vqe_and_backend_noise.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">noisy vqe and backend noise</a></li>
-              <li><a href="notes/parity_topology_protection.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">parity topology protection</a></li>
-              <li><a href="notes/qubit_encoding_derivations.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">qubit encoding derivations</a></li>
-              <li><a href="notes/scaling_to_large_L.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">scaling to large L</a></li>
-              <li><a href="notes/topology_noise_reps_scaling.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">topology noise reps scaling</a></li>
-              <li><a href="notes/week6_phase_sweep.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">week6 phase sweep</a></li>
-              <li><a href="notes/week7_vqe_sweep.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">week7 vqe sweep</a></li>
-              <li><a href="notes/week9_note.pdf?v=d923d1ec47304667b395ec6c4c1d8be33ef81304">week9 note</a></li>
-  </ul>
+  <header class="hero" style="--hero-image: url('img/majorana_zero_modes_hero.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55')">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">Advanced Seminar / AI-Augmented Theoretical Physics</p>
+        <h1>Majorana Modes in the Machine</h1>
+        <p class="lede">A project page for the full arc: Kitaev-chain topology, Jordan-Wigner qubits, VQE string-order measurement, and the circuit-level noise study that decides what survives on NISQ hardware.</p>
+        <div class="actions" aria-label="Primary links">
+          <a class="action" href="https://github.com/edhar98/majorana-modes-machine">GitHub project</a>
+          <a class="action secondary" href="#figures">View figures</a>
+          <a class="action secondary" href="#slides">Browse slides</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="band intro-grid" aria-labelledby="thesis-heading">
+      <div>
+        <h2 id="thesis-heading">What the project answers</h2>
+        <p class="lede">The central question is not whether Majorana physics is beautiful in the exact model. It is whether the measurable topological signal can still be prepared, verified, and read out after realistic circuit noise enters.</p>
+      </div>
+      <ul class="thesis">
+        <li><strong>Topology gives the target.</strong> The Kitaev chain has a sharp bulk transition and exponentially split edge modes.</li>
+        <li><strong>The measured signal is non-local.</strong> The useful qubit diagnostic is an edge string, not a local order parameter.</li>
+        <li><strong>Noise sets the operating point.</strong> The best circuit is the shallowest one that is already expressive enough.</li>
+      </ul>
+    </section>
+    <section class="band" aria-labelledby="arc-heading">
+      <h2 id="arc-heading">Project arc</h2>
+      <div class="timeline">
+        <article class="stage">
+          <strong>Block 1</strong>
+          <h3>Bulk topology</h3>
+          <p>BdG bands, winding number, phase diagram, and Majorana edge modes.</p>
+        </article>
+        <article class="stage">
+          <strong>Block 2</strong>
+          <h3>Qubit encoding</h3>
+          <p>Jordan-Wigner mapping, parity sectors, and exact qubit checks.</p>
+        </article>
+        <article class="stage">
+          <strong>Block 3</strong>
+          <h3>Measurement</h3>
+          <p>VQE preparation and a circuit-measurable non-local edge string.</p>
+        </article>
+        <article class="stage">
+          <strong>Block 4</strong>
+          <h3>NISQ reality check</h3>
+          <p>Density-matrix gate noise, verification, depth optimum, parity, and scaling.</p>
+        </article>
+      </div>
+    </section>
+    <section class="band" id="figures" aria-labelledby="figures-heading">
+      <h2 id="figures-heading">Figure gallery</h2>
+      <div class="gallery">
+        
+        <article class="figure-card">
+          <a class="media" href="plots/block1_02_trajectory_deformation.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_02_trajectory_deformation.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="02 Trajectory Deformation" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>02 Trajectory Deformation</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_02_trajectory_deformation.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block1_03_phase_diagram.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_03_phase_diagram.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="03 Phase Diagram" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>03 Phase Diagram</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_03_phase_diagram.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block1_04_finite_size_spectrum.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_04_finite_size_spectrum.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="04 Finite Size Spectrum" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>04 Finite Size Spectrum</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_04_finite_size_spectrum.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block1_05_realspace_snapshot.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_05_realspace_snapshot.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="05 Realspace Snapshot" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>05 Realspace Snapshot</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_05_realspace_snapshot.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block1_06_majorana_splitting.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_06_majorana_splitting.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="06 Majorana Splitting" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>06 Majorana Splitting</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_06_majorana_splitting.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block1_07_bulk_dispersion_panels.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_07_bulk_dispersion_panels.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="07 Bulk Dispersion Panels" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>07 Bulk Dispersion Panels</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_07_bulk_dispersion_panels.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block1_08_winding_loops_panels.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_08_winding_loops_panels.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="08 Winding Loops Panels" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>08 Winding Loops Panels</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_08_winding_loops_panels.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block1_09_npabs_comparison.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block1_09_npabs_comparison.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="09 Npabs Comparison" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>09 Npabs Comparison</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block1_09_npabs_comparison.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block2_01_parity_gap_vs_bdg.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block2_01_parity_gap_vs_bdg.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="01 Parity Gap Vs Bdg" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>01 Parity Gap Vs Bdg</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block2_01_parity_gap_vs_bdg.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block2_02_qubit_spectrum.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block2_02_qubit_spectrum.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="02 Qubit Spectrum" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>02 Qubit Spectrum</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block2_02_qubit_spectrum.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_01_vqe_observables_test.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_01_vqe_observables_test.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="01 Vqe Observables Test" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>01 Vqe Observables Test</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_01_vqe_observables_test.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week5_ansatz.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week5_ansatz.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Ansatz" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Ansatz</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week5_ansatz.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week5_convergence.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week5_convergence.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Convergence" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Convergence</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week5_convergence.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week5_correlation.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week5_correlation.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Correlation" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Correlation</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week5_correlation.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week5_meas_correlation.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week5_meas_correlation.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Meas Correlation" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Meas Correlation</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week5_meas_correlation.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week5_meas_local.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week5_meas_local.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Meas Local" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Meas Local</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week5_meas_local.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week6_finite_size.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week6_finite_size.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Finite Size" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Finite Size</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week6_finite_size.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week6_finite_size_local.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week6_finite_size_local.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Finite Size Local" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Finite Size Local</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week6_finite_size_local.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week6_phase_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week6_phase_sweep.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Phase Sweep" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Phase Sweep</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week6_phase_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week7_depth_fidelity.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week7_depth_fidelity.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Depth Fidelity" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Depth Fidelity</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week7_depth_fidelity.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block3_week7_vqe_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block3_week7_vqe_sweep.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Vqe Sweep" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Vqe Sweep</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block3_week7_vqe_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_disorder_robustness.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_disorder_robustness.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Disorder Robustness" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Disorder Robustness</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_disorder_robustness.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_largeL_overlay.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_largeL_overlay.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Largel Overlay" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Largel Overlay</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_largeL_overlay.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_length_under_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_length_under_noise.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Length Under Noise" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Length Under Noise</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_length_under_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_parity_vs_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_parity_vs_noise.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Parity Vs Noise" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Parity Vs Noise</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_parity_vs_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_robust_vs_fatal.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_robust_vs_fatal.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Robust Vs Fatal" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Robust Vs Fatal</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_robust_vs_fatal.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_scaling_Lsweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_scaling_Lsweep.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Scaling Lsweep" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Scaling Lsweep</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_scaling_Lsweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_vqe_taxonomy.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_vqe_taxonomy.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Vqe Taxonomy" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Vqe Taxonomy</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_vqe_taxonomy.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_week8_noise_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_week8_noise_sweep.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Noise Sweep" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Noise Sweep</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_week8_noise_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_week9_backend_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_week9_backend_noise.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Backend Noise" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Backend Noise</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_week9_backend_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_week9_depth_optimum.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_week9_depth_optimum.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Depth Optimum" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Depth Optimum</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_week9_depth_optimum.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_week9_depth_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_week9_depth_sweep.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Depth Sweep" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Depth Sweep</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_week9_depth_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_week9_noisy_vqe.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_week9_noisy_vqe.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Noisy Vqe" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Noisy Vqe</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_week9_noisy_vqe.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_week9_parameter_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_week9_parameter_noise.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Parameter Noise" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Parameter Noise</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_week9_parameter_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+
+        <article class="figure-card">
+          <a class="media" href="plots/block4_week9_verification.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">
+            <img src="img/plot_thumbs/block4_week9_verification.png?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55" alt="Verification" loading="lazy">
+          </a>
+          <div class="figure-body">
+            <h3>Verification</h3>
+            <p>Existing project figure generated by the block runners or analysis scripts.</p>
+            <div class="links"><a href="plots/block4_week9_verification.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open plot</a></div>
+          </div>
+        </article>
+    
+      </div>
+    </section>
+    <section class="band" id="slides" aria-labelledby="slides-heading">
+      <h2 id="slides-heading">Presentations</h2>
+      <div class="weeks">
+        
+        <article class="week-card">
+          <div class="meta">Week 1 / Block 1</div>
+          <h3>Physics bridge</h3>
+          <p>Kitaev chain, BdG Hamiltonian, and the first topological invariant.</p>
+          <div class="links"><a href="week1.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 2 / Block 1</div>
+          <h3>Bulk topology</h3>
+          <p>Winding number, phase diagram, and the gap closing at mu = +/- 2t.</p>
+          <div class="links"><a href="week2.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 3 / Blocks 1-2</div>
+          <h3>Finite-size edge physics</h3>
+          <p>Majorana edge modes, splitting, and the bridge into qubits.</p>
+          <div class="links"><a href="week3.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 4 / Block 2</div>
+          <h3>Jordan-Wigner encoding</h3>
+          <p>Qubit Hamiltonian, parity sectors, and exact qubit spectra.</p>
+          <div class="links"><a href="week4.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 5 / Block 3</div>
+          <h3>VQE preparation</h3>
+          <p>Hardware-efficient RY/CNOT ansatz and first edge-string measurements.</p>
+          <div class="links"><a href="week5.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 6 / Block 3</div>
+          <h3>String-order sweep</h3>
+          <p>Circuit-measurable edge string across the topological transition.</p>
+          <div class="links"><a href="week6.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 7 / Block 3</div>
+          <h3>Parity-constrained VQE</h3>
+          <p>Warm-start mu sweep, ED validation, and depth diagnostics.</p>
+          <div class="links"><a href="week7.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 8 / Block 4</div>
+          <h3>Noise kickoff</h3>
+          <p>Frozen-state readout and gate-noise diagnostics after the VQE baseline.</p>
+          <div class="links"><a href="week8.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 9 / Block 4</div>
+          <h3>Circuit-level NISQ study</h3>
+          <p>Density-matrix noise, verification, depth optimum, parity, and length.</p>
+          <div class="links"><a href="week9.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+
+        <article class="week-card">
+          <div class="meta">Week 10 / Synthesis</div>
+          <h3>Final capstone</h3>
+          <p>End-to-end thesis from Majorana physics to noisy quantum circuits.</p>
+          <div class="links"><a href="week10.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Open slides</a></div>
+        </article>
+    
+      </div>
+    </section>
+    <section class="band" id="notes" aria-labelledby="notes-heading">
+      <h2 id="notes-heading">Notes</h2>
+      <div class="notes">
+        
+        <section class="note-group">
+          <h3>Encoding and exact physics</h3>
+          <ul>
+            <li><a href="notes/finite_size_majorana_splitting.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Finite-size Majorana splitting</a></li>
+<li><a href="notes/ising_comparison.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Ising comparison</a></li>
+<li><a href="notes/majorana_splitting_vs_L.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Majorana splitting versus L</a></li>
+<li><a href="notes/qubit_encoding_derivations.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Jordan-Wigner derivations</a></li>
+          </ul>
+        </section>
+        
+
+        <section class="note-group">
+          <h3>VQE and measurement</h3>
+          <ul>
+            <li><a href="notes/measuring_topology_qiskit.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Measuring topology in Qiskit</a></li>
+<li><a href="notes/week6_phase_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Week 6 phase sweep</a></li>
+<li><a href="notes/week7_vqe_sweep.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Week 7 VQE sweep</a></li>
+          </ul>
+        </section>
+        
+
+        <section class="note-group">
+          <h3>Noise and scaling</h3>
+          <ul>
+            <li><a href="notes/block4_noise_diagnostic.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Block 4 noise diagnostic</a></li>
+<li><a href="notes/kitaev_error_taxonomy.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Kitaev error taxonomy</a></li>
+<li><a href="notes/noisy_vqe_and_backend_noise.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Noisy VQE and backend noise</a></li>
+<li><a href="notes/parity_topology_protection.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Parity versus topology</a></li>
+<li><a href="notes/scaling_to_large_L.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Scaling to large L</a></li>
+<li><a href="notes/topology_noise_reps_scaling.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Topology, noise, and reps scaling</a></li>
+<li><a href="notes/week9_note.pdf?v=1b3c14a1e4e6838a4c60717ce960eef18e039c55">Week 9 gate-noise study</a></li>
+          </ul>
+        </section>
+        
+      </div>
+    </section>
+    <footer>
+      <p>Generated from the repository slides, notes, and existing plot artifacts. Cache key: 1b3c14a1e4e6838a4c60717ce960eef18e039c55.</p>
+    </footer>
+  </main>
 </body>
 </html>
