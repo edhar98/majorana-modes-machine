@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Final reflection on using LLMs during the Majorana modes seminar project.">
+  <title>LLM Project Feedback</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #121417;
+  --muted: #626a72;
+  --line: #dfe3e7;
+  --paper: #ffffff;
+  --wash: #f6f4f0;
+  --accent: #d7358a;
+  --accent-2: #167f7a;
+  --accent-gradient: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--wash);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+a {
+  color: inherit;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+.hero {
+  position: relative;
+  min-height: 68vh;
+  padding: 1.25rem;
+  display: flex;
+  align-items: end;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+.hero-copy {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 1.35rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 8px solid transparent;
+  border-image: var(--accent-gradient) 1;
+}
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--accent-2);
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h1 {
+  margin-bottom: 0.75rem;
+  font-size: 3rem;
+  line-height: 1.04;
+}
+h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+h3 {
+  margin-bottom: 0.35rem;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+.lede {
+  max-width: 720px;
+  margin-bottom: 1rem;
+  color: #272b31;
+  font-size: 1.08rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.1rem;
+}
+.action {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.58rem 0.8rem;
+  border: 1px solid transparent;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.action.secondary {
+  background: #ffffff;
+  border-color: #cfd5db;
+  color: var(--ink);
+}
+main {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+.band {
+  padding: 3rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+.thesis {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.thesis li {
+  padding: 0.95rem 1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--accent-2);
+  border-radius: 8px;
+}
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.stage,
+.figure-card,
+.week-card,
+.note-group {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.stage {
+  min-height: 12rem;
+  padding: 1rem;
+}
+.stage strong {
+  display: inline-block;
+  margin-bottom: 0.55rem;
+  color: var(--accent-2);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.stage p,
+.figure-card p,
+.week-card p {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.figure-card {
+  overflow: hidden;
+}
+.media {
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+.media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.figure-body,
+.week-card,
+.note-group {
+  padding: 1rem;
+}
+.meta {
+  margin-bottom: 0.45rem;
+  color: var(--accent-2);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+.links a {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+  color: #1f2933;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.weeks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.week-card {
+  min-height: 10.5rem;
+  display: flex;
+  flex-direction: column;
+}
+.week-card .links {
+  margin-top: auto;
+  padding-top: 0.9rem;
+}
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.note-group h3 {
+  color: var(--accent-2);
+}
+.note-group ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.note-group li {
+  margin: 0.35rem 0;
+}
+.empty {
+  color: var(--muted);
+}
+.feedback-hero {
+  min-height: 52vh;
+}
+.feedback-page .band {
+  padding: 2.7rem 0;
+}
+.reflection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.reflection-card {
+  min-height: 13rem;
+  padding: 1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.reflection-card.accent {
+  border-left: 6px solid var(--accent);
+}
+.reflection-card.teal {
+  border-left: 6px solid var(--accent-2);
+}
+.reflection-card p,
+.reflection-card li {
+  color: var(--muted);
+}
+.reflection-card ul,
+.tip-list,
+.improvement-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.reflection-card li,
+.tip-list li,
+.improvement-list li {
+  margin: 0.45rem 0;
+}
+.reflection-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+.quote-panel {
+  padding: 1.2rem;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-left: 8px solid transparent;
+  border-image: var(--accent-gradient) 1;
+  border-radius: 8px;
+}
+.quote-panel p:last-child {
+  margin-bottom: 0;
+}
+.back-link {
+  display: inline-flex;
+  min-height: 2.2rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: var(--accent-2);
+  font-weight: 800;
+  text-decoration: none;
+}
+footer {
+  padding: 2rem 0 3rem;
+  color: var(--muted);
+}
+@media (max-width: 900px) {
+  .intro-grid,
+  .timeline,
+  .gallery,
+  .weeks,
+  .notes,
+  .reflection-grid,
+  .reflection-split {
+    grid-template-columns: 1fr;
+  }
+  .hero {
+    min-height: 62vh;
+    padding: 0.85rem;
+  }
+  .hero::before {
+    background-position: center top;
+    background-size: 100% auto;
+  }
+  .hero-copy {
+    padding: 1rem;
+  }
+  h1 {
+    font-size: 2.25rem;
+  }
+}
+  </style>
+</head>
+<body class="feedback-page">
+  <header class="hero feedback-hero" style="--hero-image: url('img/majorana_zero_modes_hero.png?v=7d946ba6e16394018185e989f50afdad4a4e5b0a')">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">Final feedback / LLM-assisted research workflow</p>
+        <h1>What We Learned From Using LLMs</h1>
+        <p class="lede">A review of an AI-heavy seminar workflow: what helped, what failed, what made the project reproducible, and what we would recommend to students using LLMs for research-style work.</p>
+        <div class="actions" aria-label="Feedback page links">
+          <a class="action" href="index.html">Back to project</a>
+          <a class="action secondary" href="#workflow">Workflow</a>
+          <a class="action secondary" href="#tips">Personal tips</a>
+          <a class="action secondary" href="#future">Future improvements</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="band reflection-split" aria-labelledby="summary-heading">
+      <div>
+        <a class="back-link" href="index.html">Back to the seminar page</a>
+        <h2 id="summary-heading">Overall experience</h2>
+        <p class="lede">We learned <strong>a lot</strong>. The project grew far beyond a normal 5 CP seminar task, precisely because LLMs made it cheap to keep expanding scope: physics derivations, code, plots, slides, notes, audits, and finally this web page.</p>
+        <p>The paid coding assistants were clearly stronger for sustained work. We mainly used <strong>Claude (Opus&nbsp;4.8)</strong> and <strong>ChatGPT (GPT&#8209;5.5)</strong> inside <strong>Cursor</strong>, and tried <em>NotebookLM</em>, <em>Gemini</em>, and <em>DeepSeek</em> early on. NotebookLM was good for <em>concept understanding and visual learning</em>, but weaker for continuous, file-based project work.</p>
+      </div>
+      <aside class="quote-panel">
+        <h3>Final takeaway</h3>
+        <p>LLMs can multiply your productivity &mdash; but <u>only if the project is organized enough that both you and the agent can verify what is true.</u></p>
+      </aside>
+    </section>
+    <section class="band" id="workflow" aria-labelledby="workflow-heading">
+      <h2 id="workflow-heading">Workflow that worked</h2>
+      <div class="reflection-grid">
+        <article class="reflection-card teal">
+          <h3>Start with the environment</h3>
+          <p>Before any physics, set up the workspace: a <strong>clear project structure</strong>, <strong>Git/GitHub</strong>, reproducible commands, and a <em>shared instruction file</em>. Here <code>AGENTS.md</code> became the agent's persistent memory and kept style, conventions, and build commands <strong>stable across weeks</strong>.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Everything is a file</h3>
+          <p>A <strong>Linux, file-first</strong> workflow was decisive: code, LaTeX, notes, prompts, build scripts, and caches all became files you can <em>version, diff, and verify</em>. That is also how you control an agent's memory &mdash; and why we preferred <strong>CLI and file-based tools over web chat</strong>, where knowledge stays trapped in the window.</p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Short, focused agents</h3>
+          <p>For hard tasks, a <strong>fresh agent with clean context</strong> beat overloading one long conversation. Knowledge-style side questions belong in a <em>separate thread or an aside command</em>, so the main task &mdash; plotting, coding, a deck &mdash; does not <em>drift</em>.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Advisor and audit patterns</h3>
+          <p>Complex steps benefited from a main agent consulting <strong>advisor agents</strong>, running <strong>subagents in parallel</strong>, and <em>cross-model review</em>. We even had Opus&nbsp;4.8 write the prompt for a <strong>Fable&nbsp;5 audit</strong> of the whole project.</p>
+        </article>
+      </div>
+    </section>
+    <section class="band" aria-labelledby="project-highlights-heading">
+      <h2 id="project-highlights-heading">Project highlights</h2>
+      <div class="reflection-grid">
+        <article class="reflection-card teal">
+          <h3>From physics to infrastructure</h3>
+          <p>The most valuable output was not text but <strong>reusable infrastructure</strong>: block runners, <code>Makefile</code> targets, LaTeX notes, slides, dependency checks, and this <strong>GitHub Pages</strong> build.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Build tools, not repeated commands</h3>
+          <p>Know <em>when to play ignorant and when to be specific</em>. If you cannot compile LaTeX you can ask the model every time &mdash; and <em>stay dependent</em>. If you know the command, ask it to write a <strong><code>Makefile</code> target</strong> both human and agent reuse. The second path <strong>compounds</strong>.</p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>LaTeX was a real advantage</h3>
+          <p>LLMs are strong with text and <em>cheaper in tokens</em> on it. Writing notes and decks in <strong>LaTeX</strong> made everything easier to edit, review, compile, and keep consistent &mdash; and turned explanations into <strong>searchable project assets</strong> instead of lost chat windows.</p>
+        </article>
+      </div>
+    </section>
+    <section class="band reflection-split" id="tips" aria-labelledby="tips-heading">
+      <div>
+        <h2 id="tips-heading">Personal tips</h2>
+        <p class="lede">The best results came from knowing <em>when to be specific</em> and <em>when to let the model propose options</em>.</p>
+      </div>
+      <ol class="tip-list">
+        <li><strong>Read the generated code.</strong> Understanding it is what lets you write sharper prompts.</li>
+        <li>Be <strong>specific</strong> when you already know the result; leave room for the model to be <em>creative</em> when you are genuinely exploring.</li>
+        <li>Make the model <strong>cite exact files, commands, and outputs</strong> before you trust an &ldquo;it's fixed.&rdquo;</li>
+        <li>Keep <strong>one canonical source of truth</strong> for the physics (shared runners), not scattered notebook-local copies that quietly diverge.</li>
+      </ol>
+    </section>
+    <section class="band" aria-labelledby="risks-heading">
+      <h2 id="risks-heading">Risks and bad habits</h2>
+      <div class="reflection-grid">
+        <article class="reflection-card accent">
+          <h3>Productivity can become laziness</h3>
+          <p>Short prompts are efficient, but they <em>erode writing discipline</em>. The model tolerates rough text while the human slowly loses <strong>precision, grammar, and polish</strong>.</p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Learning can become too filtered</h3>
+          <p>When most explanations come from an LLM window, awareness of <strong>cited, reviewed, trustworthy sources</strong> weakens. Scientific work still needs <em>external references</em>.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Confidence without proof</h3>
+          <p>LLMs sound certain even when a <em>sign convention, file path, dependency, or physics claim</em> is wrong. <u>Independent verification remains mandatory.</u></p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Generated artifacts need boundaries</h3>
+          <p>Agents happily spawn extra plots, caches, thumbnails, and pages. That only helps when generated output is <strong>controlled and separated</strong> from source.</p>
+        </article>
+      </div>
+    </section>
+    <section class="band reflection-split" id="future" aria-labelledby="future-heading">
+      <div>
+        <h2 id="future-heading">Future improvements</h2>
+        <p class="lede">For a future seminar, we would make LLM use <em>more collaborative, more reproducible, and more research-oriented</em> from the start.</p>
+      </div>
+      <ul class="improvement-list">
+        <li>A <strong>shared team plan</strong> (for example Claude Team), provided by a professor or university, would give every student the same project context through <em>persistent workspaces</em>.</li>
+        <li>Topics could be <strong>more diverse and more research-oriented</strong> &mdash; ideally to the point where results become <em>publishable</em>.</li>
+        <li>Every plot should carry <strong>provenance</strong>: source script, command, parameters, cache inputs, and the slides or notes that depend on it.</li>
+        <li><strong>Automatic checks</strong> should verify figures, notes, slides, caches, and web assets <em>before</em> publishing.</li>
+        <li>Review prompts should explicitly hunt for <strong>bugs, missing tests, invalid assumptions, and scientific weak points</strong> &mdash; while the student stays responsible for <u>correctness, taste, and final judgment</u>.</li>
+      </ul>
+    </section>
+    <footer>
+      <p>Generated from the repository site builder. Cache key: 7d946ba6e16394018185e989f50afdad4a4e5b0a.</p>
+    </footer>
+  </main>
+</body>
+</html>
