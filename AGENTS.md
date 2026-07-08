@@ -265,10 +265,10 @@ Standalone LaTeX documents. Source `.tex` files are tracked; generated `notes/*.
 - `majorana_splitting_vs_L.tex` — derivation of `E₀(L) ~ (|μ|/2t)^L`, overlap proxy argument, conceptual clarifications on BdG spectrum interpretation
 - `qubit_encoding_derivations.tex` — Jordan-Wigner derivation details
 - `measuring_topology_qiskit.tex` — Block 3 notes on Qiskit state preparation, local/string observables, and shot-based measurement protocols.
-- `week6_phase_sweep.tex` — Week 6 notes on sweeping `mu`, measuring the non-local edge string, and bridging to Block 4 noise studies.
-- `week7_vqe_sweep.tex` — Week 7 notes on parity-constrained VQE sweep preparation, EfficientSU2 repetitions, subspace fidelity, ideal vs shot-based VQE, and edge-string measurement from bitstrings.
+- `string_order_phase_sweep.tex` — Block 3 notes on sweeping `mu`, measuring the non-local edge string, and bridging to Block 4 noise studies.
+- `parity_constrained_vqe_sweep.tex` — Block 3 notes on parity-constrained VQE sweep preparation, EfficientSU2 repetitions, subspace fidelity, ideal vs shot-based VQE, and edge-string measurement from bitstrings.
 - `block4_noise_diagnostic.tex` — merged Block 4/Week 8 notes: practical `src/block4.py` frozen-state edge-string noise diagnostic, plus broader theory for measurement-basis rotations, asymmetric SPAM/readout bias, relaxation/dephasing, and noisy VQE optimization explicitly marked as not implemented yet.
-- `week9_note.tex` — Week 9 circuit-level gate-noise study: density-matrix `NoiseModel`, machine-precision verification, the depth-optimum (expressibility threshold) result, and the coherent-vs-incoherent (theta+dtheta) study.
+- `circuit_level_gate_noise.tex` — Block 4 circuit-level gate-noise study: density-matrix `NoiseModel`, machine-precision verification, the depth-optimum (expressibility threshold) result, and the coherent-vs-incoherent (theta+dtheta) study.
 - `parity_topology_protection.tex` — the professor's Q1/Q2: parity is protected by `Z2` symmetry (not topology), the non-local edge string is not noise-immune at fixed `L`, and chain length acts in opposing directions (intrinsic gap improves as `e^{-L/xi}` while device vulnerability grows with `L`).
 - `topology_noise_reps_scaling.tex` — standalone explanation of why topology matters despite non-immune measurements, and how `L`, `reps`, CNOT count, and measured edge-string contrast trade off.
 - `noisy_vqe_and_backend_noise.tex` — Block 4 extension notes for plots 8-9: noisy-cost VQE optimization and backend-calibrated noise.

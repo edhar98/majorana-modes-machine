@@ -50,7 +50,7 @@ if /I "%TARGET:~0,5%"=="note-" (
 )
 
 echo Unknown target: %TARGET%
-echo Usage: make week8 ^| make notes ^| make note-week7_vqe_sweep ^| make all ^| make clean
+echo Usage: make week8 ^| make notes ^| make note-parity_constrained_vqe_sweep ^| make all ^| make clean
 exit /b 1
 
 :compile_all_weeks

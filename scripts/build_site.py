@@ -60,27 +60,42 @@ WEEKS = (
 FIGURES: tuple[Figure, ...] = ()
 
 
+# Notes are grouped by project Block and listed chronologically within each Block
+# (tuple order == display order within a group; see NOTE_ORDER / render_notes).
+BLOCK_GROUPS = (
+    "Block 1: Kitaev chain and Majorana physics",
+    "Block 2: Jordan-Wigner qubit encoding",
+    "Block 3: VQE preparation and measurement",
+    "Block 4: NISQ noise and scaling",
+    "Additional notes",
+)
+
 NOTES = (
-    Note("qubit_encoding_derivations", "Jordan-Wigner derivations", "Encoding and exact physics"),
-    Note("finite_size_majorana_splitting", "Finite-size Majorana splitting", "Encoding and exact physics"),
-    Note("majorana_splitting_vs_L", "Majorana splitting versus L", "Encoding and exact physics"),
-    Note("ising_comparison", "Ising comparison", "Encoding and exact physics"),
-    Note("measuring_topology_qiskit", "Measuring topology in Qiskit", "VQE and measurement"),
-    Note("week6_phase_sweep", "Week 6 phase sweep", "VQE and measurement"),
-    Note("week7_vqe_sweep", "Week 7 VQE sweep", "VQE and measurement"),
-    Note("block4_noise_diagnostic", "Block 4 noise diagnostic", "Noise and scaling"),
-    Note("week9_note", "Week 9 gate-noise study", "Noise and scaling"),
-    Note("noisy_vqe_and_backend_noise", "Noisy VQE and backend noise", "Noise and scaling"),
-    Note("parity_topology_protection", "Parity versus topology", "Noise and scaling"),
-    Note("topology_noise_reps_scaling", "Topology, noise, and reps scaling", "Noise and scaling"),
-    Note("scaling_to_large_L", "Scaling to large L", "Noise and scaling"),
-    Note("kitaev_error_taxonomy", "Kitaev error taxonomy", "Noise and scaling"),
+    # Block 1 -- Kitaev chain and Majorana physics
+    Note("finite_size_majorana_splitting", "Finite-size Majorana splitting", BLOCK_GROUPS[0]),
+    Note("majorana_splitting_vs_L", "Majorana splitting versus L", BLOCK_GROUPS[0]),
+    # Block 2 -- Jordan-Wigner qubit encoding
+    Note("qubit_encoding_derivations", "Jordan-Wigner derivations", BLOCK_GROUPS[1]),
+    Note("ising_comparison", "Ising comparison", BLOCK_GROUPS[1]),
+    # Block 3 -- VQE preparation and measurement
+    Note("measuring_topology_qiskit", "Measuring topology in Qiskit", BLOCK_GROUPS[2]),
+    Note("string_order_phase_sweep", "String-order phase sweep", BLOCK_GROUPS[2]),
+    Note("parity_constrained_vqe_sweep", "Parity-constrained VQE sweep", BLOCK_GROUPS[2]),
+    # Block 4 -- NISQ noise and scaling
+    Note("block4_noise_diagnostic", "Block 4 noise diagnostic", BLOCK_GROUPS[3]),
+    Note("circuit_level_gate_noise", "Circuit-level gate noise", BLOCK_GROUPS[3]),
+    Note("parity_topology_protection", "Parity versus topology", BLOCK_GROUPS[3]),
+    Note("noisy_vqe_and_backend_noise", "Noisy VQE and backend noise", BLOCK_GROUPS[3]),
+    Note("topology_noise_reps_scaling", "Topology, noise, and reps scaling", BLOCK_GROUPS[3]),
+    Note("scaling_to_large_L", "Scaling to large L", BLOCK_GROUPS[3]),
+    Note("kitaev_error_taxonomy", "Kitaev error taxonomy", BLOCK_GROUPS[3]),
 )
 
 
 WEEK_METADATA = {week.number: week for week in WEEKS}
 FIGURE_METADATA = {figure.filename: figure for figure in FIGURES}
 NOTE_METADATA = {note.stem: note for note in NOTES}
+NOTE_ORDER = {note.stem: i for i, note in enumerate(NOTES)}  # chronological within blocks
 
 
 CSS = """
@@ -633,12 +648,14 @@ def render_notes(paths: list[Path], version: str) -> str:
         groups.setdefault(note_group(path.stem), []).append(path)
 
     rendered: list[str] = []
-    for group in ("Encoding and exact physics", "VQE and measurement", "Noise and scaling", "Additional notes"):
+    for group in BLOCK_GROUPS:
         if group not in groups:
             continue
+        # chronological within the block (NOTES tuple order); unknown stems last
+        ordered = sorted(groups[group], key=lambda p: NOTE_ORDER.get(p.stem, 10_000))
         items = "\n".join(
             f'<li><a href="{esc(versioned("notes/" + path.name, version))}">{esc(note_title(path.stem))}</a></li>'
-            for path in groups[group]
+            for path in ordered
         )
         rendered.append(f"""
         <section class="note-group">
@@ -766,10 +783,11 @@ def render_feedback(version: str) -> str:
     <div class="hero-inner">
       <div class="hero-copy">
         <p class="eyebrow">Final feedback / LLM-assisted research workflow</p>
-        <h1>What I Learned From Using LLMs</h1>
-        <p class="lede">A personal review of how language models helped this seminar project, where they were risky, and what I would change in future physics and quantum-computing workflows.</p>
+        <h1>What We Learned From Using LLMs</h1>
+        <p class="lede">A review of an AI-heavy seminar workflow: what helped, what failed, what made the project reproducible, and what we would recommend to students using LLMs for research-style work.</p>
         <div class="actions" aria-label="Feedback page links">
           <a class="action" href="index.html">Back to project</a>
+          <a class="action secondary" href="#workflow">Workflow</a>
           <a class="action secondary" href="#tips">Personal tips</a>
           <a class="action secondary" href="#future">Future improvements</a>
         </div>
@@ -781,82 +799,96 @@ def render_feedback(version: str) -> str:
       <div>
         <a class="back-link" href="index.html">Back to the seminar page</a>
         <h2 id="summary-heading">Overall experience</h2>
-        <p class="lede">LLMs were most useful when I treated them as an engineering and explanation partner, not as an authority. They helped me move faster from physics ideas to code, plots, notes, slides, and a publishable web page.</p>
-        <p>The strongest use case was iteration: asking for a first structure, checking it against the repository, improving the visual design, and then verifying the generated files. The weakest use case was anything that required scientific trust without independent checks.</p>
+        <p class="lede">We learned <strong>a lot</strong>. The project grew far beyond a normal 5 CP seminar task, precisely because LLMs made it cheap to keep expanding scope: physics derivations, code, plots, slides, notes, audits, and finally this web page.</p>
+        <p>The paid coding assistants were clearly stronger for sustained work. We mainly used <strong>Claude (Opus&nbsp;4.8)</strong> and <strong>ChatGPT (GPT&#8209;5.5)</strong> inside <strong>Cursor</strong>, and tried <em>NotebookLM</em>, <em>Gemini</em>, and <em>DeepSeek</em> early on. NotebookLM was good for <em>concept understanding and visual learning</em>, but weaker for continuous, file-based project work.</p>
       </div>
       <aside class="quote-panel">
         <h3>Final takeaway</h3>
-        <p>LLMs can speed up a project dramatically, but the human still has to own the physics, the conventions, the data provenance, and the final taste.</p>
+        <p>LLMs can multiply your productivity &mdash; but <u>only if the project is organized enough that both you and the agent can verify what is true.</u></p>
       </aside>
     </section>
-    <section class="band" aria-labelledby="worked-heading">
-      <h2 id="worked-heading">What worked well</h2>
+    <section class="band" id="workflow" aria-labelledby="workflow-heading">
+      <h2 id="workflow-heading">Workflow that worked</h2>
       <div class="reflection-grid">
         <article class="reflection-card teal">
-          <h3>Turning rough ideas into structure</h3>
-          <p>The model was helpful for breaking a broad seminar topic into blocks: Kitaev physics, Jordan-Wigner encoding, VQE measurement, and NISQ noise.</p>
+          <h3>Start with the environment</h3>
+          <p>Before any physics, set up the workspace: a <strong>clear project structure</strong>, <strong>Git/GitHub</strong>, reproducible commands, and a <em>shared instruction file</em>. Here <code>AGENTS.md</code> became the agent's persistent memory and kept style, conventions, and build commands <strong>stable across weeks</strong>.</p>
         </article>
         <article class="reflection-card accent">
-          <h3>Code and presentation glue</h3>
-          <p>It was useful for connecting scripts, figures, notes, slides, and the GitHub Pages site, especially when the task was mechanical but error-prone.</p>
+          <h3>Everything is a file</h3>
+          <p>A <strong>Linux, file-first</strong> workflow was decisive: code, LaTeX, notes, prompts, build scripts, and caches all became files you can <em>version, diff, and verify</em>. That is also how you control an agent's memory &mdash; and why we preferred <strong>CLI and file-based tools over web chat</strong>, where knowledge stays trapped in the window.</p>
         </article>
         <article class="reflection-card teal">
-          <h3>Fast visual iteration</h3>
-          <p>The page design improved through several short feedback loops: changing the hero figure, moving the chain, simplifying colors, and replacing the final-deck link with the repository link.</p>
+          <h3>Short, focused agents</h3>
+          <p>For hard tasks, a <strong>fresh agent with clean context</strong> beat overloading one long conversation. Knowledge-style side questions belong in a <em>separate thread or an aside command</em>, so the main task &mdash; plotting, coding, a deck &mdash; does not <em>drift</em>.</p>
         </article>
         <article class="reflection-card accent">
-          <h3>Consistency checks</h3>
-          <p>The model was valuable when asked to verify what slides and notes actually imported, recover cache files, and avoid publishing stale generated artifacts.</p>
+          <h3>Advisor and audit patterns</h3>
+          <p>Complex steps benefited from a main agent consulting <strong>advisor agents</strong>, running <strong>subagents in parallel</strong>, and <em>cross-model review</em>. We even had Opus&nbsp;4.8 write the prompt for a <strong>Fable&nbsp;5 audit</strong> of the whole project.</p>
         </article>
       </div>
     </section>
-    <section class="band" aria-labelledby="limits-heading">
-      <h2 id="limits-heading">What did not work well</h2>
+    <section class="band" aria-labelledby="project-highlights-heading">
+      <h2 id="project-highlights-heading">Project highlights</h2>
       <div class="reflection-grid">
-        <article class="reflection-card accent">
-          <h3>Confidence without proof</h3>
-          <p>LLMs can sound certain even when a convention, sign, file path, or figure dependency is wrong. In this project, physics conventions had to be pinned down explicitly.</p>
-        </article>
         <article class="reflection-card teal">
-          <h3>Generated artifacts need boundaries</h3>
-          <p>It is easy for a model to create extra plots, thumbnails, or pages. That is only helpful when generated output is separated from source artifacts and caches.</p>
+          <h3>From physics to infrastructure</h3>
+          <p>The most valuable output was not text but <strong>reusable infrastructure</strong>: block runners, <code>Makefile</code> targets, LaTeX notes, slides, dependency checks, and this <strong>GitHub Pages</strong> build.</p>
         </article>
         <article class="reflection-card accent">
-          <h3>Context can drift</h3>
-          <p>Long projects need persistent instructions. Otherwise the assistant may forget which branch publishes the site, which figures are canonical, or which scripts are allowed to regenerate data.</p>
+          <h3>Build tools, not repeated commands</h3>
+          <p>Know <em>when to play ignorant and when to be specific</em>. If you cannot compile LaTeX you can ask the model every time &mdash; and <em>stay dependent</em>. If you know the command, ask it to write a <strong><code>Makefile</code> target</strong> both human and agent reuse. The second path <strong>compounds</strong>.</p>
         </article>
         <article class="reflection-card teal">
-          <h3>Scientific judgment is not outsourced</h3>
-          <p>The model can explain and implement, but it cannot replace checking equations, validating plots, or deciding whether a result is physically meaningful.</p>
+          <h3>LaTeX was a real advantage</h3>
+          <p>LLMs are strong with text and <em>cheaper in tokens</em> on it. Writing notes and decks in <strong>LaTeX</strong> made everything easier to edit, review, compile, and keep consistent &mdash; and turned explanations into <strong>searchable project assets</strong> instead of lost chat windows.</p>
         </article>
       </div>
     </section>
     <section class="band reflection-split" id="tips" aria-labelledby="tips-heading">
       <div>
         <h2 id="tips-heading">Personal tips</h2>
-        <p class="lede">The best results came from giving the model narrow tasks with visible verification criteria.</p>
+        <p class="lede">The best results came from knowing <em>when to be specific</em> and <em>when to let the model propose options</em>.</p>
       </div>
       <ol class="tip-list">
-        <li>Keep a clear source of truth for conventions, commands, and generated artifacts.</li>
-        <li>Ask for small changes and inspect the result before asking for the next one.</li>
-        <li>Make the model cite exact files, commands, and outputs when it claims something is fixed.</li>
-        <li>Do not accept physics derivations or numerical claims without an independent check.</li>
-        <li>Separate source plots, cache files, thumbnails, and published web output.</li>
-        <li>Commit often before large cleanup or restructuring steps.</li>
+        <li><strong>Read the generated code.</strong> Understanding it is what lets you write sharper prompts.</li>
+        <li>Be <strong>specific</strong> when you already know the result; leave room for the model to be <em>creative</em> when you are genuinely exploring.</li>
+        <li>Make the model <strong>cite exact files, commands, and outputs</strong> before you trust an &ldquo;it's fixed.&rdquo;</li>
+        <li>Keep <strong>one canonical source of truth</strong> for the physics (shared runners), not scattered notebook-local copies that quietly diverge.</li>
       </ol>
+    </section>
+    <section class="band" aria-labelledby="risks-heading">
+      <h2 id="risks-heading">Risks and bad habits</h2>
+      <div class="reflection-grid">
+        <article class="reflection-card accent">
+          <h3>Productivity can become laziness</h3>
+          <p>Short prompts are efficient, but they <em>erode writing discipline</em>. The model tolerates rough text while the human slowly loses <strong>precision, grammar, and polish</strong>.</p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Learning can become too filtered</h3>
+          <p>When most explanations come from an LLM window, awareness of <strong>cited, reviewed, trustworthy sources</strong> weakens. Scientific work still needs <em>external references</em>.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Confidence without proof</h3>
+          <p>LLMs sound certain even when a <em>sign convention, file path, dependency, or physics claim</em> is wrong. <u>Independent verification remains mandatory.</u></p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Generated artifacts need boundaries</h3>
+          <p>Agents happily spawn extra plots, caches, thumbnails, and pages. That only helps when generated output is <strong>controlled and separated</strong> from source.</p>
+        </article>
+      </div>
     </section>
     <section class="band reflection-split" id="future" aria-labelledby="future-heading">
       <div>
         <h2 id="future-heading">Future improvements</h2>
-        <p class="lede">For a future project, I would use LLMs more deliberately and build stronger guardrails around them.</p>
+        <p class="lede">For a future seminar, we would make LLM use <em>more collaborative, more reproducible, and more research-oriented</em> from the start.</p>
       </div>
       <ul class="improvement-list">
-        <li>Use a project memory file from the beginning, especially for physics conventions and build commands.</li>
-        <li>Add automatic dependency checks for figures, notes, slides, caches, and web assets.</li>
-        <li>Track provenance for every plot: source script, command, parameters, and cache inputs.</li>
-        <li>Prefer reproducible scripts over notebook-only workflows when a figure enters a slide deck.</li>
-        <li>Make review prompts stricter: ask for bugs, missing tests, and invalid assumptions before asking for style changes.</li>
-        <li>Use the LLM for acceleration, but keep final responsibility for correctness and presentation quality.</li>
+        <li>A <strong>shared team plan</strong> (for example Claude Team), provided by a professor or university, would give every student the same project context through <em>persistent workspaces</em>.</li>
+        <li>Topics could be <strong>more diverse and more research-oriented</strong> &mdash; ideally to the point where results become <em>publishable</em>.</li>
+        <li>Every plot should carry <strong>provenance</strong>: source script, command, parameters, cache inputs, and the slides or notes that depend on it.</li>
+        <li><strong>Automatic checks</strong> should verify figures, notes, slides, caches, and web assets <em>before</em> publishing.</li>
+        <li>Review prompts should explicitly hunt for <strong>bugs, missing tests, invalid assumptions, and scientific weak points</strong> &mdash; while the student stays responsible for <u>correctness, taste, and final judgment</u>.</li>
       </ul>
     </section>
     <footer>
