@@ -283,15 +283,38 @@ With a \texttt{NoiseModel}-backed estimator, \emph{every} VQE cost evaluation is
   \end{itemize}\par}
 \end{frame}
 
+\begin{frame}{Block 4 --- Device Noise \emph{is} Physical Error (Jordan--Wigner)}
+  \small
+  Two axes --- \textbf{physical} errors perturb the \emph{simulated wire}; \textbf{NISQ} errors perturb the \emph{circuit} that simulates it --- but Jordan--Wigner sends every single-qubit channel to a Pauli, so the \emph{same} parity rule classifies both.
+  \smallskip
+  \begin{center}
+  \renewcommand{\arraystretch}{1.25}
+  \footnotesize
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{NISQ error} & \textbf{Physical-error twin} & \textbf{Verdict} \\
+    \midrule
+    $T_2$ dephasing ($\sim Z_i$) & charge noise $\delta\mu\,n_i$ & \textcolor{topological}{parity-even: robust} \\
+    coherent $Z$ miscalibration & coherent $\delta\mu$ shift & \textcolor{topological}{robust} \\
+    $T_1$ damping ($\sigma^-{=}\tfrac12(X{+}iY)$) & \textbf{quasiparticle poisoning} & \textcolor{trivial}{parity-odd: fatal} \\
+    depolarising ($X{+}Y{+}Z$) & $\tfrac23$ poisoning, $\tfrac13$ charge noise & \textcolor{trivial}{fatal component} \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \smallskip
+  {\footnotesize\raggedright
+  So $T_1$ relaxation \emph{is} poisoning and $T_2$ dephasing \emph{is} charge noise --- not analogies, the same operators. \textbf{But} the gap protects against physical errors only when the \emph{hardware is the wire}; our transmons are \emph{not} the wire, so a mid-circuit $X$ is unprotected: \textbf{the taxonomy transfers, the protection does not}.\par}
+\end{frame}
+
 % ============================ CLOSING =====================================
 \begin{frame}{Takeaways}
   \begin{itemize}
     \item The Kitaev chain's Majorana edge signature can be \textbf{prepared and measured on qubits} via a non-local string order $O_{\mathrm{edge}}=\Oedge$.
     \item \textbf{Parity (symmetry) is protected} under noise; the \textbf{edge string (topology) is not} noise-immune at fixed $L$.
-    \item Classically, both exponentials are removable: the ED reference $\to$ \textbf{free fermions} (BdG), the $4^L$ density matrix $\to$ \textbf{MPS trajectories} --- only a mild $2^L$ statevector remains.
-    \item For the edge-string diagnostic, \textbf{expressibility is $L$-independent} (constant depth $r^\ast=4$): the large-$L$ wall is \emph{decoherence} over a linearly growing gate count.
+    \item Both exponentials are classically removable: ED $\to$ \textbf{free fermions} (BdG), the $4^L$ density matrix $\to$ \textbf{MPS trajectories} --- only a mild $2^L$ statevector remains.
+    \item \textbf{Expressibility is $L$-independent} (constant depth $r^\ast=4$): the large-$L$ wall is \emph{decoherence} over a linearly growing gate count.
     \item On \textbf{real IBM noise} the signature survives far beyond the toy model ($p=0.05$), staying measurable to $L\!\sim\!48$ across devices.
-    \item \textbf{Which errors kill topology?} Local parity-even sub-gap noise is harmless; \textbf{quasiparticle poisoning} (parity-odd) and gap closure are fatal.
+    \item \textbf{Which errors kill topology?} Local parity-even sub-gap noise is harmless; \textbf{quasiparticle poisoning} (parity-odd) and gap closure are fatal --- and via JW the device's own $T_1$ \emph{is} poisoning, $T_2$ \emph{is} charge noise.
   \end{itemize}
   \vfill
   \centering

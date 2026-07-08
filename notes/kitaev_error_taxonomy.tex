@@ -225,6 +225,110 @@ with no protective threshold. Topological protection is protection against local
 parity-preserving, sub-gap noise \emph{only}.}
 \end{figure}
 
+\subsection{What poisoning does to the string operator}
+A natural question: after a poisoning event we still \emph{measure} the same Pauli
+string $O_{\mathrm{edge}}=\Oedge$ on the prepared (VQE) state --- so what is ``the
+string operator after poisoning''? The premise needs correcting: poisoning is a
+channel on the \emph{state}, not a redefinition of the observable. The operator you
+measure is unchanged; its expectation is obtained by conjugation,
+\begin{equation}
+  \expv{O_{\mathrm{edge}}}_{\text{after}}
+   = \langle\psi|\,Q^\dagger\,O_{\mathrm{edge}}\,Q\,|\psi\rangle,
+  \qquad Q=c_i^\dagger=\Bigl(\prod_{k<i}Z_k\Bigr)(X_i\mp iY_i),
+\end{equation}
+and whether the string survives is decided by whether $Q$ commutes with it. A direct
+Pauli check over all sites and both flavours ($X_i$, $Y_i$) gives a sharp asymmetry:
+\begin{itemize}
+  \item \textbf{Parity is the universal casualty.} \emph{Every} $c_i^{(\dagger)}$
+        anticommutes with $\Pop=\prod_j Z_j$ --- this is the definition of a
+        parity-odd operator --- so $\expv{\Pop}\to-\expv{\Pop}$ for any site and any
+        flavour. The logical bit flips, guaranteed.
+  \item \textbf{The edge string is only a site-dependent witness.} The effect on
+        $O_{\mathrm{edge}}$ is \emph{not} universal: for most sites $Q$
+        \emph{commutes} with the string, so a single event leaves
+        $\expv{O_{\mathrm{edge}}}$ untouched. It flips the sign only for the two
+        special boundary terms, $Y_0$ at the left end and $X_{L-1}$ at the right; in
+        particular the left Majorana $\gamma_0=X_0$ itself \emph{commutes} with the
+        string.
+\end{itemize}
+The lesson: a single left-edge poisoning $\gamma_0=X_0$ leaves
+$\expv{O_{\mathrm{edge}}}$ looking perfectly healthy \emph{while the logical bit has
+already flipped}. This is exactly why we diagnose poisoning with the parity $\Pop$ and
+not with the string --- the string can be blind to the very event that destroys the
+qubit.
+
+\paragraph{Why the figure then shows \emph{both} collapsing.} The fatal channel in
+\code{contrast\_ed} is not a single unitary kick: it adds a \emph{static} term
+$g\,X_0$ to $H$ and takes the \emph{unconstrained} ground state (no even-sector
+projection). Because the even and odd sectors are near-degenerate, any $g>0$
+hybridises them, and the new ground state is a sector-mixed (cat-like) superposition.
+On that state $\expv{\Pop}$ collapses (the primary signal) \emph{and}
+$\expv{O_{\mathrm{edge}}}$ erodes as well, because a sector-mixed ground state is no
+longer the pure topological eigenstate whose two Majorana ends were cleanly
+correlated. The single-event algebra above and the static-perturbation figure are two
+views of the same fact: the parity is the reliable diagnostic, the string is not.
+
+\section{Physical errors vs.\ NISQ errors: the same taxonomy}
+So far the perturbations have been \emph{physical} errors --- terms added to the
+target Kitaev Hamiltonian, modelling defects of the wire itself. The Block-4 circuits
+also suffer \emph{NISQ} errors: imperfections of the emulator (depolarising, $T_1/T_2$
+relaxation, coherent miscalibration, readout error). These are two different axes ---
+one perturbs the \emph{Hamiltonian we simulate}, the other the \emph{circuit that
+simulates it} --- but they are classified by the \emph{same} rule, because
+Jordan--Wigner turns any single-qubit NISQ channel into a Pauli operator whose
+parity determines its verdict exactly as in \S2.
+
+\subsection{The dictionary}
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}p{4.4cm}p{3.4cm}p{3.6cm}p{3.0cm}@{}}
+\toprule
+\textbf{NISQ error} & \textbf{Pauli content} & \textbf{Physical-error twin} & \textbf{Verdict} \\
+\midrule
+Dephasing ($T_2$, phase damping) & $\propto Z_i$ &
+charge noise $\delta\mu\,n_i=\delta h\,Z_i$ &
+\textcolor{topological}{parity-\emph{even}: robust} \\
+Coherent $Z$ miscalibration (over-rotated RZ) & $e^{-i\theta Z_i}$ &
+a coherent $\delta\mu$ shift &
+\textcolor{topological}{robust} (but accumulates) \\
+Amplitude damping ($T_1$, $|1\rangle\!\to\!|0\rangle$) & $\sigma^-=\tfrac12(X_i{+}iY_i)$ &
+\textbf{quasiparticle poisoning} $c_i$ &
+\textcolor{trivial}{parity-\emph{odd}: fatal} \\
+Bit-flip / depolarising & $\tfrac13(X_i{+}Y_i{+}Z_i)$ &
+$X,Y$ parts $=$ poisoning; $Z$ part $=$ charge noise &
+\textcolor{trivial}{mixed: fatal component} \\
+Readout / assignment error & measurement-layer $X$ & --- (no Hamiltonian twin) &
+classical, post-state \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The identifications are literal, not loose analogies. Under JW an incoherent
+$\sigma^-_i$ (a $T_1$ event) changes one qubit's occupation and hence the fermion
+parity: $T_1$ relaxation \emph{is} quasiparticle poisoning. A $Z_i$ dephasing event is
+a random $\delta h_i Z_i$ field: $T_2$ dephasing \emph{is} charge noise. Depolarising
+noise is $\tfrac23$ poisoning-flavoured ($X,Y$) and $\tfrac13$ charge-noise-flavoured
+($Z$), so it always carries a parity-odd, fatal component. This is exactly why the
+noisy-VQE markers of \code{block4\_vqe\_taxonomy.pdf} sit \emph{below} the ideal curve
+\emph{even in the robust channel}: the device noise adds its own poisoning-like leak
+that the pure physical charge-noise perturbation does not.
+
+\subsection{The disanalogy that matters}
+There is one trap. On a \emph{real} Majorana device the hardware \emph{is} the wire, so
+the physical-error and NISQ-error lists coincide and the bulk gap genuinely suppresses
+the local, parity-even ones --- which is why ``quasiparticle poisoning'' tops every
+topological-hardware error budget: it is the $T_1$ of a Majorana qubit, and it is
+unprotected. In \emph{our} emulation the qubits are \emph{not} the wire; they are
+generic transmons running a shallow VQE circuit. A mid-circuit $X$ error is \emph{not}
+suppressed by the wire's gap, because we are \emph{preparing} a state, not evolving
+under the gapped protected Hamiltonian. The emulation therefore loses the
+hardware-level immunity: it faithfully tells us \emph{which} errors are dangerous (the
+parity-odd ones), but it does not inherit the wire's protection against the
+parity-even ones. In one line: \textbf{the JW taxonomy relates the two axes, but
+topological protection lives on the physical-error axis only --- for a real Majorana
+qubit the axes coincide and the protection is real; in the NISQ emulation they split
+and the protection does not transfer.}
+
 \section{Conclusion --- the usability statement}
 Majorana qubits trade the analog fragility of a transmon for a discrete
 vulnerability: they are genuinely immune to the local charge and field noise that
