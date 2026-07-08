@@ -351,6 +351,71 @@ main {
 .empty {
   color: var(--muted);
 }
+.feedback-hero {
+  min-height: 52vh;
+}
+.feedback-page .band {
+  padding: 2.7rem 0;
+}
+.reflection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.reflection-card {
+  min-height: 13rem;
+  padding: 1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.reflection-card.accent {
+  border-left: 6px solid var(--accent);
+}
+.reflection-card.teal {
+  border-left: 6px solid var(--accent-2);
+}
+.reflection-card p,
+.reflection-card li {
+  color: var(--muted);
+}
+.reflection-card ul,
+.tip-list,
+.improvement-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.reflection-card li,
+.tip-list li,
+.improvement-list li {
+  margin: 0.45rem 0;
+}
+.reflection-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+.quote-panel {
+  padding: 1.2rem;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-left: 8px solid transparent;
+  border-image: var(--accent-gradient) 1;
+  border-radius: 8px;
+}
+.quote-panel p:last-child {
+  margin-bottom: 0;
+}
+.back-link {
+  display: inline-flex;
+  min-height: 2.2rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: var(--accent-2);
+  font-weight: 800;
+  text-decoration: none;
+}
 footer {
   padding: 2rem 0 3rem;
   color: var(--muted);
@@ -360,7 +425,9 @@ footer {
   .timeline,
   .gallery,
   .weeks,
-  .notes {
+  .notes,
+  .reflection-grid,
+  .reflection-split {
     grid-template-columns: 1fr;
   }
   .hero {
@@ -612,6 +679,7 @@ def render_index(version: str) -> str:
           <a class="action" href="{esc(project_url)}">GitHub project</a>
           <a class="action secondary" href="#figures">View figures</a>
           <a class="action secondary" href="#slides">Browse slides</a>
+          <a class="action secondary" href="{esc(versioned("llm-feedback.html", version))}">LLM feedback</a>
         </div>
       </div>
     </div>
@@ -680,6 +748,126 @@ def render_index(version: str) -> str:
 """
 
 
+def render_feedback(version: str) -> str:
+    hero_image = versioned("img/majorana_zero_modes_hero.png", version)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Final reflection on using LLMs during the Majorana modes seminar project.">
+  <title>LLM Project Feedback</title>
+  <style>
+{CSS}
+  </style>
+</head>
+<body class="feedback-page">
+  <header class="hero feedback-hero" style="--hero-image: url('{esc(hero_image)}')">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">Final feedback / LLM-assisted research workflow</p>
+        <h1>What I Learned From Using LLMs</h1>
+        <p class="lede">A personal review of how language models helped this seminar project, where they were risky, and what I would change in future physics and quantum-computing workflows.</p>
+        <div class="actions" aria-label="Feedback page links">
+          <a class="action" href="index.html">Back to project</a>
+          <a class="action secondary" href="#tips">Personal tips</a>
+          <a class="action secondary" href="#future">Future improvements</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="band reflection-split" aria-labelledby="summary-heading">
+      <div>
+        <a class="back-link" href="index.html">Back to the seminar page</a>
+        <h2 id="summary-heading">Overall experience</h2>
+        <p class="lede">LLMs were most useful when I treated them as an engineering and explanation partner, not as an authority. They helped me move faster from physics ideas to code, plots, notes, slides, and a publishable web page.</p>
+        <p>The strongest use case was iteration: asking for a first structure, checking it against the repository, improving the visual design, and then verifying the generated files. The weakest use case was anything that required scientific trust without independent checks.</p>
+      </div>
+      <aside class="quote-panel">
+        <h3>Final takeaway</h3>
+        <p>LLMs can speed up a project dramatically, but the human still has to own the physics, the conventions, the data provenance, and the final taste.</p>
+      </aside>
+    </section>
+    <section class="band" aria-labelledby="worked-heading">
+      <h2 id="worked-heading">What worked well</h2>
+      <div class="reflection-grid">
+        <article class="reflection-card teal">
+          <h3>Turning rough ideas into structure</h3>
+          <p>The model was helpful for breaking a broad seminar topic into blocks: Kitaev physics, Jordan-Wigner encoding, VQE measurement, and NISQ noise.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Code and presentation glue</h3>
+          <p>It was useful for connecting scripts, figures, notes, slides, and the GitHub Pages site, especially when the task was mechanical but error-prone.</p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Fast visual iteration</h3>
+          <p>The page design improved through several short feedback loops: changing the hero figure, moving the chain, simplifying colors, and replacing the final-deck link with the repository link.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Consistency checks</h3>
+          <p>The model was valuable when asked to verify what slides and notes actually imported, recover cache files, and avoid publishing stale generated artifacts.</p>
+        </article>
+      </div>
+    </section>
+    <section class="band" aria-labelledby="limits-heading">
+      <h2 id="limits-heading">What did not work well</h2>
+      <div class="reflection-grid">
+        <article class="reflection-card accent">
+          <h3>Confidence without proof</h3>
+          <p>LLMs can sound certain even when a convention, sign, file path, or figure dependency is wrong. In this project, physics conventions had to be pinned down explicitly.</p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Generated artifacts need boundaries</h3>
+          <p>It is easy for a model to create extra plots, thumbnails, or pages. That is only helpful when generated output is separated from source artifacts and caches.</p>
+        </article>
+        <article class="reflection-card accent">
+          <h3>Context can drift</h3>
+          <p>Long projects need persistent instructions. Otherwise the assistant may forget which branch publishes the site, which figures are canonical, or which scripts are allowed to regenerate data.</p>
+        </article>
+        <article class="reflection-card teal">
+          <h3>Scientific judgment is not outsourced</h3>
+          <p>The model can explain and implement, but it cannot replace checking equations, validating plots, or deciding whether a result is physically meaningful.</p>
+        </article>
+      </div>
+    </section>
+    <section class="band reflection-split" id="tips" aria-labelledby="tips-heading">
+      <div>
+        <h2 id="tips-heading">Personal tips</h2>
+        <p class="lede">The best results came from giving the model narrow tasks with visible verification criteria.</p>
+      </div>
+      <ol class="tip-list">
+        <li>Keep a clear source of truth for conventions, commands, and generated artifacts.</li>
+        <li>Ask for small changes and inspect the result before asking for the next one.</li>
+        <li>Make the model cite exact files, commands, and outputs when it claims something is fixed.</li>
+        <li>Do not accept physics derivations or numerical claims without an independent check.</li>
+        <li>Separate source plots, cache files, thumbnails, and published web output.</li>
+        <li>Commit often before large cleanup or restructuring steps.</li>
+      </ol>
+    </section>
+    <section class="band reflection-split" id="future" aria-labelledby="future-heading">
+      <div>
+        <h2 id="future-heading">Future improvements</h2>
+        <p class="lede">For a future project, I would use LLMs more deliberately and build stronger guardrails around them.</p>
+      </div>
+      <ul class="improvement-list">
+        <li>Use a project memory file from the beginning, especially for physics conventions and build commands.</li>
+        <li>Add automatic dependency checks for figures, notes, slides, caches, and web assets.</li>
+        <li>Track provenance for every plot: source script, command, parameters, and cache inputs.</li>
+        <li>Prefer reproducible scripts over notebook-only workflows when a figure enters a slide deck.</li>
+        <li>Make review prompts stricter: ask for bugs, missing tests, and invalid assumptions before asking for style changes.</li>
+        <li>Use the LLM for acceleration, but keep final responsibility for correctness and presentation quality.</li>
+      </ul>
+    </section>
+    <footer>
+      <p>Generated from the repository site builder. Cache key: {esc(version)}.</p>
+    </footer>
+  </main>
+</body>
+</html>
+"""
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build the static GitHub Pages site.")
     parser.add_argument("--output", default="web_output", type=Path)
@@ -694,7 +882,9 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     copy_outputs(output)
     (output / "index.html").write_text(render_index(args.version), encoding="utf-8")
+    (output / "llm-feedback.html").write_text(render_feedback(args.version), encoding="utf-8")
     print(f"Built {output / 'index.html'}")
+    print(f"Built {output / 'llm-feedback.html'}")
 
 
 if __name__ == "__main__":
