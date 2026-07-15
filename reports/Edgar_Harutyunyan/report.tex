@@ -1,0 +1,114 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{setspace}
+\usepackage{iftex}
+\usepackage{comment}
+\usepackage[numbers]{natbib}
+\ifPDFTeX
+\renewcommand{\familydefault}{\sfdefault}
+\else
+\usepackage{fontspec}
+\setmainfont{DejaVu Serif}
+\fi
+\usepackage{fancyhdr}
+\geometry{
+	paper=a4paper,
+	top=3cm,
+	bottom=2cm,
+	left=2cm,
+	right=2cm,
+	headheight=2.5cm,
+	footskip=1cm,
+	headsep=0.2cm,
+}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black}
+\onehalfspacing
+\numberwithin{equation}{section}
+
+\definecolor{aicolor}{HTML}{6E2A8C}
+\ifdefined\hideai
+  \long\def\ai#1{}
+\else
+  \long\def\ai#1{{\color{aicolor}#1}}
+\fi
+
+\providecommand{\mnras}{MNRAS}
+\providecommand{\aap}{A\&A}
+\providecommand{\aapr}{A\&A Rev.}
+\providecommand{\apj}{ApJ}
+\providecommand{\apjs}{ApJS}
+\providecommand{\apjl}{ApJ}
+\providecommand{\araa}{ARA\&A}
+\providecommand{\nat}{Nature}
+\providecommand{\physrep}{Phys. Rep.}
+\providecommand{\ssr}{Space Sci. Rev.}
+
+% Metadata macros
+\newcommand{\Class}{Specialized Topics of Theoretical Physics}
+\newcommand{\Title}{Majorana Modes in the Machine – \\ Simulating Topological Phases with Quantum Circuits and AI}
+\newcommand{\subtitle}{Subtitle} % Here goes the title of the separated part for individual student
+\newcommand{\assignmentSemester}{SS 26}
+\newcommand{\AuthorName}{Edgar Harutyunyan}
+\newcommand{\AuthorNumber}{3775171}
+\newcommand{\FacultyName}{FAKULTÄT FÜR PHYSIK\\UND GEOWISSENSCHAFTEN}
+\newcommand{\Supervisor}{\href{mailto:rosenow@physik.uni-leipzig.de}{Prof. Dr. Bernd Rosenow}}
+
+\pagestyle{fancy}
+\author{
+    \textit{\Large\AuthorName}\\[4pt]
+    \textit{\Large[ \AuthorNumber\ ]}\\
+    \\ \\
+    \textit{\Large Supervisor:\ \Supervisor}
+}
+\date{}
+\title{
+	\vspace{0.2\textheight}
+	\textbf{\Huge\Class} \\ 
+	\vspace{10pt}
+	\textbf{\LARGE\Title} \\ 
+	\vspace{10pt}
+	\textbf{\Large\subtitle}
+	\vspace{10pt}
+}
+
+\fancypagestyle{firstpage}{
+    \fancyhead[L]{\includegraphics[height=2cm]{uni_leipzig_logo.png}}
+    \fancyhead[R]{\textsf{\Large \FacultyName} \\}
+    \fancyfoot[L]{}
+    \fancyfoot[C]{}
+    \fancyfoot[R]{\textsf{\assignmentSemester}}
+}
+\pagestyle{fancy}
+\fancyhead[L]{}
+\fancyhead[R]{}
+\fancyfoot[L]{}
+\fancyfoot[R]{\small\thepage}
+\fancyfoot[C]{}
+\renewcommand\headrulewidth{0pt}
+
+\begin{document}
+\maketitle
+\thispagestyle{firstpage}
+\newpage
+\tableofcontents
+\newpage
+
+% report body goes here with input block
+\input{sections/00_intro}
+\input{sections/10_theory}
+\input{sections/20_results}
+\input{sections/30_ai}
+
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
