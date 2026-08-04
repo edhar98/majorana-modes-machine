@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dobromir Stoev · Report Inspector</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d12;
+      --panel: #12151d;
+      --panel-raised: #181c26;
+      --border: #2a3040;
+      --text: #e8eaf0;
+      --muted: #8991a5;
+      --accent: #a97bd1;
+      --accent-soft: #30233d;
+      --match: #4b3d1b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+
+    button, input { font: inherit; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+      padding: 24px 14px;
+    }
+
+    .eyebrow {
+      margin: 0 10px 4px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 10px 22px;
+      font-size: 18px;
+      letter-spacing: -.02em;
+    }
+
+    #files {
+      display: grid;
+      gap: 4px;
+    }
+
+    .file {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 9px 10px;
+      text-align: left;
+    }
+
+    .file:hover {
+      background: var(--panel-raised);
+      color: var(--text);
+    }
+
+    .file.active {
+      border-color: #48345d;
+      background: var(--accent-soft);
+      color: #dec7f1;
+    }
+
+    main {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .path {
+      min-width: 0;
+      margin-right: auto;
+      overflow: hidden;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .search {
+      width: min(280px, 36vw);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: 0;
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 11px;
+    }
+
+    .search:focus { border-color: var(--accent); }
+
+    .wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      padding: 8px 11px;
+    }
+
+    .wrap[aria-pressed="true"] {
+      border-color: #48345d;
+      color: #dec7f1;
+    }
+
+    .viewer {
+      min-height: calc(100vh - 90px);
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0e1118;
+      box-shadow: 0 18px 50px rgb(0 0 0 / 20%);
+    }
+
+    .code {
+      display: table;
+      min-width: 100%;
+      padding: 12px 0;
+      font: 13px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace;
+      white-space: pre;
+    }
+
+    .code.wrapped {
+      display: block;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .line {
+      display: table-row;
+    }
+
+    .wrapped .line {
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr);
+    }
+
+    .line.match { background: var(--match); }
+
+    .number {
+      display: table-cell;
+      width: 58px;
+      padding: 0 14px 0 8px;
+      border-right: 1px solid #202532;
+      color: #596174;
+      text-align: right;
+      user-select: none;
+    }
+
+    .content {
+      display: table-cell;
+      padding: 0 18px;
+      color: #d8dce7;
+    }
+
+    .status {
+      display: grid;
+      min-height: 60vh;
+      place-items: center;
+      padding: 32px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      aside {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+      }
+      h1 { margin-bottom: 12px; }
+      #files {
+        display: flex;
+        overflow-x: auto;
+      }
+      .file { width: auto; white-space: nowrap; }
+      main { padding: 14px; }
+      .toolbar { flex-wrap: wrap; }
+      .path { flex-basis: 100%; }
+      .search { flex: 1; width: auto; }
+      .viewer { min-height: 65vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <p class="eyebrow">Report files</p>
+      <h1>Dobromir Stoev</h1>
+      <nav id="files" aria-label="Report files"></nav>
+    </aside>
+    <main>
+      <div class="toolbar">
+        <div class="path" id="path">Select a file</div>
+        <input class="search" id="search" type="search" placeholder="Search file · Ctrl K" aria-label="Search current file">
+        <button class="wrap" id="wrap" type="button" aria-pressed="false">Wrap</button>
+      </div>
+      <div class="viewer" id="viewer">
+        <div class="status">Loading report…</div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const sourceFiles = [
+      "report.tex",
+      "sections/00_intro.tex",
+      "sections/10_theory.tex",
+      "sections/20_results.tex",
+      "sections/30_ai.tex",
+      "references.bib",
+      "makefile",
+      "make.bat"
+    ];
+
+    const files = document.querySelector("#files");
+    const path = document.querySelector("#path");
+    const search = document.querySelector("#search");
+    const viewer = document.querySelector("#viewer");
+    const wrap = document.querySelector("#wrap");
+    let currentFile = "";
+    let currentSource = "";
+
+    function renderSource() {
+      const query = search.value.trim().toLocaleLowerCase();
+      const code = document.createElement("div");
+      code.className = wrap.getAttribute("aria-pressed") === "true" ? "code wrapped" : "code";
+
+      currentSource.split("\n").forEach((text, index) => {
+        const line = document.createElement("div");
+        const number = document.createElement("span");
+        const content = document.createElement("span");
+        line.className = query && text.toLocaleLowerCase().includes(query) ? "line match" : "line";
+        number.className = "number";
+        number.textContent = String(index + 1);
+        content.className = "content";
+        content.textContent = text || " ";
+        line.append(number, content);
+        code.append(line);
+      });
+
+      viewer.replaceChildren(code);
+      const firstMatch = code.querySelector(".match");
+      if (firstMatch) firstMatch.scrollIntoView({ block: "center" });
+    }
+
+    async function openFile(file) {
+      currentFile = file;
+      path.textContent = file;
+      search.value = "";
+      viewer.innerHTML = '<div class="status">Loading…</div>';
+      document.querySelectorAll(".file").forEach(button => {
+        button.classList.toggle("active", button.dataset.file === file);
+      });
+
+      try {
+        const response = await fetch(file);
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        currentSource = await response.text();
+        renderSource();
+        history.replaceState(null, "", `#${encodeURIComponent(file)}`);
+      } catch (error) {
+        currentSource = "";
+        viewer.innerHTML = `<div class="status">Could not load ${file}. Open this page through a local web server.<br>${error.message}</div>`;
+      }
+    }
+
+    sourceFiles.forEach(file => {
+      const button = document.createElement("button");
+      button.className = "file";
+      button.type = "button";
+      button.dataset.file = file;
+      button.textContent = file;
+      button.addEventListener("click", () => openFile(file));
+      files.append(button);
+    });
+
+    search.addEventListener("input", renderSource);
+    wrap.addEventListener("click", () => {
+      wrap.setAttribute("aria-pressed", String(wrap.getAttribute("aria-pressed") !== "true"));
+      renderSource();
+    });
+    document.addEventListener("keydown", event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "k") {
+        event.preventDefault();
+        search.focus();
+      }
+    });
+
+    const requestedFile = decodeURIComponent(location.hash.slice(1));
+    openFile(sourceFiles.includes(requestedFile) ? requestedFile : sourceFiles[0]);
+  </script>
+</body>
+</html>
