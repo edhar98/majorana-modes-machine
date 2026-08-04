@@ -14,24 +14,25 @@
 
 \subsection{Circuit-level implementation and verification}
 
-\ai{All circuit results use $L=4$, $t=\Delta=1$, the same parity-constrained VQE
-and edge string as Part 4, and a linear \texttt{RY}+\texttt{cx}
-\texttt{EfficientSU2} ansatz~\cite{peruzzo2014vqe}.  Circuits are transpiled at
-optimization level zero to the fixed basis
-\texttt{[rz,sx,cx]}, ensuring that an error registered on \texttt{cx} fires after
-every entangling instruction.  The state is saved as a density matrix and the
-diagnostic is evaluated as $\operatorname{Tr}(O_{\mathrm{edge}}\rho)$.}
+\ai{All circuit results use a chain of $L=4$ sites, hopping strength $t=1$,
+pairing strength $\Delta=1$, and the parity-constrained VQE and edge string from
+Part 4.  The chemical potential $\mu$ is varied to cross the phase transition.
+The preparation circuit contains single-qubit $R_Y$ rotations and linear CNOT
+gates~\cite{peruzzo2014vqe}.  Before simulation it is written in the fixed gate
+set \texttt{[rz,sx,cx]} without removing gates.  An error assigned to
+\texttt{cx} therefore acts after every CNOT.  The output density matrix $\rho$
+gives the edge-string value
+$\operatorname{Tr}(O_{\mathrm{edge}}\rho)$.}
 
-\ai{The integration was verified independently.  A reference routine evolves
-the density matrix gate by gate with \texttt{Operator} and explicitly applies a
-depolarizing \texttt{SuperOp} after each CNOT; it does not use Aer's noise
-machinery.  Across 41 values of $\mu/t$, the reference and Aer results agree at
-approximately $10^{-15}$.  Figure~\ref{fig:verification} also compares the
-deliberately strong $p_{\mathrm{cx}}=0.10$ depolarizing channel with thermal
-relaxation at $T_1=80\,\mu\mathrm{s}$, $T_2=60\,\mu\mathrm{s}$ and
-$\tau_{\mathrm{cx}}=300\,\mathrm{ns}$.  The associated one-gate relaxation
-probability is only $1-e^{-\tau/T_1}\simeq0.0037$, so the thermal curve remains
-closer to the ideal one.}
+\ai{The implementation was checked with a separate calculation that applies
+each gate and each depolarizing channel directly, without using Aer's noise
+machinery.  Across 41 values of $\mu/t$, the two calculations differ by only
+about $10^{-15}$.  Figure~\ref{fig:verification} also compares the deliberately
+strong CNOT depolarizing strength $p_{\mathrm{cx}}=0.10$ with thermal relaxation
+at $T_1=80\,\mu\mathrm{s}$, $T_2=60\,\mu\mathrm{s}$ and CNOT duration
+$\tau_{\mathrm{cx}}=300\,\mathrm{ns}$.  The relaxation probability per gate is
+only $1-e^{-\tau_{\mathrm{cx}}/T_1}\simeq0.0037$, so the thermal curve remains
+closer to the ideal result.}
 
 \begin{figure}[H]
   \centering
@@ -45,12 +46,12 @@ closer to the ideal one.}
 \subsection{The optimal depth is an expressibility threshold}
 
 \ai{At the topological sweet spot $\mu=0$, the noiseless edge string is only
-$\simeq0.004$ for $r=1$ but jumps to approximately one at $r=2$ and remains
-saturated for deeper circuits.  Thus the failure at $r=1$ is under-expressibility,
-not an optimizer accident.  With $p_{\mathrm{cx}}=0.05$, the signal peaks at
-$r^*=2$; every further repetition adds three noisy CNOTs without an ideal-state
-gain.  Figure~\ref{fig:depth} makes the two factors in
-Eq.~\eqref{eq:depth_tradeoff} visible separately.}
+$\simeq0.004$ for one repetition ($r=1$), but reaches approximately one at
+$r=2$ and changes little in deeper circuits.  The first circuit is simply too
+shallow to represent the state.  With $p_{\mathrm{cx}}=0.05$, the measured
+signal peaks at $r^*=2$; every further repetition adds three noisy CNOTs without
+improving the ideal state.  Figure~\ref{fig:depth} shows these two effects
+separately.}
 
 \begin{figure}[H]
   \centering
@@ -60,22 +61,33 @@ Eq.~\eqref{eq:depth_tradeoff} visible separately.}
   \label{fig:depth}
 \end{figure}
 
-\ai{Parameter perturbations provide a complementary diagnostic.  Gaussian
-$\delta\theta$ rotates the ideal state away from the optimum while its purity
-stays at one.  Per-CNOT depolarization suppresses the same edge string while the
-purity falls.  The two errors should therefore not be summarized by a single
-``effective gate error'': coherent drift is in principle recalibratable, whereas
-incoherent loss cannot be undone by retuning one angle vector.}
+\ai{Angle errors provide a second check.  A random shift $\delta\theta$ rotates
+the ideal state away from the optimum while its purity stays at one.  CNOT
+depolarization reduces the same edge string while the purity falls.  The first
+error can in principle be corrected by recalibrating the angles; the second
+cannot be removed by changing one set of angles.}
 
 \subsection{Noisy optimization and backend calibration}
 
-\ai{The noisy-cost experiment uses $L=4$, $r=3$, $\mu=0$, $\lambda=0.1$ and
-COBYLA, warm-started from the noiseless optimum with additional random starts.
-Depolarizing noise is unital and produces almost no exploitable displacement of
-the optimum.  Amplitude damping is non-unital: re-optimization can increase the
-\emph{measured} edge string while moving the underlying noiseless circuit away
-from the exact ground state.  Selected values from the reproducible seed-7 sweep
-are listed in Table~\ref{tab:noisy}.}
+\ai{This experiment fixes $r=3$, which does not replace the $r=2$ optimum found
+above.  The earlier test asks which depth gives the largest measured signal for
+$p_{\mathrm{cx}}=0.05$.  Here the purpose is different: the depth is held fixed
+one layer above the representation threshold so that only the response of the
+optimizer to two noise channels is compared.  Thus $r=3$ is a controlled test
+setting, not a recommended operating depth; its extra CNOTs also explain why its
+absolute noisy values are lower than an $r=2$ run would be.}
+
+\ai{The noisy-cost calculation uses $L=4$, $r=3$, $\mu=0$, parity-penalty
+strength $\lambda=0.1$, and the COBYLA optimizer.  It starts from the noiseless
+angles and also tries several random starting points.  A channel is
+\emph{unital} if it leaves the fully mixed state unchanged; it does not pull the
+system toward one preferred state.  Depolarizing noise is unital, and optimizing
+again changes the result very little.  A \emph{non-unital} channel does prefer a
+state.  Amplitude damping is non-unital because it drives qubits toward
+$|0\rangle$.  Under this channel, re-optimization can increase the
+\emph{measured} edge string while moving the corresponding noiseless circuit
+away from the exact ground state.  Table~\ref{tab:noisy} gives selected values
+from the seed-7 sweep.}
 
 \begin{table}[H]
   \centering
@@ -98,17 +110,15 @@ are listed in Table~\ref{tab:noisy}.}
   \label{tab:noisy}
 \end{table}
 
-\ai{Finally, a \texttt{NoiseModel.from\_backend} calculation replaces the
-uniform toy channel with the recorded \texttt{FakeManilaV2} calibration.  Its
-heterogeneous CNOT error rates are about $0.009$--$0.014$.  At $\mu=0$ the ideal,
-backend-calibrated, and uniform $p_{\mathrm{cx}}=0.05$ edge strings are
-$0.99$, $0.87$, and $0.67$, respectively.  The uniform model is therefore a
-conservative caricature rather than a calibrated prediction.  This comparison
-is still mildly optimistic: the backend noise model contains readout errors, but
-they do not fire because the simulation reads
-$\operatorname{Tr}(O_{\mathrm{edge}}\rho)$ directly without measurement
-instructions.  The calculation uses a recorded calibration snapshot, not a live
-hardware run.}
+\ai{Finally, \texttt{NoiseModel.from\_backend} replaces the uniform test channel
+with a recorded \texttt{FakeManilaV2} calibration.  Its CNOT error rates vary
+from about $0.009$ to $0.014$.  At $\mu=0$ the ideal, backend-calibrated, and
+uniform $p_{\mathrm{cx}}=0.05$ edge strings are $0.99$, $0.87$, and $0.67$.
+The uniform model is therefore a deliberately harsh comparison, not a device
+prediction.  The backend result is still optimistic: its readout errors are not
+used because the simulation evaluates
+$\operatorname{Tr}(O_{\mathrm{edge}}\rho)$ without measurement instructions.
+The data also come from a recorded calibration, not a live hardware run.}
 
 \ai{Together these tests show that realistic noise primarily reduces the
 contrast of the non-local diagnostic.  Circuit depth should be chosen by

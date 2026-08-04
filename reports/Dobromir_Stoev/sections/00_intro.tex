@@ -21,12 +21,14 @@ ideal result does not yet answer the experimentally relevant question: does the
 diagnostic remain visible after imperfect gates, decoherence, readout errors,
 and a noisy variational loop?}
 
-\ai{This report covers Part 5, \emph{NISQ Noise on the Diagnostic}.  It isolates
-noise at three different levels---a frozen state, the gates of the preparation
-circuit, and the variational parameters---and then removes two simplifying
-assumptions by optimizing the noisy cost and using a recorded backend calibration.
-The emphasis is quantitative: the same $L=4$ circuit and edge-string observable
-are retained while only the noise model or ansatz depth is changed.}
+\ai{This report covers Part 5, \emph{NISQ Noise on the Diagnostic}.  Week 8 first
+kept the validated state frozen and tested only readout error, local
+depolarization, and finite measurement counts.  Week 9 then applied noise during
+the preparation circuit, where it accumulates after individual gates, and later
+allowed the VQE optimizer itself to receive noisy cost values.  A recorded
+backend calibration was also compared with the uniform test model.  Throughout,
+the same $L=4$ circuit and edge-string observable are used so that the source of
+each change remains clear.}
 
 \ai{The noiseless construction of the VQE and string-measurement circuit belongs
 to Zhengyi Liu's Part 4.  The symmetry-based taxonomy of physical Kitaev-chain
