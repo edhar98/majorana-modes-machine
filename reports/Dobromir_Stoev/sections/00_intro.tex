@@ -1,0 +1,34 @@
+% ============================================================================
+% 00_intro.tex  --  Introduction  (~1/2 page)
+%
+% GOAL: State which of the six parts this report covers, why it matters, and
+%       where it sits in the overall project. One paragraph of motivation, one
+%       paragraph locating your part relative to the neighbouring parts (use a
+%       one-line "see [Author, Part N]" cross-reference at each seam instead of
+%       re-explaining a neighbour's material).
+% Keep the whole report to 4-5 pages; this section is the shortest.
+% ============================================================================
+
+\section{Introduction}
+\label{sec:intro}
+
+The 1D Kitaev chain hosts unpaired Majorana zero modes at its ends in the
+topological phase~\cite{kitaev2001}.
+\ai{In the preceding part of the project, a parity-constrained variational
+quantum eigensolver (VQE) prepared the finite-chain ground state and measured the
+non-local edge string $O_{\mathrm{edge}}=X_0Z_1\cdots Z_{L-2}X_{L-1}$.  That
+ideal result does not yet answer the experimentally relevant question: does the
+diagnostic remain visible after imperfect gates, decoherence, readout errors,
+and a noisy variational loop?}
+
+\ai{This report covers Part 5, \emph{NISQ Noise on the Diagnostic}.  It isolates
+noise at three different levels---a frozen state, the gates of the preparation
+circuit, and the variational parameters---and then removes two simplifying
+assumptions by optimizing the noisy cost and using a recorded backend calibration.
+The emphasis is quantitative: the same $L=4$ circuit and edge-string observable
+are retained while only the noise model or ansatz depth is changed.}
+
+\ai{The noiseless construction of the VQE and string-measurement circuit belongs
+to Zhengyi Liu's Part 4.  The symmetry-based taxonomy of physical Kitaev-chain
+errors and the scaling to large $L$ belong to Edgar Harutyunyan's Part 6; here
+$T_1/T_2$ enter only as device-level channels acting on the simulated circuit.}

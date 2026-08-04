@@ -1,0 +1,96 @@
+% ============================================================================
+% 10_theory.tex  --  Theory / derivation  (~1 - 1.5 pages)
+%
+% GOAL: The physics or derivation your part owns. Mine the matching notes/*.tex
+%       listed for your part in ../../reports/README.md -- adapt and cite them,
+%       do NOT re-derive from scratch. Equations use \numberwithin so they read
+%       as (sec.eq).
+% ============================================================================
+
+\section{Noise model and diagnostic}
+\label{sec:theory}
+
+\subsection{Gate-level quantum channels}
+
+\ai{An ideal gate $g$ acts on a density matrix as
+$\mathcal U_g(\rho)=U_g\rho U_g^\dagger$.  In the circuit-level model the ideal
+gate is followed immediately by a completely positive trace-preserving channel,}
+\begin{equation}
+  \widetilde{\mathcal U}_g=\mathcal E_g\circ\mathcal U_g,
+  \qquad
+  \mathcal E_g(\rho)=\sum_k K_k\rho K_k^\dagger,
+  \qquad
+  \sum_k K_k^\dagger K_k=I .
+  \label{eq:kraus}
+\end{equation}
+\ai{For a circuit containing $M$ gates, the output is the ordered composition
+$\rho_{\mathrm{out}}=(\mathcal E_{g_M}\!\circ\mathcal U_{g_M})\circ\cdots\circ
+(\mathcal E_{g_1}\!\circ\mathcal U_{g_1})(\rho_0)$.  Noise therefore accumulates
+with the actual transpiled gate count rather than being applied once to the final
+state.  Qiskit Aer implements this construction with a density-matrix simulator
+and a \texttt{NoiseModel}~\cite{qiskit2024}.}
+
+\ai{The controlled baseline attaches a two-qubit depolarizing channel after
+every \texttt{cx},}
+\begin{equation}
+  \mathcal E^{\mathrm{dep}}_p(\rho)
+  =(1-p)\rho+p\,\frac{\operatorname{Tr}\rho}{2^n}I .
+  \label{eq:depol}
+\end{equation}
+\ai{A second model uses gate-duration-dependent thermal relaxation.  For a gate
+of duration $\tau$, amplitude loss has probability
+$p_{T_1}=1-e^{-\tau/T_1}$, while $T_2$ controls the decay of off-diagonal
+coherences.  The two mechanisms differ operationally: relaxation may move the
+prepared state out of its target parity sector, whereas dephasing directly
+suppresses the endpoint coherence needed by the edge string.  These are channel
+mechanics only; their classification as physical errors of the Kitaev chain is
+deferred to Part 6.}
+
+\subsection{Three locations for error}
+
+\ai{The study separates effects that can otherwise be confused.  The Week-8
+\emph{frozen-state} test takes the validated state and applies readout or a single
+post-preparation channel.  Symmetric assignment error $\epsilon$ attenuates a
+weight-$L$ Pauli string as}
+\begin{equation}
+  \langle O_{\mathrm{edge}}\rangle_{\mathrm{readout}}
+  =(1-2\epsilon)^L\langle O_{\mathrm{edge}}\rangle,
+  \label{eq:readout}
+\end{equation}
+\ai{with an additional statistical uncertainty of order
+$N_{\mathrm{shots}}^{-1/2}$.  The \emph{circuit-level} test instead applies a
+channel after every entangling gate.  Finally, a coherent calibration error
+replaces $\theta^*$ by $\theta^*+\delta\theta$ but keeps the state pure; an
+incoherent channel generally lowers $\operatorname{Tr}\rho^2$.  Purity therefore
+distinguishes a unitary miscalibration from genuine mixing even when both reduce
+$|\langle O_{\mathrm{edge}}\rangle|$.}
+
+\subsection{Expressibility versus accumulated noise}
+
+\ai{For the linear-entanglement \texttt{EfficientSU2} ansatz, $r$ repetitions on
+$L$ qubits contain $r(L-1)$ CNOTs.  A useful approximation to the measured
+signal is}
+\begin{equation}
+ |\langle O_{\mathrm{edge}}\rangle|_{\mathrm{meas}}(r)
+ \simeq
+ |\langle O_{\mathrm{edge}}\rangle|_{\mathrm{ideal}}(r)
+ (1-p_{\mathrm{cx}})^{r(L-1)} .
+ \label{eq:depth_tradeoff}
+\end{equation}
+\ai{The first factor can have an expressibility threshold; the second decreases
+at every added layer.  The relevant optimum is consequently the shallowest
+depth that can represent the target state, not the deepest affordable circuit.}
+
+\ai{Putting noise inside the VQE changes the objective itself.  With parity
+$P=\prod_j Z_j$, the cost evaluated on the noisy density matrix is}
+\begin{equation}
+ C_{\mathrm{noisy}}(\theta)
+ =\operatorname{Tr}[H\rho_\theta]
+ +\lambda\bigl(1-\operatorname{Tr}[P\rho_\theta]\bigr)^2,
+ \qquad
+ \rho_\theta=\mathcal E\!\left(U(\theta)|0\rangle\langle0|U^\dagger(\theta)\right).
+ \label{eq:noisy_cost}
+\end{equation}
+\ai{A lower value of Eq.~\eqref{eq:noisy_cost}, or even a larger noisy edge
+string, need not imply a higher-fidelity ground state.  The re-optimized angles
+must therefore be checked in a noiseless circuit against the exact ground state.}

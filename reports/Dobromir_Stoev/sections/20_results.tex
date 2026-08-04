@@ -1,0 +1,118 @@
+% ============================================================================
+% 20_results.tex  --  Methods & results  (~2 pages, the core of the report)
+%
+% GOAL: What you computed and what it shows. Include the key figure(s) for your
+%       part ONLY (see the Code/figs column for your part in
+%       ../../reports/README.md). Regenerate fresh PDFs with the block runner,
+%       e.g.  python src/block1.py --plots 6   (venv /opt/python-envs/myenv),
+%       and copy them into a local figs/ folder. Do NOT use showcase.py gallery
+%       images (shared). Report concrete numbers, not just plots.
+% ============================================================================
+
+\section{Methods and Results}
+\label{sec:results}
+
+\subsection{Circuit-level implementation and verification}
+
+\ai{All circuit results use $L=4$, $t=\Delta=1$, the same parity-constrained VQE
+and edge string as Part 4, and a linear \texttt{RY}+\texttt{cx}
+\texttt{EfficientSU2} ansatz~\cite{peruzzo2014vqe}.  Circuits are transpiled at
+optimization level zero to the fixed basis
+\texttt{[rz,sx,cx]}, ensuring that an error registered on \texttt{cx} fires after
+every entangling instruction.  The state is saved as a density matrix and the
+diagnostic is evaluated as $\operatorname{Tr}(O_{\mathrm{edge}}\rho)$.}
+
+\ai{The integration was verified independently.  A reference routine evolves
+the density matrix gate by gate with \texttt{Operator} and explicitly applies a
+depolarizing \texttt{SuperOp} after each CNOT; it does not use Aer's noise
+machinery.  Across 41 values of $\mu/t$, the reference and Aer results agree at
+approximately $10^{-15}$.  Figure~\ref{fig:verification} also compares the
+deliberately strong $p_{\mathrm{cx}}=0.10$ depolarizing channel with thermal
+relaxation at $T_1=80\,\mu\mathrm{s}$, $T_2=60\,\mu\mathrm{s}$ and
+$\tau_{\mathrm{cx}}=300\,\mathrm{ns}$.  The associated one-gate relaxation
+probability is only $1-e^{-\tau/T_1}\simeq0.0037$, so the thermal curve remains
+closer to the ideal one.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{block4_week9_verification.pdf}
+  \caption{Left: the Aer \texttt{NoiseModel} edge string and the independent
+  exact gate-by-gate reference agree to $\sim10^{-15}$ across the $\mu$ sweep.
+  Right: depolarizing versus thermal $T_1/T_2$ noise at matched gate placement.}
+  \label{fig:verification}
+\end{figure}
+
+\subsection{The optimal depth is an expressibility threshold}
+
+\ai{At the topological sweet spot $\mu=0$, the noiseless edge string is only
+$\simeq0.004$ for $r=1$ but jumps to approximately one at $r=2$ and remains
+saturated for deeper circuits.  Thus the failure at $r=1$ is under-expressibility,
+not an optimizer accident.  With $p_{\mathrm{cx}}=0.05$, the signal peaks at
+$r^*=2$; every further repetition adds three noisy CNOTs without an ideal-state
+gain.  Figure~\ref{fig:depth} makes the two factors in
+Eq.~\eqref{eq:depth_tradeoff} visible separately.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.72\linewidth]{block4_week9_depth_optimum.pdf}
+  \caption{For $L=4$, the noiseless edge string has an expressibility threshold:
+  $r=1$ fails, $r=2$ succeeds, and deeper circuits mainly accumulate CNOT noise.}
+  \label{fig:depth}
+\end{figure}
+
+\ai{Parameter perturbations provide a complementary diagnostic.  Gaussian
+$\delta\theta$ rotates the ideal state away from the optimum while its purity
+stays at one.  Per-CNOT depolarization suppresses the same edge string while the
+purity falls.  The two errors should therefore not be summarized by a single
+``effective gate error'': coherent drift is in principle recalibratable, whereas
+incoherent loss cannot be undone by retuning one angle vector.}
+
+\subsection{Noisy optimization and backend calibration}
+
+\ai{The noisy-cost experiment uses $L=4$, $r=3$, $\mu=0$, $\lambda=0.1$ and
+COBYLA, warm-started from the noiseless optimum with additional random starts.
+Depolarizing noise is unital and produces almost no exploitable displacement of
+the optimum.  Amplitude damping is non-unital: re-optimization can increase the
+\emph{measured} edge string while moving the underlying noiseless circuit away
+from the exact ground state.  Selected values from the reproducible seed-7 sweep
+are listed in Table~\ref{tab:noisy}.}
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{llcccc}
+    \toprule
+    channel & strength & \multicolumn{2}{c}{$|\langle O_{\mathrm{edge}}\rangle|$ noisy}
+      & \multicolumn{2}{c}{fidelity to exact GS}\\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+      & & fixed $\theta^*$ & noise-aware & fixed $\theta^*$ & noise-aware\\
+    \midrule
+    depolarizing & $0.08$ & $0.502$ & $0.501$ & $0.998$ & $1.000$\\
+    amplitude damping & $0.08$ & $0.422$ & $0.565$ & $0.998$ & $0.994$\\
+    amplitude damping & $0.12$ & $0.266$ & $0.337$ & $0.998$ & $0.966$\\
+    \bottomrule
+  \end{tabular}
+  \caption{Best-case versus noise-aware optimization at $L=4$, $r=3$, $\mu=0$.
+  Under amplitude damping the measured edge string rises while the noiseless
+  fidelity to the exact ground state falls at strong damping.}
+  \label{tab:noisy}
+\end{table}
+
+\ai{Finally, a \texttt{NoiseModel.from\_backend} calculation replaces the
+uniform toy channel with the recorded \texttt{FakeManilaV2} calibration.  Its
+heterogeneous CNOT error rates are about $0.009$--$0.014$.  At $\mu=0$ the ideal,
+backend-calibrated, and uniform $p_{\mathrm{cx}}=0.05$ edge strings are
+$0.99$, $0.87$, and $0.67$, respectively.  The uniform model is therefore a
+conservative caricature rather than a calibrated prediction.  This comparison
+is still mildly optimistic: the backend noise model contains readout errors, but
+they do not fire because the simulation reads
+$\operatorname{Tr}(O_{\mathrm{edge}}\rho)$ directly without measurement
+instructions.  The calculation uses a recorded calibration snapshot, not a live
+hardware run.}
+
+\ai{Together these tests show that realistic noise primarily reduces the
+contrast of the non-local diagnostic.  Circuit depth should be chosen by
+noiseless expressibility validation followed by noisy evaluation, and any
+noise-aware optimization must report a state-quality check rather than only the
+observable it was able to improve.  These conclusions concern the $L=4$ NISQ
+circuit; their large-$L$ consequences are treated separately in Part 6.}

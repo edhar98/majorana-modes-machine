@@ -1,0 +1,23 @@
+% ============================================================================
+% 30_ai.tex  --  AI-collaboration note  (~1/3 page)
+%
+% GOAL: A short, honest reflection on how LLMs were used as a research
+%       collaborator for this part (what they helped derive/debug/write, and
+%       where you corrected them). This is a course requirement of the
+%       AI-augmented seminar. Throughout ALL sections, wrap AI-generated prose
+%       in \ai{...} so that report_clean.pdf shows the human-only version.
+% ============================================================================
+
+\section{On the AI collaboration}
+\label{sec:ai}
+
+\ai{A large-language model was used to organize this first draft, condense the
+Block-4 notes, and check that the numerical claims match \texttt{block4.py}.  It
+also helped separate frozen-state, circuit-level, parameter-level, and
+optimizer-level noise so that results from different experiments were not
+silently combined.  The main correction during the AI-assisted review was to
+reject the tempting statement that noise-aware VQE ``recovers'' the topological
+signal: the independent noiseless-fidelity check shows that a non-unital channel
+can improve the displayed edge string while producing a worse state.  All
+AI-drafted prose remains marked in purple and should be revised by the author
+before submission.}
