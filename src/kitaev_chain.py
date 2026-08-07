@@ -9,7 +9,12 @@ Hamiltonian (eq. 1 of the deck):
 BdG basis: Psi = (c_1, ..., c_L, c†_1, ..., c†_L)^T
 BdG matrix: M = [[h, d], [-d, -h]]
   h_{ij}    = -mu * delta_{ij} - t * (delta_{i,j+1} + delta_{i+1,j})
-  d_{ij}    = Delta * (delta_{i,j+1} - delta_{i+1,j})   [antisymmetric]
+  d_{ij}    = Delta * (delta_{j,i+1} - delta_{i,j+1})   [antisymmetric]
+
+Note the index order in d: +Delta sits on the UPPER diagonal (d[j, j+1]), which
+is what reproduces the +Delta pairing term above; writing it the other way round
+flips the sign of Delta (a gauge choice c_j -> i c_j that leaves the spectrum
+unchanged, but swaps which end each Majorana sublattice binds to).
 
 Eigenvalues come in ±E pairs (particle-hole symmetry).
 """
