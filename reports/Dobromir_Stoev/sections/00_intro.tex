@@ -21,16 +21,18 @@ ideal result does not yet answer the experimentally relevant question: does the
 diagnostic remain visible after imperfect gates, decoherence, readout errors,
 and a noisy variational loop?}
 
-\ai{This report covers Part 5, \emph{NISQ Noise on the Diagnostic}.  Week 8 first
-kept the validated state frozen and tested only readout error, local
-depolarization, and finite measurement counts.  Week 9 then applied noise during
-the preparation circuit, where it accumulates after individual gates, and later
-allowed the VQE optimizer itself to receive noisy cost values.  A recorded
-backend calibration was also compared with the uniform test model.  Throughout,
-the same $L=4$ circuit and edge-string observable are used so that the source of
-each change remains clear.}
+\ai{This report studies \emph{NISQ Noise on the Diagnostic}.  The first test kept
+the validated state frozen and isolated readout error, local depolarization, and
+finite measurement counts.  The next test applied noise during state
+preparation, where it accumulates after individual gates.  Finally, the VQE
+optimizer itself received noisy cost values, and a recorded backend calibration
+was compared with the uniform test model.  Throughout, the same $L=4$ circuit
+and edge-string observable are used so that the source of each change remains
+clear.}
 
 \ai{The noiseless construction of the VQE and string-measurement circuit belongs
-to Zhengyi Liu's Part 4.  The symmetry-based taxonomy of physical Kitaev-chain
-errors and the scaling to large $L$ belong to Edgar Harutyunyan's Part 6; here
-$T_1/T_2$ enter only as device-level channels acting on the simulated circuit.}
+to Zhengyi Liu's report, \emph{Measuring Topology on Circuits}.  The
+symmetry-based classification of physical Kitaev-chain errors and the scaling to
+large $L$ are treated in Edgar Harutyunyan's report, \emph{Error Taxonomy and
+Scaling to Large $L$}.  Here $T_1/T_2$ enter only as device-level channels acting
+on the simulated circuit.}

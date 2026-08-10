@@ -16,12 +16,12 @@
 
 \ai{All circuit results use a chain of $L=4$ sites, hopping strength $t=1$,
 pairing strength $\Delta=1$, and the parity-constrained VQE and edge string from
-Part 4.  The chemical potential $\mu$ is varied to cross the phase transition.
-The preparation circuit contains single-qubit $R_Y$ rotations and linear CNOT
-gates~\cite{peruzzo2014vqe}.  Before simulation it is written in the fixed gate
-set \texttt{[rz,sx,cx]} without removing gates.  An error assigned to
-\texttt{cx} therefore acts after every CNOT.  The output density matrix $\rho$
-gives the edge-string value
+Zhengyi Liu's report on noiseless circuit measurement.  The chemical potential
+$\mu$ is varied to cross the phase transition.  The preparation circuit contains
+single-qubit $R_Y$ rotations and linear CNOT gates~\cite{peruzzo2014vqe}.
+Before simulation it is written in the fixed gate set \texttt{[rz,sx,cx]}
+without removing gates.  An error assigned to \texttt{cx} therefore acts after
+every CNOT.  The output density matrix $\rho$ gives the edge-string value
 $\operatorname{Tr}(O_{\mathrm{edge}}\rho)$.}
 
 \ai{The implementation was checked with a separate calculation that applies
@@ -75,12 +75,6 @@ verify it under noise.  More layers are not automatically better.}
   $r=1$ fails, $r=2$ succeeds, and deeper circuits mainly accumulate CNOT noise.}
   \label{fig:depth}
 \end{figure}
-
-\ai{Angle errors provide a second check.  A random shift $\delta\theta$ rotates
-the ideal state away from the optimum while its purity stays at one.  CNOT
-depolarization reduces the same edge string while the purity falls.  The first
-error can in principle be corrected by recalibrating the angles; the second
-cannot be removed by changing one set of angles.}
 
 \subsection{Noisy optimization and backend calibration}
 
@@ -168,4 +162,5 @@ contrast of the non-local diagnostic.  Circuit depth should be chosen by
 noiseless expressibility validation followed by noisy evaluation, and any
 noise-aware optimization must report a state-quality check rather than only the
 observable it was able to improve.  These conclusions concern the $L=4$ NISQ
-circuit; their large-$L$ consequences are treated separately in Part 6.}
+circuit; their large-$L$ consequences are treated separately in Edgar
+Harutyunyan's report.}

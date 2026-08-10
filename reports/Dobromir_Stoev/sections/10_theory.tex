@@ -48,17 +48,18 @@ $p_{T_1}=1-e^{-\tau/T_1}$, where $T_1$ is the energy-relaxation time.  The
 dephasing time $T_2$ describes loss of phase coherence.  Relaxation can move the
 state out of the chosen parity sector, while dephasing weakens the coherence
 needed by the edge string.  Their classification as physical Kitaev-chain errors
-belongs to Part 6.}
+is discussed in Edgar Harutyunyan's report on error taxonomy and large-chain
+scaling.}
 
-\subsection{Week 8 frozen state and Week 9 noisy preparation}
+\subsection{From a frozen state to noisy preparation}
 
-\ai{Week 8 was an isolation test, not a complete model of noisy state
-preparation.  It started from a validated state that was kept fixed and then
-applied symmetric readout error, local two-qubit depolarizing noise on
-nearest-neighbour pairs, and finite-shot sampling.  It did not include repeated
-noise during the preparation circuit, $T_1/T_2$ relaxation, angle
-miscalibration, or optimization with noisy cost values.  This limited setup was
-useful because it showed how the diagnostic alone responds to controlled errors.}
+\ai{The initial isolation test was not a complete model of noisy state
+preparation.  It started from a validated state that was kept fixed and applied
+symmetric readout error, local two-qubit depolarizing noise on nearest-neighbour
+pairs, and finite-shot sampling.  It did not include repeated noise during the
+preparation circuit, $T_1/T_2$ relaxation, angle miscalibration, or optimization
+with noisy cost values.  This limited setup was useful because it showed how the
+diagnostic alone responds to controlled errors.}
 
 \ai{If $\epsilon$ is the probability of reading one qubit incorrectly, the
 readout error reduces an $L$-qubit edge string according to}
@@ -71,13 +72,13 @@ readout error reduces an $L$-qubit edge string according to}
 $N_{\mathrm{shots}}$ times adds a statistical uncertainty that decreases roughly
 as $N_{\mathrm{shots}}^{-1/2}$.}
 
-\ai{Week 9 instead produced the state with the noisy circuit itself.  A channel
+\ai{The next stage produced the state with the noisy circuit itself.  A channel
 acts after every relevant gate, so its effect depends on gate order and circuit
 depth.  This is a better model of a device because errors alter the state while
-it is being built and accumulate with the number of gates.  The final Week-9
-test also placed noise inside the VQE loop, so every trial set of angles was
-judged using a noisy circuit rather than an ideal one.  It is still a simulation,
-but it removes the main frozen-state assumption.}
+it is being built and accumulate with the number of gates.  The final test also
+placed noise inside the VQE loop, so every trial set of angles was judged using
+a noisy circuit rather than an ideal one.  It is still a simulation, but it
+removes the main frozen-state assumption.}
 
 \ai{Angle errors form a separate case.  If $\theta^*$ denotes the optimized gate
 angles, a calibration error uses $\theta^*+\delta\theta$.  This coherent error
