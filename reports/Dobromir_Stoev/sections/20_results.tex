@@ -82,11 +82,11 @@ the edge string look better.  We therefore compare both the noisy edge string
 and the noiseless fidelity to the exact ground state.  The calculation fixes
 $L=4$, $\mu=0$, $\lambda=0.1$, and $r=3$.  This depth is held one layer above
 the $r=2$ preparation threshold to compare the channels on the same capable
-circuit; it is not a new depth recommendation.}
+circuit. This does not mean that we have a new depth recommendation.}
 
-\ai{Both strengths run from $0$ to $0.12$ in steps of $0.02$, covering the
-noiseless limit through a strong stress test.  The shared range supports a
-controlled comparison, not equal hardware likelihood.  Depolarizing noise,
+\ai{For the testing, we let both strengths run from $0$ to $0.12$ in steps of $0.02$, covering the
+noiseless limit through a high stress test.  The shared range supports a
+controlled comparison.  Depolarizing noise,
 with two-qubit strength $p_{\mathrm{cx}}$, is \emph{unital}: it favours no state.
 Amplitude damping, with single-qubit probability $\gamma$ on both CNOT qubits,
 is \emph{non-unital}: it drives them toward $|0\rangle$ and can shift the best
@@ -113,21 +113,22 @@ angles.}
   \label{tab:noisy}
 \end{table}
 
-\ai{Under depolarizing noise at $0.08$, re-optimization leaves the edge string
+\ai{Under depolarizing noise at $0.08$, optimization leaves the edge string
 unchanged ($0.502$ to $0.501$) and the fidelity near one, supporting the use of
 ideal angles for this channel.  Under amplitude damping, it raises the edge
 string from $0.422$ to $0.565$ at $0.08$, yet the fidelity falls from $0.998$ to
 $0.966$ at $0.12$.  The optimizer can therefore improve the displayed signal
-without preparing a better state.  Noisy VQE results need an independent
+without preparing a better state.  This leads us to the conclusion that noisy VQE results need an independent
 state-quality check.}
 
-\ai{Finally, \texttt{NoiseModel.from\_backend} replaces the uniform test channel
-with a recorded \texttt{FakeManilaV2} calibration.  Its CNOT error rates vary
-from about $0.009$ to $0.014$.  At $\mu=0$ the ideal, backend-calibrated, and
-uniform $p_{\mathrm{cx}}=0.05$ edge strings are $0.99$, $0.87$, and $0.67$.
-The uniform model is therefore a harsh comparison rather than a device
-prediction.  The calibrated result uses a recorded snapshot and excludes
-readout error, so it remains mildly optimistic.}
+\ai{To check whether the uniform $p_{\mathrm{cx}}=0.05$ model is realistic, we
+repeat the same circuit using recorded calibration data from
+\texttt{FakeManilaV2}.  This model assigns different error rates to individual
+gates, with CNOT rates between about $0.009$ and $0.014$.  At $\mu=0$, the ideal
+edge string is $0.99$; it falls to $0.87$ with the Manila calibration and to
+$0.67$ with uniform noise.  The device snapshot therefore predicts noticeable,
+but less severe, signal loss than the stress test.  It is not a live hardware
+run, and readout error is excluded, so the value $0.87$ is slightly optimistic.}
 
 \ai{The central result is that noisy optimization and better state preparation
 are not equivalent.  The large-$L$ consequences are treated separately in Edgar
