@@ -12,10 +12,10 @@
 
 \subsection{Gate-level quantum channels}
 
-\ai{A quantum state is described by its density matrix $\rho$.  An ideal gate
+A quantum state is described by its density matrix $\rho$.  An ideal gate
 $g$, represented by the unitary matrix $U_g$, changes it as
 $\mathcal U_g(\rho)=U_g\rho U_g^\dagger$.  In the noisy model, a channel
-$\mathcal E_g$ acts immediately after the ideal gate:}
+$\mathcal E_g$ acts immediately after the ideal gate:
 \begin{equation}
   \widetilde{\mathcal U}_g=\mathcal E_g\circ\mathcal U_g,
   \qquad
@@ -24,22 +24,22 @@ $\mathcal E_g$ acts immediately after the ideal gate:}
   \sum_k K_k^\dagger K_k=I .
   \label{eq:kraus}
 \end{equation}
-\ai{The matrices $K_k$ are the channel's \emph{Kraus operators}; each describes
+The matrices $K_k$ are the channel's \emph{Kraus operators}; each describes
 one possible effect of the noise, and $k$ labels these effects.  The last equality
 preserves total probability, with $I$ denoting the identity matrix.  For a circuit
 of $M$ gates, Eq.~\eqref{eq:kraus} is applied in gate order, starting from the
 input state $\rho_0$.  Noise then builds up during preparation instead of being
 added only to the completed state.  Qiskit Aer performs this calculation with a
-density-matrix simulator and a \texttt{NoiseModel}~\cite{qiskit2024}.}
+density-matrix simulator and a \texttt{NoiseModel}~\cite{qiskit2024}.
 
-\ai{The controlled baseline attaches a two-qubit depolarizing channel after
-every CNOT (\texttt{cx}) gate,}
+The controlled baseline attaches a two-qubit depolarizing channel after
+every CNOT (\texttt{cx}) gate,
 \begin{equation}
   \mathcal E^{\mathrm{dep}}_p(\rho)
   =(1-p)\rho+p\,\frac{\operatorname{Tr}\rho}{2^n}I .
   \label{eq:depol}
 \end{equation}
-\ai{Here $p$ is the error strength and $n$ is the number of qubits affected by
+Here $p$ is the error strength and $n$ is the number of qubits affected by
 the channel.  In this report $n=2$ because the channel follows a two-qubit CNOT.
 With probability $1-p$ the state is unchanged; the other term moves it toward
 the fully mixed $n$-qubit state.  A second model uses thermal relaxation.  For a
@@ -49,50 +49,50 @@ dephasing time $T_2$ describes loss of phase coherence.  Relaxation can move the
 state out of the chosen parity sector, while dephasing weakens the coherence
 needed by the edge string.  Their classification as physical Kitaev-chain errors
 is discussed in Edgar Harutyunyan's report on error taxonomy and large-chain
-scaling.}
+scaling.
 
 \subsection{From a frozen state to noisy preparation}
 
-\ai{The initial isolation test was not a complete model of noisy state
+The initial isolation test was not a complete model of noisy state
 preparation.  It started from a validated state that was kept fixed and applied
 symmetric readout error, local two-qubit depolarizing noise on nearest-neighbour
 pairs, and finite-shot sampling.  It did not include repeated noise during the
 preparation circuit, $T_1/T_2$ relaxation, angle miscalibration, or optimization
 with noisy cost values.  This limited setup was useful because it showed how the
-diagnostic alone responds to controlled errors.}
+diagnostic alone responds to controlled errors.
 
-\ai{If $\epsilon$ is the probability of reading one qubit incorrectly, the
-readout error reduces an $L$-qubit edge string according to}
+If $\epsilon$ is the probability of reading one qubit incorrectly, the
+readout error reduces an $L$-qubit edge string according to
 \begin{equation}
   \langle O_{\mathrm{edge}}\rangle_{\mathrm{readout}}
   =(1-2\epsilon)^L\langle O_{\mathrm{edge}}\rangle,
   \label{eq:readout}
 \end{equation}
-\ai{where $L$ is the chain length.  Repeating the measurement
+where $L$ is the chain length.  Repeating the measurement
 $N_{\mathrm{shots}}$ times adds a statistical uncertainty that decreases roughly
-as $N_{\mathrm{shots}}^{-1/2}$.}
+as $N_{\mathrm{shots}}^{-1/2}$.
 
-\ai{The next stage produced the state with the noisy circuit itself.  A channel
+The next stage produced the state with the noisy circuit itself.  A channel
 acts after every relevant gate, so its effect depends on gate order and circuit
 depth.  This is a better model of a device because errors alter the state while
 it is being built and accumulate with the number of gates.  The final test also
 placed noise inside the VQE loop, so every trial set of angles was judged using
 a noisy circuit rather than an ideal one.  It is still a simulation, but it
-removes the main frozen-state assumption.}
+removes the main frozen-state assumption.
 
-\ai{Angle errors form a separate case.  If $\theta^*$ denotes the optimized gate
+Angle errors form a separate case.  If $\theta^*$ denotes the optimized gate
 angles, a calibration error uses $\theta^*+\delta\theta$.  This coherent error
 rotates the state but keeps it pure.  Random, or incoherent, channels generally
 lower the purity $\operatorname{Tr}\rho^2$.  Purity can therefore distinguish a
 wrong rotation from actual mixing even when both reduce
-$|\langle O_{\mathrm{edge}}\rangle|$.}
+$|\langle O_{\mathrm{edge}}\rangle|$.
 
 \subsection{Expressibility versus accumulated noise}
 
-\ai{The preparation circuit uses a repeated layer, called an ansatz repetition.
+The preparation circuit uses a repeated layer, called an ansatz repetition.
 For $r$ repetitions on $L$ qubits, the linear circuit contains $r(L-1)$ CNOTs.
 If $p_{\mathrm{cx}}$ is the error strength of each CNOT, a useful approximation
-to the measured signal is}
+to the measured signal is
 \begin{equation}
  |\langle O_{\mathrm{edge}}\rangle|_{\mathrm{meas}}(r)
  \simeq
@@ -100,13 +100,13 @@ to the measured signal is}
  (1-p_{\mathrm{cx}})^{r(L-1)} .
  \label{eq:depth_tradeoff}
 \end{equation}
-\ai{The first factor states whether the circuit is deep enough to represent the
+The first factor states whether the circuit is deep enough to represent the
 target state.  The second decreases with every added layer.  The useful depth is
-therefore the shallowest circuit that can represent the state.}
+therefore the shallowest circuit that can represent the state.
 
-\ai{Putting noise inside the VQE changes the quantity being minimized.  Let $H$
+Putting noise inside the VQE changes the quantity being minimized.  Let $H$
 be the qubit Hamiltonian, $\theta$ the trial gate angles, and
-$P=\prod_j Z_j$ the parity operator.  The noisy cost is}
+$P=\prod_j Z_j$ the parity operator.  The noisy cost is
 \begin{equation}
  C_{\mathrm{noisy}}(\theta)
  =\operatorname{Tr}[H\rho_\theta]
@@ -115,8 +115,8 @@ $P=\prod_j Z_j$ the parity operator.  The noisy cost is}
  \rho_\theta=\mathcal E\!\left(U(\theta)|0\rangle\langle0|U^\dagger(\theta)\right).
  \label{eq:noisy_cost}
 \end{equation}
-\ai{Here $U(\theta)$ is the preparation circuit, $\mathcal E$ represents all
+Here $U(\theta)$ is the preparation circuit, $\mathcal E$ represents all
 noise applied through that circuit, and $\lambda$ sets the penalty for leaving
 the target parity sector.  A lower cost, or even a larger noisy edge string, need
 not mean that the ground state was prepared more accurately.  The new angles
-must therefore be run without noise and compared with the exact ground state.}
+must therefore be run without noise and compared with the exact ground state.
