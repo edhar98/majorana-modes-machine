@@ -1,0 +1,163 @@
+% ============================================================================
+% 20_results.tex  --  Methods & results  (~2 pages, the core of the report)
+%
+% GOAL: What you computed and what it shows. Include the key figure(s) for your
+%       part ONLY (see the Code/figs column for your part in
+%       ../../reports/README.md). Regenerate fresh PDFs with the block runner,
+%       e.g.  python src/block1.py --plots 6   (venv /opt/python-envs/myenv),
+%       and copy them into a local figs/ folder. Do NOT use showcase.py gallery
+%       images (shared). Report concrete numbers, not just plots.
+% ============================================================================
+
+\section{Methods and Results}
+\label{sec:results}
+
+\subsection{Circuit-level implementation and verification}
+
+\ai{All circuit results use a chain of $L=4$ sites, hopping strength $t=1$,
+pairing strength $\Delta=1$, and the parity-constrained VQE and edge string from
+Zhengyi Liu's report on noiseless circuit measurement.  The chemical potential
+$\mu$ is varied to cross the phase transition.  The preparation circuit contains
+single-qubit $R_Y$ rotations and linear CNOT gates~\cite{peruzzo2014vqe}.  An error assigned to \texttt{cx} therefore acts after
+every CNOT.  The output density matrix $\rho$ gives the edge-string value
+$\operatorname{Tr}(O_{\mathrm{edge}}\rho)$.}
+
+\ai{The implementation was checked with a separate calculation that applies
+each gate and each depolarizing channel directly, without using Aer's noise
+machinery.  Across 41 values of $\mu/t$, the two calculations differ by only
+about $10^{-15}$.  Figure~\ref{fig:verification} also compares the deliberately
+strong CNOT depolarizing strength $p_{\mathrm{cx}}=0.10$ with thermal relaxation
+at $T_1=80\,\mu\mathrm{s}$, $T_2=60\,\mu\mathrm{s}$ and CNOT duration
+$\tau_{\mathrm{cx}}=300\,\mathrm{ns}$.  The relaxation probability per gate is
+only $1-e^{-\tau_{\mathrm{cx}}/T_1}\simeq0.0037$, so the thermal curve remains
+closer to the ideal result.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{block4_week9_verification.pdf}
+  \caption{Left: the Aer \texttt{NoiseModel} edge string and the independent
+  exact gate-by-gate reference agree to $\sim10^{-15}$ across the $\mu$ sweep.
+  Right: depolarizing versus thermal $T_1/T_2$ noise at matched gate placement.}
+  \label{fig:verification}
+\end{figure}
+
+\subsection{The optimal depth is an expressibility threshold}
+
+\ai{A deeper VQE circuit can describe more states, but it also contains more
+noisy gates.  The purpose of this test is to find the first depth that is rich
+enough to prepare the target state and to check whether any later layers still
+help after gate noise is included.  This matters experimentally: choosing a
+depth from noiseless accuracy alone can produce a worse measured signal.}
+
+\ai{The test uses $\mu=0$, where the ideal edge string is strongest, so loss of
+signal is clearly caused by the circuit rather than by being close to the phase
+transition.  Repetitions $r=1,\ldots,6$ cover a circuit below the required depth,
+the point where preparation first succeeds, and four deeper cases.  The uniform
+CNOT error $p_{\mathrm{cx}}=0.05$ is an intentionally strong stress test: it is
+larger than the roughly $0.009$--$0.014$ rates in the recorded backend used
+later, but small enough that signal remains visible across all six depths.  It
+is chosen to expose the depth trend, not to predict one specific device.}
+
+\ai{The noiseless edge string is only $\simeq0.004$ at $r=1$, reaches
+approximately one at $r=2$, and changes little in deeper circuits.  The first
+circuit is therefore too shallow to represent the state.  With noise included,
+the signal peaks at $r^*=2$; every further repetition adds three noisy CNOTs
+without improving the ideal state.  The test establishes a practical rule:
+choose the shallowest depth that passes the noiseless preparation check, then
+verify it under noise.  More layers are not automatically better.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.72\linewidth]{block4_week9_depth_optimum.pdf}
+  \caption{For $L=4$, the noiseless edge string has an expressibility threshold:
+  $r=1$ fails, $r=2$ succeeds, and deeper circuits mainly accumulate CNOT noise.}
+  \label{fig:depth}
+\end{figure}
+
+\subsection{Noisy optimization and backend calibration}
+
+\ai{The preceding test applied noise after optimizing ideal gate angles.  A real
+VQE run instead receives noisy energy values while searching for those angles.
+The next question is therefore whether the optimizer can adapt to the channel.
+A second check is essential: if the measured edge string improves, did the
+optimizer prepare a better ground state, or did it merely find angles that make
+one noisy measurement look better?  The test records both the noisy edge string
+and the fidelity of the resulting angles to the exact ground state.}
+
+\ai{The comparison fixes $L=4$, $\mu=0$, parity-penalty strength $\lambda=0.1$,
+and $r=3$.  This does not replace the $r=2$ optimum above.  The depth is held one
+layer above the preparation threshold so that the same already-capable circuit
+is used for both channels and only the optimizer's response changes.  Thus
+$r=3$ is a controlled test setting, not a recommended depth.}
+
+\ai{Both channel strengths are swept from $0$ to $0.12$ in steps of $0.02$.
+Zero checks that noisy and noiseless optimization agree when no error is
+present.  The lower part of the range represents weak noise, while the upper
+part is a deliberate stress regime where a difference between the two channels
+becomes easy to see.  Using the same numerical range makes the comparison
+controlled, but equal numbers do not mean that the two errors are equally likely
+on hardware: $p_{\mathrm{cx}}$ is the two-qubit depolarizing strength after each
+CNOT, whereas $\gamma$ is the amplitude-damping probability applied to each
+qubit of that CNOT pair.}
+
+\ai{The two channels are chosen because they test opposite behaviours.  A
+\emph{unital} channel leaves the fully mixed state unchanged and does not favour
+one state; depolarizing noise is the control case.  A \emph{non-unital} channel
+does favour a state; amplitude damping drives qubits toward $|0\rangle$ and can
+therefore shift the best VQE angles.  The calculation uses the COBYLA optimizer,
+starts from the noiseless angles, and also tries several random starting points.
+Table~\ref{tab:noisy} shows the middle-to-strong part of the seed-7 sweep, where
+the contrast is clearest.}
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{llcccc}
+    \toprule
+    channel & strength & \multicolumn{2}{c}{$|\langle O_{\mathrm{edge}}\rangle|$ noisy}
+      & \multicolumn{2}{c}{fidelity to exact GS}\\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+      & & fixed $\theta^*$ & noise-aware & fixed $\theta^*$ & noise-aware\\
+    \midrule
+    depolarizing & $0.08$ & $0.502$ & $0.501$ & $0.998$ & $1.000$\\
+    amplitude damping & $0.08$ & $0.422$ & $0.565$ & $0.998$ & $0.994$\\
+    amplitude damping & $0.12$ & $0.266$ & $0.337$ & $0.998$ & $0.966$\\
+    \bottomrule
+  \end{tabular}
+  \caption{Best-case versus noise-aware optimization at $L=4$, $r=3$, $\mu=0$.
+  Under amplitude damping the measured edge string rises while the noiseless
+  fidelity to the exact ground state falls at strong damping.}
+  \label{tab:noisy}
+\end{table}
+
+\ai{The depolarizing result is important even though almost nothing changes:
+at strength $0.08$, re-optimization changes the edge string only from $0.502$ to
+$0.501$, while the fidelity remains essentially one.  For this $L=4$ circuit,
+the optimizer cannot exploit symmetric depolarizing noise.  This supports the
+simpler practice of optimizing ideal angles first when studying this channel.}
+
+\ai{Amplitude damping gives the more cautionary result.  At strength $0.08$,
+re-optimization raises the measured edge string from $0.422$ to $0.565$, but at
+$0.12$ the fidelity falls from $0.998$ to $0.966$.  The larger displayed signal
+therefore does not mean that the ground state was prepared better.  This is the
+main achievement of the test: it demonstrates why a noisy VQE result must
+include an independent state-quality check.  Reporting only the improved
+observable can give the wrong conclusion.}
+
+\ai{Finally, \texttt{NoiseModel.from\_backend} replaces the uniform test channel
+with a recorded \texttt{FakeManilaV2} calibration.  Its CNOT error rates vary
+from about $0.009$ to $0.014$.  At $\mu=0$ the ideal, backend-calibrated, and
+uniform $p_{\mathrm{cx}}=0.05$ edge strings are $0.99$, $0.87$, and $0.67$.
+The uniform model is therefore a deliberately harsh comparison, not a device
+prediction.  The backend result is still optimistic: its readout errors are not
+used because the simulation evaluates
+$\operatorname{Tr}(O_{\mathrm{edge}}\rho)$ without measurement instructions.
+The data also come from a recorded calibration, not a live hardware run.}
+
+\ai{Together these tests show that realistic noise primarily reduces the
+contrast of the non-local diagnostic.  Circuit depth should be chosen by
+noiseless expressibility validation followed by noisy evaluation, and any
+noise-aware optimization must report a state-quality check rather than only the
+observable it was able to improve.  These conclusions concern the $L=4$ NISQ
+circuit; their large-$L$ consequences are treated separately in Edgar
+Harutyunyan's report.}
