@@ -25,14 +25,14 @@ $\mathcal E_g$ acts immediately after the ideal gate:
   \label{eq:kraus}
 \end{equation}
 The matrices $K_k$ are the channel's \emph{Kraus operators}; each describes
-one possible effect of the noise, and $k$ labels these effects.  The last equality
-preserves total probability, with $I$ denoting the identity matrix.  For a circuit
+one possible effect of the noise, and $k$ labels indices.  The last equality is important, as it
+preserves the total probability, with $I$ denoting the identity matrix.  For a circuit
 of $M$ gates, Eq.~\eqref{eq:kraus} is applied in gate order, starting from the
 input state $\rho_0$.  Noise then builds up during preparation instead of being
 added only to the completed state.  Qiskit Aer performs this calculation with a
 density-matrix simulator and a \texttt{NoiseModel}~\cite{qiskit2024}.
 
-The controlled baseline attaches a two-qubit depolarizing channel after
+The error test exploits a two-qubit depolarizing channel after
 every CNOT (\texttt{cx}) gate,
 \begin{equation}
   \mathcal E^{\mathrm{dep}}_p(\rho)
@@ -41,13 +41,13 @@ every CNOT (\texttt{cx}) gate,
 \end{equation}
 Here $p$ is the error strength and $n$ is the number of qubits affected by
 the channel.  In this report $n=2$ because the channel follows a two-qubit CNOT.
-With probability $1-p$ the state is unchanged; the other term moves it toward
-the fully mixed $n$-qubit state.  A second model uses thermal relaxation.  For a
+The state is unchanged with probability $1-p$.  The other term moves it towards
+a fully mixed $n$-qubit state.  A second model uses thermal relaxation.  For a
 gate lasting $\tau$, energy relaxation has probability
 $p_{T_1}=1-e^{-\tau/T_1}$, where $T_1$ is the energy-relaxation time.  The
-dephasing time $T_2$ describes loss of phase coherence.  Relaxation can move the
+dephasing time $T_2$ describes the loss of phase coherence, which is known as decoherence.  Relaxation can move the
 state out of the chosen parity sector, while dephasing weakens the coherence
-needed by the edge string.  Their classification as physical Kitaev-chain errors
+needed by the edge string.  As mentioned before, the classification of these errors as physical Kitaev-chain errors
 is discussed in Ed.\ Harutyunyan's report on error taxonomy and large-chain
 scaling.
 
@@ -56,7 +56,7 @@ scaling.
 The initial isolation test was not a complete model of noisy state
 preparation.  It started from a validated state that was kept fixed and applied
 symmetric readout error, local two-qubit depolarizing noise on nearest-neighbour
-pairs, and finite-shot sampling.  It did not include repeated noise during the
+pairs and finite-shot sampling.  It did not include repeated noise during the
 preparation circuit, $T_1/T_2$ relaxation, angle miscalibration, or optimization
 with noisy cost values.  This limited setup was useful because it showed how the
 diagnostic alone responds to controlled errors.
@@ -72,13 +72,13 @@ where $L$ is the chain length.  Repeating the measurement
 $N_{\mathrm{shots}}$ times adds a statistical uncertainty that decreases roughly
 as $N_{\mathrm{shots}}^{-1/2}$.
 
-The next stage produced the state with the noisy circuit itself.  A channel
+The next stage of the experiment produced the state with the noisy circuit itself.  A channel
 acts after every relevant gate, so its effect depends on gate order and circuit
 depth.  This is a better model of a device because errors alter the state while
 it is being built and accumulate with the number of gates.  The final test also
 placed noise inside the VQE loop, so every trial set of angles was judged using
-a noisy circuit rather than an ideal one.  It is still a simulation, but it
-removes the main frozen-state assumption.
+a noisy circuit rather than an ideal one.  This allows to 
+remove the frozen-state assumption.
 
 Angle errors form a separate case.  If $\theta^*$ denotes the optimized gate
 angles, a calibration error uses $\theta^*+\delta\theta$.  This coherent error
@@ -101,7 +101,7 @@ to the measured signal is
  \label{eq:depth_tradeoff}
 \end{equation}
 The first factor states whether the circuit is deep enough to represent the
-target state.  The second decreases with every added layer.  The useful depth is
+target state.  The second decreases the signal with every added layer.  The optimal depth is
 therefore the shallowest circuit that can represent the state.
 
 Putting noise inside the VQE changes the quantity being minimized.  Let $H$
@@ -117,6 +117,6 @@ $P=\prod_j Z_j$ the parity operator.  The noisy cost is
 \end{equation}
 Here $U(\theta)$ is the preparation circuit, $\mathcal E$ represents all
 noise applied through that circuit, and $\lambda$ sets the penalty for leaving
-the target parity sector.  A lower cost, or even a larger noisy edge string, need
-not mean that the ground state was prepared more accurately.  The new angles
+the target parity sector.  A lower cost need
+not necessarily imply that the ground state was prepared more accurately.  The new angles
 must therefore be run without noise and compared with the exact ground state.
