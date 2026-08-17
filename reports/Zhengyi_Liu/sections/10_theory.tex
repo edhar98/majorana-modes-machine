@@ -1,0 +1,103 @@
+% ============================================================================
+% 10_theory.tex -- Theory and measurement protocol (~1--1.5 pages)
+% All AI-drafted prose is wrapped in \ai{...}; revise personally before submission.
+% ============================================================================
+\section{Variational preparation and circuit measurement}
+\label{sec:theory}
+
+\subsection{Hamiltonian, ansatz, and parity constraint}
+\ai{For an even open chain of length $L$, the encoded Hamiltonian used in
+Block~3 is}
+\begin{equation}
+ H(\mu)= -\frac{\mu}{2}\sum_{j=0}^{L-1}Z_j
+ +\frac{t-\Delta}{2}\sum_{j=0}^{L-2}X_jX_{j+1}
+ +\frac{t+\Delta}{2}\sum_{j=0}^{L-2}Y_jY_{j+1}.
+ \label{eq:qubit_h}
+\end{equation}
+\ai{The numerical sweeps fix $t=\Delta=1$, so the $XX$ term vanishes and the
+known transition scale is $|\mu|=2t$.  VQE replaces direct diagonalization by the
+trial state}
+\begin{equation}
+ \ket{\psi(\boldsymbol\theta)}=U(\boldsymbol\theta)\ket{0\cdots0},
+ \qquad
+ \boldsymbol\theta^*(\mu)=\arg\min_{\boldsymbol\theta}C_\mu(\boldsymbol\theta),
+ \label{eq:vqe_state}
+\end{equation}
+\ai{where $U$ is Qiskit's hardware-efficient \texttt{EfficientSU2} circuit
+restricted to $R_Y$ rotations and linear nearest-neighbour CNOT entanglement.
+This is a standard hybrid variational strategy~\cite{peruzzo2014vqe,mcclean2016,kandala2017}.
+With $r$ ansatz repetitions, the circuit contains $L(r+1)$ rotation angles and
+$r(L-1)$ CNOTs.  For the production sweep, $L=4$ and $r=3$, hence there are
+$16$ variational parameters and three entangling layers.}
+
+\ai{The Hamiltonian conserves the parity operator}
+\begin{equation}
+ \Ppar=\prod_{j=0}^{L-1}Z_j.
+\end{equation}
+\ai{A low energy alone is insufficient near the nearly degenerate parity
+sectors, so the Week~7 sweep minimizes}
+\begin{equation}
+ C_\mu(\boldsymbol\theta)
+ =\langle H(\mu)\rangle_{\boldsymbol\theta}
+ +\lambda\bigl(1-\langle \Ppar\rangle_{\boldsymbol\theta}\bigr)^2,
+ \qquad \lambda=3,
+ \label{eq:parity_cost}
+\end{equation}
+\ai{which targets the even sector.  The earlier Week~5 convergence
+demonstration used the linear bias $\langle H\rangle-0.1\langle P\rangle$;
+Eq.~\eqref{eq:parity_cost} is the more robust cost used for the full $\mu$
+continuation.}
+
+\begin{figure}[H]
+ \centering
+ \begin{minipage}[c]{0.34\linewidth}
+   \centering
+   \includegraphics[width=\linewidth]{block3_week5_ansatz.pdf}
+ \end{minipage}\hfill
+ \begin{minipage}[c]{0.63\linewidth}
+   \centering
+   \includegraphics[width=\linewidth]{block3_week5_meas_correlation.pdf}
+ \end{minipage}
+ \caption{\ai{Left: one $R_Y$--linear-CNOT repetition of the $L=4$
+ \texttt{EfficientSU2} ansatz.  Right: the same preparation followed by endpoint
+ basis rotations and computational-basis readout for the four-qubit edge string.}}
+ \label{fig:circuits}
+\end{figure}
+
+\subsection{Why the observable must be non-local}
+\ai{A single endpoint operator such as $X_0$ anticommutes with parity.  In a
+parity eigenstate $P\ket{\psi}=p\ket{\psi}$,}
+\begin{equation}
+ \langle X_0\rangle
+ =\bra{\psi}PX_0P\ket{\psi}
+ =-\langle X_0\rangle=0.
+ \label{eq:local_zero}
+\end{equation}
+\ai{Thus a local parity-odd edge expectation cannot diagnose the phase.  The
+parity-preserving boundary correlator used in the project is}
+\begin{equation}
+ \Oedge=X_0Z_1\cdots Z_{L-2}X_{L-1}=i b_0a_{L-1},
+ \qquad [\Oedge,P]=0,
+ \label{eq:edge_string}
+\end{equation}
+\ai{where $a_j,b_j$ are the Majorana operators in the project's fixed
+convention.  Only $|\langle\Oedge\rangle|$ is plotted, so an overall sign from an
+alternative Majorana ordering is irrelevant.  The string measures coherence
+between both ends of the finite chain: it is large around the topological sweet
+spot and suppressed when the end correlation is lost.}
+
+\subsection{Basis rotation and shot estimator}
+\ai{Quantum hardware returns computational-basis bits.  The $X$ factors in
+Eq.~\eqref{eq:edge_string} are therefore rotated to $Z$ by Hadamard gates on
+qubits $0$ and $L-1$, while the interior $Z$ factors require no rotation.  A
+measured bit string $b^{(s)}=(b_0^{(s)},\ldots,b_{L-1}^{(s)})$ gives one $\pm1$
+sample}
+\begin{equation}
+ m_s=(-1)^{\sum_{j=0}^{L-1}b_j^{(s)}},
+ \qquad
+ \widehat{\langle\Oedge\rangle}=\frac{1}{N}\sum_{s=1}^{N}m_s.
+ \label{eq:shot_estimator}
+\end{equation}
+\ai{For a Pauli observable, the sampling standard error is
+$\sqrt{(1-\langle O\rangle^2)/N}$ and is at most $N^{-1/2}$.  The main sweep uses
+$N=4096$, giving a worst-case statistical scale of approximately $0.016$.}

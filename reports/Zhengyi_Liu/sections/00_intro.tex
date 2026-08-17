@@ -1,0 +1,25 @@
+% ============================================================================
+% 00_intro.tex -- Introduction (~1/2 page)
+% All AI-drafted prose is wrapped in \ai{...}; revise personally before submission.
+% ============================================================================
+\section{Introduction}
+\label{sec:intro}
+
+\ai{The one-dimensional Kitaev chain supports boundary Majorana modes in its
+topological phase~\cite{kitaev2001}.  After a Jordan--Wigner transformation,
+however, neither the Majorana wave functions nor an exact eigenvector are direct
+hardware observables.  The relevant experimental question is therefore more
+operational: can a parameterized quantum circuit prepare the finite-chain ground
+state and can measurements of that circuit distinguish the topological and
+trivial regimes?}
+
+\ai{This report covers Part~4 of the project, \emph{Measuring Topology on
+Circuits}.  The qubit Hamiltonian and parity convention are taken as inputs from
+J. Singh's Part~3 report rather than re-derived here.  I construct the ideal
+circuit workflow: ground-state preparation with a variational quantum
+eigensolver (VQE), comparison of local and non-local observables, basis-rotated
+shot readout of the edge string, a chemical-potential sweep, parity-constrained
+optimization, and an ansatz-depth diagnostic.  The observable used below is a
+finite-size boundary/string diagnostic; it is not, by itself, a replacement for
+the bulk winding number.  Gate, relaxation, and readout-noise effects are outside
+the present scope and are treated in D. Stoev's Part~5 report.}

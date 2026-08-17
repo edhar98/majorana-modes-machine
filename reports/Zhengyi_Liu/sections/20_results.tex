@@ -1,0 +1,119 @@
+% ============================================================================
+% 20_results.tex -- Methods and results (~2--2.5 pages)
+% All AI-drafted prose is wrapped in \ai{...}; revise personally before submission.
+% ============================================================================
+\section{Methods and results}
+\label{sec:results}
+
+\subsection{Numerical protocol and validation}
+\ai{The project's Block~3 implementation uses Qiskit statevector/Aer
+simulation~\cite{majoranaMachine2026,qiskit2024}.  ED serves only as a
+small-$L$ certificate; VQE prepares the states plotted below.  Table~\ref{tab:settings} lists the production settings.}
+
+\begin{table}[H]
+ \centering
+ \small
+ \begin{tabular}{ll}
+  \toprule
+  quantity & value \\
+  \midrule
+  chain and couplings & $L=4$, $t=\Delta=1$ \\
+  sweep & $81$ points, $\mu/t\in[-3.5,3.5]$ \\
+  ansatz & $R_Y$ + linear CNOT, $r=3$, $N_\theta=16$ \\
+  optimizer & COBYLA, at most $500$ iterations per start \\
+  symmetry penalty & $\lambda(1-\langle P\rangle)^2$, $\lambda=3$ \\
+  continuation & previous optimum as the next initial point \\
+  recovery & up to $4$ additional random restarts \\
+  readout & $4096$ shots for $O_{\mathrm{edge}}$ \\
+  acceptance & $|\Delta E|\le0.05$, $|1-\langle P\rangle|\le0.01$, $\mathcal F\ge0.99$ \\
+  \bottomrule
+ \end{tabular}
+ \caption{\ai{Settings of the parity-constrained VQE sweep.}}
+ \label{tab:settings}
+\end{table}
+
+\ai{The sweep is warm-started: $\boldsymbol\theta^*(\mu_k)$ initializes the
+optimization at the neighbouring point $\mu_{k+1}$.  If a point fails any of the
+three acceptance tests, random restarts are evaluated.  For this validation
+study the final candidate is selected by its fidelity to the ED even-sector
+ground state.  This ED-assisted post-selection is deliberately stringent for a
+benchmark, but it is not a device-only selection rule and should not be confused
+with an experimentally deployable VQE stopping criterion.}
+
+\subsection{Local versus non-local readout}
+\ai{Figure~\ref{fig:local_nonlocal} gives the first operational check.  The local
+parity-odd observable is statistically compatible with zero in all three
+optimized states, consistent with the parity argument in
+Eq.~\eqref{eq:local_zero}.  The non-local string instead separates
+representative regimes: its magnitude is about $0.99$ at $\mu=0$,
+approximately $0.24$ at the bulk-critical parameter $\mu=2t$, and about $0.11$
+at $\mu=3t$.  This representative-point test uses $8192$ shots per observable;
+the full continuation below uses $4096$.  The result is not merely ``measure an
+edge qubit'': both endpoints and the Jordan--Wigner $Z$ string are essential.}
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width=0.78\linewidth]{block3_01_vqe_observables_test.pdf}
+ \caption{\ai{Shot-based VQE measurement of a local parity-odd operator and the
+ non-local edge string for topological, critical, and trivial representative
+ points.  Error bars show finite-shot uncertainty.}}
+ \label{fig:local_nonlocal}
+\end{figure}
+
+\subsection{Parity-constrained VQE across the phase sweep}
+\ai{The central result is Fig.~\ref{fig:vqe_sweep}.  The ED reference, noiseless
+VQE expectation, and the $4096$-shot estimator lie on the same finite-size
+crossover.  The signal reaches essentially one at the sweet spot $\mu=0$, falls
+to about $0.23$ at $|\mu|=2t$, and approaches roughly $0.05$ by
+$|\mu/t|=3.5$.  A four-site system cannot display a discontinuous thermodynamic
+transition; the dashed lines therefore mark the known bulk boundary while the
+measured string changes smoothly around it.  Shot fluctuations remain
+consistent with the $N^{-1/2}\simeq0.016$ worst-case scale and become smaller
+near unit expectation.}
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width=0.92\linewidth]{block3_week7_vqe_sweep.pdf}
+ \caption{\ai{Top: ED, ideal VQE, and finite-shot edge-string curves across the
+ chemical-potential sweep.  Bottom: energy error, infidelity, and parity
+ deviation used to validate every prepared state.}}
+ \label{fig:vqe_sweep}
+\end{figure}
+
+\ai{The lower panel is important because agreement of one observable alone could
+be accidental.  In the displayed run the energy error stays below
+$3\times10^{-2}$, the infidelity below approximately $5\times10^{-3}$, and the
+parity deviation below $10^{-3}$, all within the acceptance thresholds in
+Table~\ref{tab:settings}.  The larger errors at the first, negative-$\mu$ end of
+the curve are an optimization-history effect: the first point starts randomly,
+while later points benefit from continuation.  They should not be interpreted as
+a physical $\mu\leftrightarrow-\mu$ asymmetry.}
+
+\subsection{How deep must the noiseless ansatz be?}
+\ai{The depth scan in Fig.~\ref{fig:depth} repeats the optimization with six
+random starts at $\mu/t=0,2,3$ and chooses the ED-validated best state at each
+depth.  One repetition is under-expressive: the infidelity is of order unity in
+the topological and critical cases and remains just above the $10^{-2}$ target
+in the trivial case.  At $r=2$ all three representative points cross below the
+fidelity threshold; additional repetitions remain accurate but do not improve
+monotonically because the classical optimization itself is stochastic and
+non-convex.  Choosing $r=3$ for the full sweep is therefore conservative: it
+adds one layer beyond the observed noiseless expressibility threshold without
+making the circuit unnecessarily deep.  The separate question of how gate noise
+changes this choice belongs to Part~5.}
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width=0.98\linewidth]{block3_week7_depth_fidelity.pdf}
+ \caption{\ai{Noiseless ansatz-depth diagnostic at representative topological,
+ critical, and trivial points.  Two repetitions are already sufficient for the
+ $L=4$ fidelity target; $r=3$ is used in the full sweep.}}
+ \label{fig:depth}
+\end{figure}
+
+\ai{The ideal Block~3 workflow therefore closes the measurement loop: a
+gate-based VQE state, symmetry control, basis-rotated bitstring processing, and
+a non-local observable reproduce the expected finite-size phase diagnostic.
+Its principal limitations are equally clear: the demonstration uses only
+$L=4$, relies on ED for validation and restart ranking, and contains sampling
+noise but no physical gate or decoherence channel.}
