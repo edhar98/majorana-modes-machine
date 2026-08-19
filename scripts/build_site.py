@@ -7,13 +7,9 @@ import argparse
 import html
 import re
 import shutil
-import subprocess
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote
-
-from PIL import Image, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,20 +23,20 @@ class Week:
     summary: str
 
 
-@dataclass(frozen=True)
-class Figure:
-    filename: str
-    title: str
-    text: str
-    alt: str
-    links: tuple[tuple[str, str], ...] = ()
-
 
 @dataclass(frozen=True)
 class Note:
     stem: str
     title: str
     group: str
+
+
+@dataclass(frozen=True)
+class Report:
+    directory: str
+    part: int
+    author: str
+    title: str
 
 
 WEEKS = (
@@ -56,8 +52,6 @@ WEEKS = (
     Week(10, "Synthesis", "Final capstone", "End-to-end thesis from Majorana physics to noisy quantum circuits."),
 )
 
-
-FIGURES: tuple[Figure, ...] = ()
 
 
 # Notes are grouped by project Block and listed chronologically within each Block
@@ -92,10 +86,20 @@ NOTES = (
 )
 
 
+REPORTS = (
+    Report("Guilherme_Schewtschik", 1, "Guilherme Schewtschik", "Kitaev Chain & Bulk Topology"),
+    Report("Zhenming_Shi", 2, "Zhenming Shi", "Finite-Size Physics & Majorana Edge Modes"),
+    Report("Jaskaran_Singh", 3, "Jaskaran Singh", "Qubit Encoding (Jordan-Wigner)"),
+    Report("Zhengyi_Liu", 4, "Zhengyi Liu", "Measuring Topology on Circuits (VQE + String Order)"),
+    Report("Dobromir_Stoev", 5, "Dobromir Stoev", "NISQ Noise on the Diagnostic"),
+    Report("Edgar_Harutyunyan", 6, "Edgar Harutyunyan", "Error Taxonomy & Scaling to Large L"),
+)
+
+
 WEEK_METADATA = {week.number: week for week in WEEKS}
-FIGURE_METADATA = {figure.filename: figure for figure in FIGURES}
 NOTE_METADATA = {note.stem: note for note in NOTES}
 NOTE_ORDER = {note.stem: i for i, note in enumerate(NOTES)}  # chronological within blocks
+REPORT_METADATA = {report.directory: report for report in REPORTS}
 
 
 CSS = """
@@ -258,9 +262,9 @@ main {
   gap: 0.85rem;
 }
 .stage,
-.figure-card,
 .week-card,
-.note-group {
+.note-group,
+.report-card {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -277,36 +281,14 @@ main {
   text-transform: uppercase;
 }
 .stage p,
-.figure-card p,
-.week-card p {
+.week-card p,
+.report-card p {
   margin-bottom: 0;
   color: var(--muted);
 }
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-.figure-card {
-  overflow: hidden;
-}
-.media {
-  aspect-ratio: 16 / 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border-bottom: 1px solid var(--line);
-}
-.media img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-.figure-body,
 .week-card,
-.note-group {
+.note-group,
+.report-card {
   padding: 1rem;
 }
 .meta {
@@ -339,12 +321,26 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.85rem;
 }
+.reports {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
 .week-card {
   min-height: 10.5rem;
   display: flex;
   flex-direction: column;
 }
 .week-card .links {
+  margin-top: auto;
+  padding-top: 0.9rem;
+}
+.report-card {
+  min-height: 9rem;
+  display: flex;
+  flex-direction: column;
+}
+.report-card .links {
   margin-top: auto;
   padding-top: 0.9rem;
 }
@@ -438,9 +434,9 @@ footer {
 @media (max-width: 900px) {
   .intro-grid,
   .timeline,
-  .gallery,
   .weeks,
   .notes,
+  .reports,
   .reflection-grid,
   .reflection-split {
     grid-template-columns: 1fr;
@@ -479,24 +475,18 @@ def source_note_pdfs() -> list[Path]:
     return sorted((ROOT / "notes").glob("*.pdf"))
 
 
-def source_gallery_plots() -> list[Path]:
-    plots = [
-        plot for plot in (ROOT / "plots").iterdir()
-        if plot.suffix.lower() in {".pdf", ".png", ".jpg", ".jpeg"}
-        and not plot.name.startswith("show_")
-    ]
-    return sorted(plots, key=plot_sort_key)
+def source_report_pdfs() -> list[Path]:
+    paths = [ROOT / "reports" / report.directory / "report.pdf" for report in REPORTS]
+    return [path for path in paths if path.exists()]
 
 
 def copy_outputs(output: Path) -> None:
     notes_dir = output / "notes"
+    reports_dir = output / "reports"
     img_dir = output / "img"
-    plots_dir = output / "plots"
-    thumbs_dir = img_dir / "plot_thumbs"
     notes_dir.mkdir(parents=True, exist_ok=True)
+    reports_dir.mkdir(parents=True, exist_ok=True)
     img_dir.mkdir(parents=True, exist_ok=True)
-    plots_dir.mkdir(parents=True, exist_ok=True)
-    thumbs_dir.mkdir(parents=True, exist_ok=True)
     (output / ".nojekyll").touch()
 
     for pdf in source_slide_pdfs():
@@ -506,9 +496,10 @@ def copy_outputs(output: Path) -> None:
     for pdf in source_note_pdfs():
         shutil.copy2(pdf, notes_dir / pdf.name)
 
-    for plot in source_gallery_plots():
-        shutil.copy2(plot, plots_dir / plot.name)
-        create_plot_thumbnail(plot, thumbs_dir / f"{plot.stem}.png")
+    for pdf in source_report_pdfs():
+        target_dir = reports_dir / pdf.parent.name
+        target_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(pdf, target_dir / pdf.name)
 
     hero = ROOT / "img" / "majorana_zero_modes_hero.png"
     if hero.exists():
@@ -518,44 +509,6 @@ def copy_outputs(output: Path) -> None:
 def week_sort_key(path: Path) -> int:
     name = path.parent.name.removeprefix("week")
     return int(name) if name.isdigit() else 999
-
-
-def plot_sort_key(path: Path) -> tuple[int, int, str]:
-    block_match = re.match(r"block(\d+)", path.stem)
-    index_match = re.search(r"_(\d+)_", path.stem)
-    block = int(block_match.group(1)) if block_match else 999
-    index = int(index_match.group(1)) if index_match else 999
-    return block, index, path.name
-
-
-def create_plot_thumbnail(source: Path, target: Path) -> None:
-    if source.suffix.lower() == ".pdf":
-        with tempfile.TemporaryDirectory() as temp_dir:
-            prefix = Path(temp_dir) / "page"
-            result = subprocess.run(
-                ["pdftoppm", "-png", "-singlefile", "-r", "120", str(source), str(prefix)],
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            if result.returncode != 0:
-                raise RuntimeError(f"pdftoppm failed for {source}: {result.stderr}")
-            resize_image(prefix.with_suffix(".png"), target)
-        return
-
-    resize_image(source, target)
-
-
-def resize_image(source: Path, target: Path) -> None:
-    with Image.open(source) as image:
-        image = ImageOps.exif_transpose(image).convert("RGB")
-        image.thumbnail((760, 480), Image.Resampling.LANCZOS)
-        canvas = Image.new("RGB", (760, 480), "white")
-        x = (canvas.width - image.width) // 2
-        y = (canvas.height - image.height) // 2
-        canvas.paste(image, (x, y))
-        canvas.save(target, "PNG", optimize=True)
 
 
 def title_from_stem(stem: str) -> str:
@@ -572,35 +525,6 @@ def render_links(links: tuple[tuple[str, str], ...], version: str) -> str:
         for label, href in links
     ]
     return '<div class="links">' + "\n".join(parts) + "</div>"
-
-
-def fallback_figure(plot: Path) -> Figure:
-    title = title_from_stem(plot.stem)
-    return Figure(
-        plot.name,
-        title,
-        "Existing project figure generated by the block runners or analysis scripts.",
-        title,
-    )
-
-
-def render_figure(plot: Path, version: str) -> str:
-    figure = FIGURE_METADATA.get(plot.name, fallback_figure(plot))
-    full = f"plots/{figure.filename}"
-    src = f"img/plot_thumbs/{plot.stem}.png"
-    links = (("Open plot", full),) + figure.links
-    return f"""
-        <article class="figure-card">
-          <a class="media" href="{esc(versioned(full, version))}">
-            <img src="{esc(versioned(src, version))}" alt="{esc(figure.alt)}" loading="lazy">
-          </a>
-          <div class="figure-body">
-            <h3>{esc(figure.title)}</h3>
-            <p>{esc(figure.text)}</p>
-            {render_links(links, version)}
-          </div>
-        </article>
-    """
 
 
 def fallback_week(pdf: Path) -> Week:
@@ -668,10 +592,22 @@ def render_notes(paths: list[Path], version: str) -> str:
     return "\n".join(rendered)
 
 
+def render_report(pdf: Path, version: str) -> str:
+    report = REPORT_METADATA[pdf.parent.name]
+    href = f"reports/{report.directory}/report.pdf"
+    return f"""
+        <article class="report-card">
+          <div class="meta">Part {report.part} / {esc(report.author)}</div>
+          <h3>{esc(report.title)}</h3>
+          {render_links((("Open report", href),), version)}
+        </article>
+    """
+
+
 def render_index(version: str) -> str:
-    figures = "\n".join(render_figure(plot, version) for plot in source_gallery_plots())
     weeks = "\n".join(render_week(pdf, version) for pdf in source_slide_pdfs())
     notes = render_notes(source_note_pdfs(), version)
+    reports = "\n".join(render_report(pdf, version) for pdf in source_report_pdfs())
     hero_image = versioned("img/majorana_zero_modes_hero.png", version)
     project_url = "https://github.com/edhar98/majorana-modes-machine"
     return f"""<!doctype html>
@@ -694,8 +630,9 @@ def render_index(version: str) -> str:
         <p class="lede">A project page for the full arc: Kitaev-chain topology, Jordan-Wigner qubits, VQE string-order measurement, and the circuit-level noise study that decides what survives on NISQ hardware.</p>
         <div class="actions" aria-label="Primary links">
           <a class="action" href="{esc(project_url)}">GitHub project</a>
-          <a class="action secondary" href="#figures">View figures</a>
           <a class="action secondary" href="#slides">Browse slides</a>
+          <a class="action secondary" href="#notes">Notes</a>
+          <a class="action secondary" href="#reports">Reports</a>
           <a class="action secondary" href="{esc(versioned("llm-feedback.html", version))}">LLM feedback</a>
         </div>
       </div>
@@ -738,12 +675,6 @@ def render_index(version: str) -> str:
         </article>
       </div>
     </section>
-    <section class="band" id="figures" aria-labelledby="figures-heading">
-      <h2 id="figures-heading">Figure gallery</h2>
-      <div class="gallery">
-        {figures}
-      </div>
-    </section>
     <section class="band" id="slides" aria-labelledby="slides-heading">
       <h2 id="slides-heading">Presentations</h2>
       <div class="weeks">
@@ -756,8 +687,14 @@ def render_index(version: str) -> str:
         {notes}
       </div>
     </section>
+    <section class="band" id="reports" aria-labelledby="reports-heading">
+      <h2 id="reports-heading">Reports</h2>
+      <div class="reports">
+        {reports}
+      </div>
+    </section>
     <footer>
-      <p>Generated from the repository slides, notes, and existing plot artifacts. Cache key: {esc(version)}.</p>
+      <p>Generated from the repository slides, notes, and reports. Cache key: {esc(version)}.</p>
     </footer>
   </main>
 </body>

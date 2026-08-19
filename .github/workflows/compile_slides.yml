@@ -1,4 +1,4 @@
-name: Compile Slides and Notes
+name: Compile Slides, Notes, and Reports
 on: [push]
 
 jobs:
@@ -22,13 +22,18 @@ jobs:
           glob_root_file: true
           work_in_root_file_dir: true
 
-      - name: Install Site Build Dependencies
+      - name: Render Report AI Blocks as Plain Text
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y poppler-utils
-          python -m pip install --upgrade pillow
+          sed -i 's/{{\\color{aicolor}#1}}/{#1}/g' reports/*/report.tex
+
+      - name: Compile Reports
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: reports/**/report.tex
+          glob_root_file: true
+          work_in_root_file_dir: true
 
       - name: Build GitHub Pages Site
         shell: bash
