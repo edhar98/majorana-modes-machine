@@ -165,9 +165,9 @@ main {
   gap: 0.85rem;
 }
 .stage,
-.figure-card,
 .week-card,
-.note-group {
+.note-group,
+.report-card {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -184,36 +184,14 @@ main {
   text-transform: uppercase;
 }
 .stage p,
-.figure-card p,
-.week-card p {
+.week-card p,
+.report-card p {
   margin-bottom: 0;
   color: var(--muted);
 }
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-.figure-card {
-  overflow: hidden;
-}
-.media {
-  aspect-ratio: 16 / 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border-bottom: 1px solid var(--line);
-}
-.media img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-.figure-body,
 .week-card,
-.note-group {
+.note-group,
+.report-card {
   padding: 1rem;
 }
 .meta {
@@ -246,12 +224,26 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.85rem;
 }
+.reports {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
 .week-card {
   min-height: 10.5rem;
   display: flex;
   flex-direction: column;
 }
 .week-card .links {
+  margin-top: auto;
+  padding-top: 0.9rem;
+}
+.report-card {
+  min-height: 9rem;
+  display: flex;
+  flex-direction: column;
+}
+.report-card .links {
   margin-top: auto;
   padding-top: 0.9rem;
 }
@@ -345,9 +337,9 @@ footer {
 @media (max-width: 900px) {
   .intro-grid,
   .timeline,
-  .gallery,
   .weeks,
   .notes,
+  .reports,
   .reflection-grid,
   .reflection-split {
     grid-template-columns: 1fr;
@@ -370,7 +362,7 @@ footer {
   </style>
 </head>
 <body class="feedback-page">
-  <header class="hero feedback-hero" style="--hero-image: url('img/majorana_zero_modes_hero.png?v=1eb9338aecabeef361e2b6ab2ce9e095434524bb')">
+  <header class="hero feedback-hero" style="--hero-image: url('img/majorana_zero_modes_hero.png?v=6e04abbd95ffebc07b5f814f60a19c3c588ee97d')">
     <div class="hero-inner">
       <div class="hero-copy">
         <p class="eyebrow">Final feedback / LLM-assisted research workflow</p>
@@ -483,7 +475,7 @@ footer {
       </ul>
     </section>
     <footer>
-      <p>Generated from the repository site builder. Cache key: 1eb9338aecabeef361e2b6ab2ce9e095434524bb.</p>
+      <p>Generated from the repository site builder. Cache key: 6e04abbd95ffebc07b5f814f60a19c3c588ee97d.</p>
     </footer>
   </main>
 </body>
