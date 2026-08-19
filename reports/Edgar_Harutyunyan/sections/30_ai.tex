@@ -1,17 +1,21 @@
-% ============================================================================
-% 30_ai.tex  --  AI-collaboration note  (~1/3 page)
-%
-% GOAL: A short, honest reflection on how LLMs were used as a research
-%       collaborator for this part (what they helped derive/debug/write, and
-%       where you corrected them). This is a course requirement of the
-%       AI-augmented seminar. Throughout ALL sections, wrap AI-generated prose
-%       in \ai{...} so that report_clean.pdf shows the human-only version.
-% ============================================================================
-
-\section{On the AI collaboration}
+\section{On the LLM collaboration}
 \label{sec:ai}
 
-% TODO: 3-5 sentences specific to your part.
-\ai{Briefly describe how the LLM contributed to this part -- e.g. deriving an
-intermediate step, catching a sign error, or drafting exposition -- and one place
-where its output was wrong and had to be corrected.}
+To keep this report compact, we avoid repeating material available on the
+\href{https://edhar98.github.io/majorana-modes-machine/llm-feedback.html}
+{LLM-feedback project page}. Instead, Figure~\ref{fig:ai-self-correction}
+illustrates a representative correction made during the collaboration. The
+model initially inferred that the required ansatz depth increased with $L$.
+After receiving the extended cluster results for $L=4,\ldots,16$, it revised
+this claim: $r^\ast=4$ remained sufficient over the tested range, while the
+large-$L$ decay arose primarily from the growing CNOT count. It also identified
+the anomalous high-depth points as optimisation failures rather than physical
+effects.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../../img/AI_SelfCorrection.png}
+  \caption{The Opus 4.8 model revising its initial scaling interpretation after
+  comparison with the extended cluster data.}
+  \label{fig:ai-self-correction}
+\end{figure}

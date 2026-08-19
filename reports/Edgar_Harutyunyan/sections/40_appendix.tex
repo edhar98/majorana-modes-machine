@@ -1,0 +1,143 @@
+\section{How a perturbation changes the Hamiltonian and states}
+\label{app:perturbation}
+
+This appendix makes explicit how the perturbation operator $V$ used in
+Sec.~\ref{sec:theory} enters the Hamiltonian and changes its eigenstates,
+Majorana wavefunctions, and measured observables.
+
+\paragraph{From a physical parameter to an operator.}
+Write the clean Hamiltonian as $H_0$ and the perturbed Hamiltonian as
+\begin{equation}
+ H'=H_0+V, \qquad V=\sum_\alpha \lambda_\alpha O_\alpha,
+ \label{eq:app-general-v}
+\end{equation}
+where $O_\alpha$ specifies how the environment couples to the chain and
+$\lambda_\alpha$ is its strength. For chemical-potential disorder
+$\mu_j=\mu_0+\delta\mu_j$, the change relative to Eq.~\eqref{eq:qubit-h} is
+\begin{equation}
+ V_{\mathrm{dis}}
+ =-\frac{1}{2}\sum_j\delta\mu_j Z_j
+ =-\sum_j\delta\mu_j\left(n_j-\frac{I}{2}\right),
+ \qquad \delta\mu_j\in[-W,W].
+ \label{eq:app-vdis}
+\end{equation}
+The identity contribution has no effect on eigenvectors. If the disorder
+coefficient is instead defined as $h_j=-\delta\mu_j$, this becomes
+$\sum_j h_j n_j$ up to that constant, which is the shorthand used in the
+taxonomy. The boundary poisoning term is instead
+\begin{equation}
+ V_{\mathrm{poison}}=gX_0=g(c_0+c_0^\dagger).
+ \label{eq:app-vpoison}
+\end{equation}
+Consequently $[V_{\mathrm{dis}},\Pop]=0$, whereas
+$\{V_{\mathrm{poison}},\Pop\}=0$.
+
+\paragraph{Change of a many-body wavefunction.}
+Let $H_0|n\rangle=E_n|n\rangle$. For an isolated, non-degenerate eigenvalue,
+first-order stationary perturbation theory gives
+\begin{align}
+ E_n'&=E_n+\langle n|V|n\rangle+O(V^2),\\
+ |n'\rangle&=|n\rangle+
+ \sum_{m\ne n}|m\rangle
+ \frac{\langle m|V|n\rangle}{E_n-E_m}+O(V^2).
+ \label{eq:app-state-response}
+\end{align}
+Thus $V$ changes a wavefunction only through matrix elements
+$\langle m|V|n\rangle$, while the energy denominators suppress mixing with
+states separated by the bulk gap.
+
+\paragraph{Selection by fermion parity.}
+For parity eigenstates $\Pop|n,p\rangle=p|n,p\rangle$, with $p=\pm1$, define
+$M_{qp}=\langle m,q|V|n,p\rangle$. The commutator or anticommutator with
+$\Pop$ implies
+\begin{equation}
+ \begin{array}{lll}
+ [V,\Pop]=0:   &(q-p)M_{qp}=0,&\text{only equal parities can mix},\\
+ \{V,\Pop\}=0:&(q+p)M_{qp}=0,&\text{only opposite parities can mix}.
+ \end{array}
+ \label{eq:app-selection}
+\end{equation}
+For the nearly degenerate topological states $|e\rangle$ and $|o\rangle$, the
+appropriate degenerate-subspace Hamiltonian is
+\begin{equation}
+ H_{\mathrm{eff}}=
+ \begin{pmatrix}
+ E_e+v_{ee} & v_{eo}\\
+ v_{oe} & E_o+v_{oo}
+ \end{pmatrix},
+ \qquad v_{pq}=\langle p|V|q\rangle.
+ \label{eq:app-heff}
+\end{equation}
+A parity-even perturbation has $v_{eo}=v_{oe}=0$ and therefore cannot mix the
+two sectors. Symmetry alone does not require $v_{ee}=v_{oo}$; locality and the
+bulk gap suppress their difference when the two edge modes are well separated.
+For a parity-odd perturbation, $v_{ee}=v_{oo}=0$ but the off-diagonal element is
+allowed. Its two energies are
+\begin{equation}
+ E_\pm=\frac{E_e+E_o}{2}
+ \pm\sqrt{\left(\frac{E_e-E_o}{2}\right)^2+|v_{eo}|^2}.
+ \label{eq:app-splitting}
+\end{equation}
+Even when the clean finite-size splitting $|E_e-E_o|$ is exponentially small,
+a permitted poisoning matrix element can therefore mix and split the sectors.
+
+\paragraph{Majorana profiles and observables.}
+For a quadratic, parity-even perturbation, the Bogoliubov--de Gennes (BdG)
+matrix changes as $h_{\mathrm{BdG}}'=h_{\mathrm{BdG}}+\delta h$. If
+$h_{\mathrm{BdG}}|u_n\rangle=\varepsilon_n|u_n\rangle$ and the level is
+isolated, its spatial wavefunction changes by
+\begin{equation}
+ |\delta u_n\rangle=
+ \sum_{m\ne n}|u_m\rangle
+ \frac{\langle u_m|\delta h|u_n\rangle}
+      {\varepsilon_n-\varepsilon_m}.
+ \label{eq:app-bdg-response}
+\end{equation}
+This is how sub-gap disorder deforms the left- and right-edge Majorana profiles
+without necessarily destroying them. The nearly degenerate edge pair itself
+must be treated with Eq.~\eqref{eq:app-heff} rather than the non-degenerate
+formula.
+
+Finally, for an observable $O$ in a non-degenerate state $|0\rangle$, the
+first-order response is
+\begin{equation}
+ \delta\langle O\rangle=
+ 2\,\mathrm{Re}\sum_{m\ne0}
+ \frac{\langle0|O|m\rangle\langle m|V|0\rangle}{E_0-E_m}+O(V^2).
+ \label{eq:app-observable-response}
+\end{equation}
+Taking $O=\Oedge$ explains why parity-even disorder can continuously deform
+the measured edge string even while parity remains exactly fixed. A
+parity-odd term instead mixes the two parity sectors through
+Eq.~\eqref{eq:app-heff}, so neither $\langle\Pop\rangle$ nor the edge-string
+signal is protected.
+
+\section{Fixed-depth MPS memory scaling}
+\label{app:mps-memory}
+
+Consider a cut between sites $b$ and $b+1$. Its Schmidt decomposition is
+\begin{equation}
+ |\psi\rangle=\sum_{\alpha=1}^{\chi_b}s_\alpha
+ |\alpha\rangle_{0\ldots b}|\alpha\rangle_{b+1\ldots L-1},
+ \label{eq:app-schmidt}
+\end{equation}
+Here $\chi_b$ is the bond dimension. A product input has $\chi_b=1$, and
+single-qubit rotations leave it unchanged. A crossing CNOT has operator
+Schmidt rank two,
+$\mathrm{CNOT}=|0\rangle\!\langle0|\otimes I
++|1\rangle\!\langle1|\otimes X$, so it at most doubles $\chi_b$.
+Since each linear layer crosses the cut once, $r$ repetitions give
+$\chi_b\leq2^r$ and hence $\chi=\max_b\chi_b\leq2^r$.
+
+The tensor at site $j$ has dimensions
+$\chi_{j-1}\times2\times\chi_j$. The total number of stored complex entries is
+therefore bounded by
+\begin{equation}
+ N_{\mathrm{MPS}}=\sum_{j=0}^{L-1}2\chi_{j-1}\chi_j
+ \leq2L\chi^2=O(L\chi^2).
+ \label{eq:app-mps-memory}
+\end{equation}
+For $r=4$, $\chi\leq16$, so the memory is linear in $L$. Kraus trajectories
+store pure-state MPS branches rather than the $4^L$ density matrix; general
+two-site noise changes the fixed-depth bond constant to $2^{O(r)}$, not the
+linear dependence on $L$.

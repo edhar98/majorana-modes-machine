@@ -1,21 +1,159 @@
-% ============================================================================
-% 10_theory.tex  --  Theory / derivation  (~1 - 1.5 pages)
-%
-% GOAL: The physics or derivation your part owns. Mine the matching notes/*.tex
-%       listed for your part in ../../reports/README.md -- adapt and cite them,
-%       do NOT re-derive from scratch. Equations use \numberwithin so they read
-%       as (sec.eq).
-% ============================================================================
-
 \section{Theory}
 \label{sec:theory}
 
-% TODO: replace with your part's key derivation / formalism.
-\ai{State the central Hamiltonian, transformation, or observable for your part
-here, with the one or two equations that carry the argument.}
+\subsection{Protection criterion and diagnostics}
 
+Consider an open chain of $L$ sites labelled $j=0,\ldots,L-1$.
+By open boundary conditions (OBC), we mean that there is no bond between sites $L-1$ and $0$.
+Under the Jordan--Wigner transformation, the chain is represented by the qubit
+Hamiltonian
 \begin{equation}
-  H_K = -\mu \sum_j c_j^\dagger c_j
-        - t \sum_j \left(c_j^\dagger c_{j+1} + \mathrm{h.c.}\right)
-        + \Delta \sum_j \left(c_j^\dagger c_{j+1}^\dagger + \mathrm{h.c.}\right).
+ H=-\frac{\mu}{2}\sum_{j=0}^{L-1}Z_j
+ +\frac{t-\Delta}{2}\sum_{j=0}^{L-2}X_jX_{j+1}
+ +\frac{t+\Delta}{2}\sum_{j=0}^{L-2}Y_jY_{j+1},
+ \qquad \Pop=\prod_{j=0}^{L-1}Z_j .
+ \label{eq:qubit-h}
 \end{equation}
+Here,
+\begin{itemize}
+  \item $\mu$ is the chemical potential;
+  \item $t$ is the nearest-neighbour hopping amplitude;
+  \item $\Delta$ is the real $p$-wave pairing amplitude;
+  \item $X_j$, $Y_j$, and $Z_j$ are Pauli operators acting on qubit $j$.
+\end{itemize}
+
+
+To connect Eq.~\eqref{eq:qubit-h} back to the fermionic variables,
+we use $c_j^\dagger$ and $c_j$ for the creation and annihilation operators, respectively, and define
+$n_j=c_j^\dagger c_j$ as the occupation-number operator at site $j$.
+The code uses the convention
+$c_j^\dagger=(\prod_{k<j}Z_k)\sigma_j^+$ with
+$2\sigma_j^+=X_j+iY_j$, where $I$ is the single-qubit identity. Hence
+$2n_j=I+Z_j$. Defining the total fermion number as $N=\sum_j n_j$, the
+fermion-parity operator is
+$P_{\mathrm f}=(-1)^N=(-1)^L\prod_j Z_j$.
+Thus, the parity convention can be written as
+$$P_{\mathrm f}=(-1)^L\Pop=
+\begin{cases}
+\Pop, & L\ \text{even},\\
+-\Pop, & L\ \text{odd}.
+\end{cases}$$
+
+For nonzero pairing, the bulk is topological for $|\mu|<2|t|$. The bulk excitation gap
+$\Delta_{\mathrm{bulk}}$, defined as the minimum positive quasiparticle energy,
+closes at $|\mu|=2|t|$~\cite{kitaev2001}.
+
+Let $V$ denote a perturbation added to the clean Hamiltonian, so
+$H'=H+V$. We consider two perturbation families:
+$V_{\mathrm{dis}}=\sum_j\delta\mu_j n_j$ with
+$\delta\mu_j\in[-W,W]$, and $V_{\mathrm{poison}}=gX_0$.
+Thus, $W$ and $g$ set the respective disorder and poisoning strengths.
+Appendix~\ref{app:perturbation} derives how these perturbations enter the
+Hamiltonian and change its eigenstates and measured observables.
+The perturbation $V$ is \emph{local} when it acts
+on one site or a finite set of neighbouring sites. It is parity even when
+$[V,\Pop]=0$ and parity odd when $\{V,\Pop\}=0$. We therefore require $V$ to be \emph{local}, \emph{parity even}, and \emph{weaker than
+$\Delta_{\mathrm{bulk}}$}. Such a perturbation may deform the wavefunction but
+cannot mix the logical sectors ($P_{\mathrm f}=\pm1$). Once its strength
+approaches the bulk gap, it can create locally trivial regions or close the
+bulk gap, thereby destroying the phase. A parity-odd perturbation instead
+changes the logical sector directly.
+The physical addition or removal of one fermion is called
+\emph{quasiparticle poisoning}; increasing $L$ does not suppress this logical
+error~\cite{rainis2012}.
+
+To define the measured diagnostic, we introduce the Majorana operators
+$\gamma_{2j}=c_j+c_j^\dagger=(\prod_{k<j}Z_k)X_j$ and
+$\gamma_{2j+1}=i(c_j-c_j^\dagger)=(\prod_{k<j}Z_k)Y_j$. The logical quantum
+number is the fermion parity $P_{\mathrm f}$ ($\Pop$ for even $L$), while the
+finite-chain edge diagnostic used in the simulations is
+\begin{equation}
+ \Oedge=X_0Z_1\cdots Z_{L-2}X_{L-1}
+       =-i\gamma_1\gamma_{2L-2}.
+ \label{eq:edge}
+\end{equation}
+This edge-string operator is a bilinear of the two boundary Majorana operators.
+Its expectation value is large for the prepared finite-chain state in the
+topological regime, whereas it is suppressed in the trivial regime. This makes
+it a useful finite-size diagnostic rather than an independent bulk topological
+invariant. A poisoning event always changes fermion parity, whereas
+its immediate effect on this particular string depends on the event's site and
+Pauli component. In summary, parity is the universal indicator of poisoning,
+whereas $\Oedge$ measures whether the prepared edge correlation survives.
+
+\subsection{Physical errors and emulator errors}
+
+
+Table~\ref{tab:taxonomy} combines the physical and NISQ error dictionaries.
+Recall that protection requires an error to be local, parity even, and weaker
+than $\Delta_{\mathrm{bulk}}$.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}p{0.20\linewidth}p{0.27\linewidth}p{0.22\linewidth}p{0.19\linewidth}@{}}
+\toprule
+Physical error & Jordan--Wigner qubit form & NISQ equivalent & Protection status \\
+\midrule
+Charge noise $\delta\mu_i n_i$
+ & $Z_i$ field; parity even
+ & $T_2$; coherent $Z$
+ & \textcolor{blue!70!black}{\textbf{ROBUST}} if sub-gap \\
+Quasiparticle poisoning $c_i^{(\dagger)}$
+ & $\frac12(\prod_{k<i}Z_k)(X_i\!\mp iY_i)$; parity odd
+ & $T_1$ damping
+ & \textcolor{red!70!black}{\textbf{FATAL}}: sectors mix \\
+Gap closure $|\mu|\to2|t|$
+ & $Z$ field overtakes the $XX/YY$ bonds
+ & large coherent $Z$ drift
+ & \textcolor{red!70!black}{\textbf{FATAL}}: phase lost \\
+Mixed Pauli: $Z$
+ & $Z_i$; parity even
+ & depolarising $Z$ branch
+ & \textcolor{blue!70!black}{\textbf{ROBUST}} if sub-gap \\
+Mixed Pauli: $X/Y$
+ & $X_i,Y_i$; parity odd
+ & depolarising $X/Y$ branches
+ & \textcolor{red!70!black}{\textbf{FATAL}}: sectors mix \\
+\bottomrule
+\end{tabular}
+\caption{Taxonomy of physical perturbations and device noise.}
+\label{tab:taxonomy}
+\end{table}
+
+The taxonomy transfers under Jordan--Wigner, but the transmon does not inherit
+the wire's gap protection. This emulator limitation is quantified by comparing
+the noisy and ideal versions of the same circuit:
+$\epsilon_{\rm edge}=|\expv{\Oedge}_{\rm noisy}-\expv{\Oedge}_{\rm ideal}|$.
+In Qiskit, two-qubit gate noise mixes parity-even charge/bond errors and
+parity-odd poisoning errors~\cite{qiskit2024}.
+
+\subsection{Scaling to large \texorpdfstring{$L$}{L}}
+
+Large-$L$ behaviour is governed by competing intrinsic and circuit scales.
+On the $t=\Delta$ line, the clean Majorana splitting in the topological regime
+obeys~\cite{kitaev2001,leumer2020}
+\begin{equation}
+ \delta E(L)\simeq2|t|(1-\lambda^2)\lambda^L,
+ \qquad \lambda=\frac{|\mu|}{2|t|}=e^{-1/\xi},
+ \label{eq:intrinsic-scaling}
+\end{equation}
+so increasing $L$ exponentially suppresses edge-mode hybridisation. For a
+depth-$r$ linear entangler, however, $n_{\rm CX}=r(L-1)$. A simple envelope for
+independent two-qubit errors therefore gives
+\begin{equation}
+ |\expv{\Oedge}_{\rm noisy}|\sim|\expv{\Oedge}_{\rm ideal}|
+ (1-p_{\rm CX})^{r(L-1)}\simeq|\expv{\Oedge}_{\rm ideal}|
+ e^{-p_{\rm CX}r(L-1)}.
+ \label{eq:circuit-scaling}
+\end{equation}
+The gate-level origin of this envelope and the $L=4$ depth optimum are analysed
+in \href{https://edhar98.github.io/majorana-modes-machine/reports/Dobromir_Stoev/report.pdf}{D.~Stoev's report};
+here, we use the envelope only to study the dependence on $L$ after fixing the
+shallowest adequately expressive depth.
+At fixed $r$, a nearest-neighbour circuit has bond dimension
+$\chi\leq2^r$ and MPS memory $O(L\chi^2)$~\cite{schollwoeck2011}; see
+Appendix~\ref{app:mps-memory}. Thus, increasing $L$ improves the intrinsic
+protection of the logical wire but simultaneously makes its circuit diagnostic
+more vulnerable, provided that the fixed depth remains expressive.

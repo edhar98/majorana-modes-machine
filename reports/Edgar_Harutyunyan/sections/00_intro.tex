@@ -1,22 +1,29 @@
-% ============================================================================
-% 00_intro.tex  --  Introduction  (~1/2 page)
-%
-% GOAL: State which of the six parts this report covers, why it matters, and
-%       where it sits in the overall project. One paragraph of motivation, one
-%       paragraph locating your part relative to the neighbouring parts (use a
-%       one-line "see [Author, Part N]" cross-reference at each seam instead of
-%       re-explaining a neighbour's material).
-% Keep the whole report to 4-5 pages; this section is the shortest.
-% ============================================================================
-
 \section{Introduction}
 \label{sec:intro}
 
-% TODO: replace with your part's motivation and scope.
-% NOTE: keep at least one \cite OUTSIDE \ai{} (as below) so the human-only
-% report_clean.pdf still carries its references -- citations belong to your claims,
-% not to the AI.
-This report covers \textbf{<Part title>} of the ``Majorana Modes in the Machine''
-project. The 1D Kitaev chain hosts unpaired Majorana zero modes at its ends in the
-topological phase~\cite{kitaev2001}. \ai{This part focuses on <one-sentence scope
-statement>.}
+The \href{https://github.com/edhar98/majorana-modes-machine}{\emph{Majorana Modes in the Machine}} project follows the Kitaev chain from
+its theoretical description to its simulation on noisy quantum circuits.
+G.~Schewtschik's report, \href{https://edhar98.github.io/majorana-modes-machine/reports/Guilherme_Schewtschik/report.pdf}{\emph{Kitaev Chain \& Bulk Topology}}, introduces
+the bulk Hamiltonian, Bogoliubov--de Gennes spectrum, and topological phase
+diagram. Z.~Shi's \href{https://edhar98.github.io/majorana-modes-machine/reports/Zhenming_Shi/report.pdf}{\emph{Finite-Size Physics \& Majorana Edge Modes}} studies
+open chains, edge localisation, and Majorana hybridisation. J.~Singh's
+\href{https://edhar98.github.io/majorana-modes-machine/reports/Jaskaran_Singh/report.pdf}{\emph{Qubit Encoding (Jordan--Wigner)}} maps the fermionic model to qubits.
+Z.~Liu's \href{https://edhar98.github.io/majorana-modes-machine/reports/Zhengyi_Liu/report.pdf}{\emph{Measuring Topology on Circuits (VQE + String Order)}} develops
+the variational preparation and non-local edge-string measurement.
+D.~Stoev's \href{https://edhar98.github.io/majorana-modes-machine/reports/Dobromir_Stoev/report.pdf}{\emph{NISQ Noise on the Diagnostic}} investigates how realistic device
+noise degrades that measured signal.
+
+In this report we focus on \href{https://edhar98.github.io/majorana-modes-machine/reports/Edgar_Harutyunyan/report.pdf}{\emph{Error Taxonomy \& Scaling to Large $L$}}. 
+Here and throughout, $L$ denotes the number of sites in the chain.
+First, we classify physical perturbations by mapping them to qubit operators
+and determine whether they preserve fermion parity and leave the bulk gap open.
+Next, we examine how the edge-string diagnostic scales using exact free-fermion references,
+fixed-depth variational states, and matrix-product-state (MPS) quantum trajectories under
+noise models derived from recorded IBM device calibrations up to $L=100$.
+Thus, the two large-system limitations are insufficient circuit expressibility 
+below a minimum depth $r^\ast$ and noise accumulated over the entangling gates,
+whose number grows linearly with $L$. We identify the shallowest adequately expressive depth 
+using exact small-system benchmarks and then test how the edge-string signal survives in calibrated large-$L$ models.
+We discuss the protection principle and the large-$L$ limit,
+while the channel-by-channel noise mechanics and noisy-optimisation
+results are treated in D.~Stoev's \href{https://edhar98.github.io/majorana-modes-machine/reports/Dobromir_Stoev/report.pdf}{\emph{NISQ Noise on the Diagnostic}}.

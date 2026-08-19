@@ -1,25 +1,107 @@
-% ============================================================================
-% 20_results.tex  --  Methods & results  (~2 pages, the core of the report)
-%
-% GOAL: What you computed and what it shows. Include the key figure(s) for your
-%       part ONLY (see the Code/figs column for your part in
-%       ../../reports/README.md). Regenerate fresh PDFs with the block runner,
-%       e.g.  python src/block1.py --plots 6   (venv /opt/python-envs/myenv),
-%       and copy them into a local figs/ folder. Do NOT use showcase.py gallery
-%       images (shared). Report concrete numbers, not just plots.
-% ============================================================================
-
 \section{Methods and Results}
 \label{sec:results}
 
-% TODO: describe the computation and drop in your figure(s).
-\ai{Summarise the numerical method (which solver, which parameters) and the main
-quantitative result.}
+\subsection{Charge noise versus quasiparticle poisoning}
 
-% Example figure include (uncomment and point at your regenerated PDF):
-% \begin{figure}[H]
-%   \centering
-%   \includegraphics[width=0.75\linewidth]{figs/your_plot.pdf}
-%   \caption{One-sentence takeaway of the figure.}
-%   \label{fig:main}
-% \end{figure}
+We first test parity-even charge noise, modelled as local chemical-potential disorder
+$\mu_j=\mu_0+U[-W,W]$. Since this channel preserves parity and the quadratic form of the Hamiltonian, a real
+antisymmetric $2L\times2L$ Majorana matrix gives the ground-state energy,
+covariance matrix, parity gap, and Eq.~\eqref{eq:edge} in $O(L^3)$ time~\cite{leumer2020}. The
+calculation used $t=\Delta=1$, $\mu_0=t$, $L=16,32$, 21 disorder strengths, and
+300 realisations per point. Here the clean bulk gap is
+$\Delta_{\rm bulk}=2t-|\mu_0|=t$. Figure~\ref{fig:disorder-robustness} shows
+that at $L=16$ the disorder-averaged edge string changes only from $0.750$ at
+$W=0$ to $0.741\pm0.115$ at $W=0.75$, before eroding more strongly near and
+above the gap.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.72\linewidth]{figs/block4_disorder_robustness.pdf}
+  \caption{Disorder-averaged response to charge noise: edge string with one-standard-deviation bands (left) and parity gap (right).}
+  \label{fig:disorder-robustness}
+\end{figure}
+
+Next, we test parity-odd quasiparticle poisoning using the static boundary term $gX_0$, representing the
+left Majorana $c_0+c_0^\dagger$. This Hamiltonian is no longer parity block
+diagonal, so a sparse exact diagonalisation of the full $2^{10}$-dimensional
+qubit Hamiltonian was used. For a direct comparison, the Hamiltonian with the parity-even charge-noise $Z$ field
+was solved in the even sector and averaged over 120 realisations. Figure
+\ref{fig:taxonomy} shows that charge noise keeps $\expv{\Pop}=1$, whereas
+fermion parity departs continuously from one for any nonzero $g$.
+At a matched perturbation strength of $0.30$, the edge strings under charge noise and poisoning are $0.750$
+and $0.614$, respectively; at $0.78$, the poisoning result has fallen to $0.318$ with
+$\expv{\Pop}=0.54$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\linewidth]{figs/block4_robust_vs_fatal.pdf}
+  \caption{Responses to the two error channels: edge string (left) and fermion parity (right).}
+  \label{fig:taxonomy}
+\end{figure}
+
+\subsection{Large-$L$ simulation}
+
+Before choosing a method, we separate three bottlenecks. Dense exact
+diagonalisation (ED) stores a $2^L\times2^L=4^L$ Hamiltonian, an ideal circuit
+simulation normally stores $2^L$ amplitudes in a statevector, and exact noisy
+simulation stores a $4^L$ density matrix. We address these bottlenecks as follows:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \emph{Dense ED $\boldsymbol{\to}$ free fermions.} A free-fermion
+  Hamiltonian is quadratic in fermionic operators and diagonalises into
+  independent Bogoliubov quasiparticles. A $2L\times2L$ covariance calculation
+  then gives the exact reference in $O(L^3)$ time. For $L=4,6,8$, it agrees with
+  dense qubit diagonalisation to about $10^{-15}$.
+  \item \emph{Statevector $\boldsymbol{\to}$ MPS.} Through $L=16$, sparse
+  Pauli operators are evaluated on a statevector. At larger $L$, the same
+  circuit state is stored as an MPS.
+  \item \emph{Density matrix $\boldsymbol{\to}$ MPS trajectories.} A Kraus
+  trajectory is one pure-state realisation of the noisy circuit. Averaging many
+  trajectories estimates the noisy expectation without storing the $4^L$
+  density matrix~\cite{schollwoeck2011,daley2014}.
+\end{enumerate}
+
+At the gapped working point $\mu=0.5t$, fixed-depth scans through $L=16$
+found a sharp expressibility threshold: $r=2,3$ failed beyond small chains, but
+$r^\ast=4$ kept the noiseless edge string near the exact value
+$\expv{\Oedge}\simeq0.94$. Thus the depth needed for this observable did not
+grow over the tested range. With a deliberately harsh depolarising rate
+$p_{\rm CX}=0.05$, the edge signal fell from $0.681$ at $L=4$ to $0.074\pm0.006$ at $L=16$; 
+the recorded \href{https://quantum.cloud.ibm.com/docs/en/api/qiskit-ibm-runtime/fake-provider-fake-cairo-v2}{Cairo}
+calibration ($p_{2q}=7.53\times10^{-3}$) instead retained $0.523\pm0.005$ at $L=16$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.78\linewidth]{figs/block4_scaling_Lsweep.pdf}
+  \caption{Noiseless edge string versus chain length and ansatz depth (left), and noisy edge string at the shallowest adequate depth (right).}
+  \label{fig:scaling-walls}
+\end{figure}
+
+The final sweep grew the chain in two-site steps, re-optimising the $r=4$
+parameters at each step, and used MPS at large $L$. These were simulations rather than hardware runs: recorded
+one-qubit noise and a median two-qubit noise channel were applied to the linear
+nearest-neighbour circuit without routing it onto the device’s
+\href{https://journals.aps.org/prx/abstract/10.1103/PhysRevX.10.011022}{heavy-hex connectivity}~\cite{chamberland2020}.
+Each noisy point was obtained from 16,000 trajectories; the error bars show
+standard errors calculated from their variance. 
+Computations for this work were done (in part) using resources of the Leipzig University Computing Center.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.66\linewidth]{figs/block4_largeL_overlay.pdf}
+  \caption{Fixed-depth edge-string expectations for ideal, toy-depolarising, and device-calibrated models; bars show trajectory standard errors.}
+  \label{fig:largeL}
+\end{figure}
+
+The ideal signal is $0.947$ at $L=6$ and $0.899$ at $L=100$. At $L=64$,
+\href{https://quantum.cloud.ibm.com/docs/en/api/qiskit-ibm-runtime/fake-provider-fake-brooklyn-v2}{Brooklyn}
+(error $1.02\times10^{-2}$) gives $0.301\pm0.035$, whereas
+\href{https://quantum.cloud.ibm.com/docs/en/api/qiskit-ibm-runtime/fake-provider-fake-washington-v2}{Washington}
+(error $1.15\times10^{-2}$) gives $0.198\pm0.035$ and reaches $0.089\pm0.038$ at
+$L=100$. 
+
+Recall that a projective measurement of the Pauli string yields $+1$ or $-1$,
+with $\expv{\Oedge}=P(+1)-P(-1)$. Thus, the value $0.089$ at $L=100$
+corresponds to $54.45\%$ positive and $45.55\%$ negative outcomes, whereas the
+ideal contrast is $0.899$. Although the Hamiltonian remains in the topological
+regime, decoherence accumulated over the growing gate count leaves the edge
+signal barely readable and constitutes the dominant large-$L$ simulation wall.
