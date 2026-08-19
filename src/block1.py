@@ -193,7 +193,7 @@ def plot_majorana_splitting(t=T, delta=DELTA, L=100, **_):
     ]
     L_arr = np.arange(4, L + 1, 2)
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
 
     for params, _, label in mu_cases:
         mu     = params['mu']
@@ -204,15 +204,23 @@ def plot_majorana_splitting(t=T, delta=DELTA, L=100, **_):
         lam    = abs(mu) / (2 * t)
         theory = 2 * t * (1 - lam ** 2) * lam ** L_arr
 
-        line, = ax.semilogy(L_arr, E0_arr, 'o-', ms=4, label=f'numerical  {label}')
+        line, = ax.semilogy(L_arr, E0_arr, 'o-', ms=3.5, lw=1.4, label=f'numerical  {label}')
         ax.semilogy(L_arr, theory, '--', color=line.get_color(), lw=1.2, alpha=0.6,
-                    label=r'$2t\,(1-(|\mu|/2t)^2)(|\mu|/2t)^L$  ' + label)
+                    label=r'$2t(1-\lambda^2)\lambda^L$  ' + label)
+
+    # Below ~1e-16 the eigensolver output is rounding noise, not physics: clip the
+    # view so the exponential decay and the double-precision floor stay legible
+    # (isolated numerical dips reach 1e-100 and would otherwise set the y-range).
+    ax.axhspan(1e-20, 5e-16, color='0.85', alpha=0.6, zorder=0)
+    ax.text(0.98, 0.04, r'double-precision floor', transform=ax.transAxes,
+            ha='right', va='bottom', fontsize=8, color='0.35')
+    ax.set_ylim(1e-20, 1e1)
 
     ax.set_xlabel('Chain length $L$')
     ax.set_ylabel('Near-zero mode energy $E_0$')
     ax.set_title(r'Majorana hybridization splitting  ($t = \Delta = 1$, OBC)')
-    ax.legend(fontsize=9)
-    
+    ax.legend(fontsize=8, ncol=2, loc='upper right')
+
     clean_axes(ax)
     save_fig(fig, 'block1_06_majorana_splitting.pdf')
 
@@ -303,6 +311,51 @@ def plot_npabs_comparison(t=T, delta=DELTA, L=100, **_):
     )
     fig.tight_layout(rect=[0, 0, 1, 0.93])
     save_fig(fig, 'block1_09_npabs_comparison.pdf')
+
+
+@plot(10, "Splitting E0 vs mu: sweet spot vs t != Delta (exact Majorana lines)")
+def plot_majorana_lines(t=T, L=20, **_):
+    """
+    Exact zero-energy ("Majorana") lines of the finite open chain, after
+    Leumer et al. / Leumer's thesis: det H_BdG vanishes iff
+        mu_n = 2 sqrt(t^2 - Delta^2) cos(n pi / (L+1)),  n = 1..L,
+    which requires t^2 >= Delta^2. At the sweet spot Delta = t all L lines
+    collapse onto mu = 0; for Delta < t the splitting E0(mu) oscillates and
+    crosses zero exactly at the mu_n (fermion-parity switches).
+    """
+    mu_arr = np.linspace(0.0, 2.5 * t, 1500)
+    cases = [(1.0 * t, r'$\Delta = t$ (sweet spot)', COLORS['topological'], '-'),
+             (0.4 * t, r'$\Delta = 0.4\,t$',         COLORS['edge'],        '-')]
+
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+
+    for delta, label, col, ls in cases:
+        E0 = np.array([
+            KitaevChain(L=L, t=t, mu=mu, delta=delta).positive_spectrum()[0]
+            for mu in mu_arr
+        ])
+        ax.semilogy(mu_arr / t, E0, color=col, ls=ls, lw=1.4, label=label, zorder=3)
+
+        if delta < t:  # exact zeros exist only for t^2 > Delta^2
+            n    = np.arange(1, L + 1)
+            mu_n = 2 * np.sqrt(t**2 - delta**2) * np.cos(n * np.pi / (L + 1))
+            mu_n = mu_n[mu_n > 0]      # spectrum is symmetric in mu
+            for i, m in enumerate(mu_n):
+                ax.axvline(m / t, color='0.45', ls='--', lw=0.8, zorder=1,
+                           label=(r'$\mu_n = 2\sqrt{t^2-\Delta^2}\,'
+                                  r'\cos\frac{n\pi}{L+1}$') if i == 0 else None)
+
+    ax.axvspan(0, 2.0, alpha=0.10, color='steelblue', zorder=0,
+               label=r'topological ($|\mu| < 2t$)')
+    ax.axvline(2.0, color='k', ls=':', lw=1)
+    ax.set_xlabel(r'$\mu\,/\,t$')
+    ax.set_ylabel('Near-zero mode energy $E_0$')
+    ax.set_xlim(0, 2.5)
+    ax.set_ylim(1e-18, 1e2)
+    ax.set_title(rf'Exact zero-energy (Majorana) lines  ($L={L}$, OBC)', fontsize=12)
+    ax.legend(fontsize=8, loc='lower right', ncol=2)
+    clean_axes(ax)
+    save_fig(fig, 'block1_10_majorana_lines.pdf')
 
 
 @plot(8, "Winding loops in Complex Plane 1x3 panels")

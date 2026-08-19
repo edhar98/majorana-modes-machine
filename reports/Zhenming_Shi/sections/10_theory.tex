@@ -1,0 +1,206 @@
+% ============================================================================
+% 10_theory.tex  --  Theory / derivation  (~1.5 pages)
+% Adapted from notes/finite_size_majorana_splitting.tex and
+% notes/majorana_splitting_vs_L.tex -- mined, not re-derived (AGENTS.md #5).
+% Exact finite-L results (Secs. 2.4, 2.5) follow Leumer et al. [leumer2020]
+% and Leumer's thesis [leumer2021thesis].
+% ============================================================================
+
+\section{Theory: edge modes of the finite open chain}
+\label{sec:theory}
+
+\subsection{BdG form of the finite chain}
+\label{sec:bdg}
+We consider the Kitaev chain on $L$ sites with open boundary conditions,
+\begin{equation}
+  H_K = -\mu \sum_{j=1}^{L} c_j^\dagger c_j
+        - t \sum_{j=1}^{L-1} \bigl(c_j^\dagger c_{j+1} + \mathrm{h.c.}\bigr)
+        + \Delta \sum_{j=1}^{L-1} \bigl(c_j^\dagger c_{j+1}^\dagger + \mathrm{h.c.}\bigr),
+  \label{eq:HK}
+\end{equation}
+with real $t,\Delta$ and the symmetric (``sweet'') point $t = \Delta$. In the
+Nambu basis $\Psi = (c_1,\dots,c_L,c_1^\dagger,\dots,c_L^\dagger)^T$ it becomes
+a $2L \times 2L$ quadratic form,
+\begin{equation}
+  H_K = \tfrac12 \Psi^\dagger M \Psi, \quad
+  M = \begin{pmatrix} h & d \\ -d & -h \end{pmatrix}, \quad
+  h_{ij} = -\mu\,\delta_{ij} - t\,(\delta_{i,j+1} + \delta_{i+1,j}), \quad
+  d_{ij} = \Delta\,(\delta_{j,i+1} - \delta_{i,j+1}),
+  \label{eq:bdg}
+\end{equation}
+with $h$ real symmetric tridiagonal and $d$ real antisymmetric, carrying
+$+\Delta$ on its upper diagonal so that $\tfrac12\Psi^\dagger M \Psi$
+reproduces the pairing term of \eqref{eq:HK}. The particle--hole operator
+$\mathcal{C} = \tau_x \mathcal{K}$ ($\tau_x$ acting on the particle--hole
+blocks, $\mathcal{K}$ complex conjugation) gives
+$\mathcal{C} M \mathcal{C}^{-1} = -M$, so $M\psi = E\psi$ implies
+$M(\mathcal{C}\psi) = -E(\mathcal{C}\psi)$: the $2L$ eigenvalues come in
+$\pm E$ pairs, each pair \emph{one} physical quasiparticle rather than two, so
+each pair must be counted once.
+
+\subsection{Edge mode and localisation length at the sweet spot}
+\label{sec:edgemode}
+The Ansatz $\psi_j \sim \lambda^j$ reduces the bulk BdG equations to a
+$2\times2$ block with $A = -\mu - t(\lambda+\lambda^{-1})$ on the diagonal and
+$B = -\Delta(\lambda-\lambda^{-1})$ off it; $B^2 - A^2 = 0$ is the
+characteristic equation
+\begin{equation}
+  \bigl[-\mu - t(\lambda + \lambda^{-1})\bigr]^2
+  - \Delta^2(\lambda - \lambda^{-1})^2 = 0 .
+  \label{eq:char}
+\end{equation}
+At $t = \Delta$ this factorises as $(A-B)(A+B) = 0$, giving the branches
+$\lambda = -\mu/2t$ and $\lambda = -2t/\mu$; the left edge mode is the
+decaying one, $|\lambda| < 1$:
+\begin{equation}
+  \psi_j^{L} \propto \lambda^{\,j-1}, \qquad
+  \lambda = -\frac{\mu}{2t}, \qquad
+  \xi = \frac{1}{\ln(2t/|\mu|)},
+  \label{eq:leftmode}
+\end{equation}
+which exists precisely inside the topological phase $|\mu| < 2t$; $\xi$ is the
+coherence length and $\psi_j^{R} \propto \lambda^{\,L-j}$ the mirrored right
+edge mode. The decay rate is $|\lambda| = |\mu|/2t$; the only structure on the
+exponential is the sign of $\lambda$, a $(-1)^j$ staggering present for
+$\mu > 0$ and absent for the $\mu < 0$ used throughout. For $t \neq \Delta$
+the roots of \eqref{eq:char} can be genuinely complex and the splitting
+oscillates around the envelope~\cite{dassarma2012,hegde2016}.
+
+\subsection{Hybridisation splitting of the zero mode}
+\label{sec:splitting}
+In the infinite chain $\psi^L$ and $\psi^R$ are degenerate at exactly $E = 0$;
+in a finite chain they overlap and the degeneracy is lifted by
+$\delta E \approx |\langle \psi^L|H|\psi^R\rangle| /
+(\|\psi^L\|\,\|\psi^R\|)$. The matrix element is boundary-dominated: both
+modes annihilate the infinite-chain Hamiltonian, and the open chain differs
+from it only by the bonds removed at the ends, so $H|\psi^R\rangle$ is
+non-zero only where the right mode has leaked to the left edge, of size
+$\lambda^{L-1}$. The normalisation $\|\psi^L\|^2 \to 1/(1-\lambda^2)$ only
+sets the prefactor, fixed by the exact finite-chain calculation at
+$t = \Delta$:
+\begin{equation}
+  \boxed{\;
+  E_0(L) \approx 2t\,\bigl(1-\lambda^2\bigr)
+  \left(\frac{|\mu|}{2t}\right)^{\!L},
+  \qquad |\lambda| = \frac{|\mu|}{2t} .
+  \;}
+  \label{eq:splitting}
+\end{equation}
+Three predictions follow: $E_0 = 0$ exactly at $\mu = 0$ for any $L$;
+exponential decay in the interior with semilog slope $\ln|\lambda| = -1/\xi$;
+and, as $|\mu| \to 2t$, $|\lambda| \to 1$ and $\xi \to \infty$, so
+\eqref{eq:splitting} --- which assumes $L \gg \xi$ --- breaks down and the
+splitting stops being exponentially small, saturating instead at the
+finite-size gap $\simeq \pi t/L$. The zero mode is therefore never protected
+near the transition. The true eigenstates are $(\psi^L \pm \psi^R)/\sqrt2$ at
+$\pm E_0$: the two edge Majoranas jointly form a single non-local fermion, and
+$E_0(L)$ measures how far a finite system is from hosting true zero modes.
+
+\subsection{Exact zero-energy lines for \texorpdfstring{$t \neq \Delta$}{t != Delta}}
+\label{sec:majoranalines}
+Equation~\eqref{eq:splitting} is asymptotic ($L \gg \xi$) and tied to the
+sweet spot. The sharper question --- \emph{when is $E_0$ exactly zero at
+finite $L$?} --- has a closed answer for all $t,\Delta,\mu$, due to Leumer
+\emph{et al.}~\cite{leumer2020,leumer2021thesis}. Split each fermion into
+Majorana operators $c_j = (\gamma_j^A + i\gamma_j^B)/2$ and order them by
+species, $\psi_c = (\gamma_1^A,\dots,\gamma_L^A,\gamma_1^B,\dots,\gamma_L^B)^T$.
+Since \eqref{eq:HK} contains no $\gamma^A\gamma^A$ or $\gamma^B\gamma^B$
+terms, the BdG matrix in this \emph{chiral basis} is block \emph{off}-diagonal,
+$H_K = \tfrac14 \psi_c^\dagger H_c \psi_c$ with
+\begin{equation}
+  H_c = \begin{pmatrix} 0 & h_c \\ h_c^\dagger & 0 \end{pmatrix}, \qquad
+  (h_c)_{ij} = -i\mu\,\delta_{ij} - b\,\delta_{j,i+1} + a\,\delta_{i,j+1},
+  \qquad a = i(\Delta - t), \quad b = i(\Delta + t),
+  \label{eq:chiral}
+\end{equation}
+tridiagonal but \emph{not} Hermitian. (Ref.~\cite{leumer2021thesis} uses the
+opposite pairing sign, which transposes $h_c$; determinants, and hence
+everything below, are unchanged.) Zero energy is then detected by a
+determinant rather than the full spectrum: the block structure gives
+$\det H_c = \det(-h_c h_c^\dagger) = (-1)^L |\det h_c|^2$, so $E = 0$ occurs
+\emph{iff} $\det h_c = 0$. The leading principal minors of a tridiagonal
+matrix obey $D_j = -i\mu\,D_{j-1} + ab\,D_{j-2}$ with $ab = t^2 - \Delta^2$,
+and the Ansatz $D_j \propto (ir)^j$ turns this into
+$r^2 + \mu r + (t^2-\Delta^2) = 0$, hence
+\begin{equation}
+  \det h_c = i^L\,\frac{r_+^{L+1} - r_-^{L+1}}{r_+ - r_-},
+  \qquad
+  r_\pm = \tfrac12\Bigl(-\mu \pm \sqrt{\mu^2 + 4(\Delta^2 - t^2)}\Bigr),
+  \label{eq:deth}
+\end{equation}
+which vanishes iff $r_+^{L+1} = r_-^{L+1}$ (for the degenerate case
+$r_+ = r_-$ the limit is $\det h_c = i^L (L+1) r_+^L$, zero only at
+$r_+ = 0$). Using
+$r_+ r_- = t^2-\Delta^2$ and parametrising
+$\mu = 2\sqrt{t^2-\Delta^2}\cos\theta$ gives
+$r_\pm = -\sqrt{t^2-\Delta^2}\,e^{\mp i\theta}$, so the condition reduces to
+$\sin[(L+1)\theta] = 0$ with $\sin\theta \neq 0$, i.e.\
+$\theta_n = n\pi/(L+1)$:
+\begin{equation}
+  \boxed{\;
+  \mu_n = 2\sqrt{t^2 - \Delta^2}\;
+  \cos\!\Bigl(\frac{n\pi}{L+1}\Bigr),
+  \qquad n = 1,\dots,L, \qquad t^2 \geq \Delta^2 .
+  \;}
+  \label{eq:majoranaline}
+\end{equation}
+A finite open chain therefore carries \emph{exact} zero modes only on $L$
+discrete ``Majorana lines''~\cite{leumer2020}, and only for $|t| \ge |\Delta|$
+--- the sole exception being $\mu = 0$ for odd $L$, where $n = (L+1)/2$ kills
+the cosine for any $t,\Delta$. Elsewhere in the topological phase $E_0$ is
+small but strictly finite. Two consequences matter. At the sweet spot the
+square root collapses and all $L$ lines merge into $\mu = 0$: there
+$\{r_+,r_-\} = \{0,-\mu\}$ and $|\det H_c| = \mu^{2L}$, vanishing only at
+$\mu = 0$ --- hence a smooth $E_0(\mu)$ with a single exact zero. For
+$|\Delta| < |t|$, instead, $E_0$ oscillates beneath its envelope and touches
+zero $L$ times, though only inside the sub-interval
+$|\mu| \le 2\sqrt{t^2-\Delta^2}$ of the topological window; each crossing is a
+fermion-parity switch of the ground state~\cite{dassarma2012,hegde2016}.
+
+The mode on a line is exact too: $h_c^\dagger \vec v_A = 0$ reads
+$b\,\xi_{j-1} + i\mu\,\xi_j - a\,\xi_{j+1} = 0$, a Fibonacci recursion whose
+solution with $\xi_0 = 0$ and $\mu = \mu_n$ is~\cite{leumer2021thesis}
+\begin{equation}
+  \xi_j \propto (-1)^{j-1}\,\frac{\sin(j\theta_n)}{\sin\theta_n}\,
+  e^{-(j-1)/\xi_{\mathrm{loc}}},
+  \qquad
+  \xi_{\mathrm{loc}} = 2\Bigl/\ln\Bigl|\tfrac{t+\Delta}{t-\Delta}\Bigr| ,
+  \label{eq:exactmode}
+\end{equation}
+a pure-$\gamma^A$ Majorana bound to one edge, its $\gamma^B$ partner
+($a \leftrightarrow b$, $\mu \to -\mu$) decaying from the other. The envelope
+is exponential, but the chemical potential survives inside $\sin(j\theta_n)$
+as a real-space \emph{oscillation} of the wavefunction --- the lattice
+analogue of the factor $e^{ik_0 j}$ absent in \eqref{eq:leftmode}.
+
+\subsection{The finite-size quantization rule}
+\label{sec:quantrule}
+The determinant settles only the $E = 0$ question. The full finite-$L$
+spectrum follows from squaring the problem to
+$h_c h_c^\dagger \vec v = E^2 \vec v$, whose amplitudes need a four-wave
+Ansatz with \emph{two} momenta $k_{1,2}$ at the same energy; both lie on the
+bulk dispersion and the open boundaries
+quantise them~\cite{leumer2020,leumer2021thesis}:
+\begin{equation}
+  \cos k_1 + \cos k_2 = -\frac{\mu\,t}{t^2-\Delta^2},
+  \qquad
+  \frac{\sin^2\!\bigl[(L+1)k_\Sigma\bigr]}{\sin^2\!\bigl[(L+1)k_\Delta\bigr]}
+  = \frac{1 + (\Delta/t)^2\cot^2 k_\Delta}
+         {1 + (\Delta/t)^2\cot^2 k_\Sigma},
+  \label{eq:quantrule}
+\end{equation}
+with $k_{\Sigma,\Delta} = (k_1 \pm k_2)/2$. Real $k_{1,2}$ are bulk standing
+waves, complex $k_{1,2}$ the sub-gap edge states, and three finite-size
+lessons follow. (i) Since superconductivity puts $\pm\mu$ into the particle
+and hole blocks of \eqref{eq:bdg}, $\mu$ cannot act as a rigid energy shift:
+it enters the quantization itself, $k_n = k_n(\mu,t,\Delta)$, so the spacing
+is generically non-equidistant and every level drifts as $\mu$ is swept; the
+particle-in-a-box values $n\pi/(L+1)$ survive only at the level crossings and
+on the zero-energy lines \eqref{eq:majoranaline}~\cite{leumer2021thesis}.
+(ii) Edge modes are the bulk solutions that go missing: some real-$k$
+solutions vanish inside the window and re-enter with complex momentum.
+Eq.~\eqref{eq:leftmode} is one, $k = i/\xi$ at $\mu<0$ --- purely evanescent,
+hence the monotonic sweet-spot splitting, whereas a generic
+$\mathrm{Re}\,k$ at $t \neq \Delta$ makes the two evanescent waves interfere. (iii) The boundary
+conditions exclude $k = 0,\pi$, so the gap closing at $|\mu| = 2t$ is
+unreachable at finite $L$: the spectrum only pinches to a finite-size gap.
